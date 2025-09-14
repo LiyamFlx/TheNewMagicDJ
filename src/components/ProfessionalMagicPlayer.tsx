@@ -267,67 +267,67 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   if (!playlist || !currentTrack) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-hidden">
+    <div className="min-h-screen bg-cyber-black overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 lg:p-6 border-b border-gray-700/50">
+      <div className="flex items-center justify-between p-4 lg:p-6 border-b border-neon-green">
         <div className="flex items-center space-x-4">
           <button
             onClick={onBack}
-            className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors"
+            className="w-8 h-8 lg:w-10 lg:h-10 rounded-none bg-cyber-dark border border-neon-green hover:neon-glow-green flex items-center justify-center transition-all"
           >
-            <ArrowLeft className="w-4 h-4 lg:w-5 lg:h-5" />
+            <ArrowLeft className="w-4 h-4 lg:w-5 lg:h-5 neon-text-green" />
           </button>
           
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors"
+            className="lg:hidden w-8 h-8 rounded-none bg-cyber-dark border border-neon-green hover:neon-glow-green flex items-center justify-center transition-all"
           >
-            {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            {mobileMenuOpen ? <X className="w-4 h-4 neon-text-green" /> : <Menu className="w-4 h-4 neon-text-green" />}
           </button>
           
           <div>
-            <h1 className="text-lg lg:text-2xl font-bold">Professional Player</h1>
-            <p className="text-sm lg:text-base text-gray-400 truncate max-w-48 lg:max-w-none">{playlist.name}</p>
+            <h1 className="text-lg lg:text-2xl font-bold text-cyber-white">Professional Player</h1>
+            <p className="text-sm lg:text-base text-cyber-gray truncate max-w-48 lg:max-w-none">{playlist.name}</p>
           </div>
         </div>
         
         <div className="flex items-center space-x-2 lg:space-x-4">
-          <div className="hidden sm:flex items-center space-x-2 px-3 lg:px-4 py-2 bg-gray-800 rounded-lg">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+          <div className="hidden sm:flex items-center space-x-2 px-3 lg:px-4 py-2 bg-cyber-dark border border-neon-green rounded-none">
+            <div className="w-3 h-3 bg-neon-green rounded-full animate-neon-pulse neon-glow-green"></div>
             <span className="text-xs lg:text-sm">Live</span>
           </div>
           <button
             onClick={onSessionEnd}
-            className="px-3 lg:px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center space-x-2"
+            className="cyber-button cyber-button-purple px-3 lg:px-4 py-2 rounded-none flex items-center space-x-2"
           >
-            <Square className="w-3 h-3 lg:w-4 lg:h-4" />
+            <Square className="w-3 h-3 lg:w-4 lg:h-4 neon-text-purple" />
             <span className="hidden sm:inline text-sm lg:text-base">End Session</span>
           </button>
         </div>
       </div>
 
       {/* Mobile Compact Player */}
-      <div className="lg:hidden bg-gray-800/90 backdrop-blur-sm border-b border-gray-700/50">
+      <div className="lg:hidden bg-cyber-dark border-b border-neon-green">
         <div className="p-4">
           {/* Current Track Info */}
           <div className="flex items-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <Play className="w-6 h-6" />
+            <div className="w-12 h-12 bg-cyber-dark border-2 border-neon-green rounded-none flex items-center justify-center neon-glow-green">
+              <Play className="w-6 h-6 neon-text-green" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold truncate">{currentTrack.title}</h3>
-              <p className="text-sm text-gray-400 truncate">{currentTrack.artist}</p>
+              <h3 className="font-semibold truncate text-cyber-white">{currentTrack.title}</h3>
+              <p className="text-sm text-cyber-gray truncate">{currentTrack.artist}</p>
             </div>
             {isLoading && (
-              <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-6 h-6 border-2 border-neon-green border-t-transparent rounded-none animate-spin neon-glow-green"></div>
             )}
           </div>
 
           {/* Progress Bar */}
           <div className="mb-4">
             <div 
-              className="w-full h-2 bg-gray-700 rounded-full cursor-pointer"
+              className="w-full h-2 bg-cyber-dark border border-neon-green rounded-none cursor-pointer"
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const percentage = ((e.clientX - rect.left) / rect.width) * 100;
@@ -335,11 +335,11 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               }}
             >
               <div 
-                className="h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-300"
+                className="h-2 progress-green rounded-none transition-all duration-300"
                 style={{ width: `${deckAProgress}%` }}
               ></div>
             </div>
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <div className="flex justify-between text-xs text-cyber-dim mt-1">
               <span>{formatTime(currentTime)}</span>
               <span>{formatTime(duration)}</span>
             </div>
@@ -349,28 +349,28 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           <div className="flex items-center justify-center space-x-6">
             <button 
               onClick={handleSkipBack}
-              className="w-10 h-10 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors"
+              className="w-10 h-10 bg-cyber-dark border border-neon-green hover:neon-glow-green rounded-none flex items-center justify-center transition-all"
             >
-              <SkipBack className="w-5 h-5" />
+              <SkipBack className="w-5 h-5 neon-text-green" />
             </button>
             <button
               onClick={() => onPlayPause(!isPlaying)}
               disabled={isLoading}
-              className="w-14 h-14 bg-gradient-to-br from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-full flex items-center justify-center transition-all transform hover:scale-105 disabled:opacity-50"
+              className="w-14 h-14 bg-cyber-dark border-4 border-neon-green hover:neon-glow-green rounded-none flex items-center justify-center transition-all transform hover:scale-105 disabled:opacity-50"
             >
               {isLoading ? (
-                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-6 h-6 border-2 border-neon-green border-t-transparent rounded-none animate-spin"></div>
               ) : isPlaying ? (
-                <Pause className="w-7 h-7" />
+                <Pause className="w-7 h-7 neon-text-green" />
               ) : (
-                <Play className="w-7 h-7" />
+                <Play className="w-7 h-7 neon-text-green" />
               )}
             </button>
             <button 
               onClick={handleSkipForward}
-              className="w-10 h-10 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors"
+              className="w-10 h-10 bg-cyber-dark border border-neon-green hover:neon-glow-green rounded-none flex items-center justify-center transition-all"
             >
-              <SkipForward className="w-5 h-5" />
+              <SkipForward className="w-5 h-5 neon-text-green" />
             </button>
           </div>
         </div>
@@ -381,24 +381,24 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 h-full">
           
           {/* Deck A */}
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-gray-700/50">
+          <div className="cyber-card rounded-none p-4 lg:p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg lg:text-xl font-semibold text-purple-400">Deck A</h2>
+              <h2 className="text-lg lg:text-xl font-semibold neon-text-green">Deck A</h2>
               <div className="flex items-center space-x-2">
-                <button className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
-                  <Play className="w-4 h-4" />
+                <button className="w-8 h-8 bg-cyber-dark border border-neon-green rounded-none flex items-center justify-center neon-glow-green">
+                  <Play className="w-4 h-4 neon-text-green" />
                 </button>
-                <button className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
-                  <Pause className="w-4 h-4" />
+                <button className="w-8 h-8 bg-cyber-dark border border-neon-green rounded-none flex items-center justify-center">
+                  <Pause className="w-4 h-4 neon-text-green" />
                 </button>
               </div>
             </div>
 
             {/* Track Info */}
             <div className="mb-6">
-              <h3 className="font-semibold text-base lg:text-lg mb-1 truncate">{currentTrack.title}</h3>
-              <p className="text-gray-400 mb-2 truncate">{currentTrack.artist}</p>
-              <div className="flex items-center space-x-4 text-sm text-gray-500">
+              <h3 className="font-semibold text-base lg:text-lg mb-1 truncate text-cyber-white">{currentTrack.title}</h3>
+              <p className="text-cyber-gray mb-2 truncate">{currentTrack.artist}</p>
+              <div className="flex items-center space-x-4 text-sm text-cyber-dim">
                 <span>{currentTrack.bpm} BPM</span>
                 <span>{currentTrack.key}</span>
                 <span>{formatTime(currentTrack.duration)}</span>
@@ -411,14 +411,14 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 ref={waveformCanvasA}
                 width={280}
                 height={100}
-                className="w-full h-16 lg:h-24 bg-gray-900 rounded-lg cursor-pointer"
+                className="w-full h-16 lg:h-24 bg-cyber-black border border-neon-green rounded-none cursor-pointer"
                 onClick={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   const percentage = ((e.clientX - rect.left) / rect.width) * 100;
                   handleSeek(percentage);
                 }}
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-2">
+              <div className="flex justify-between text-xs text-cyber-dim mt-2">
                 <span>{formatTime(currentTime)}</span>
                 <span>{formatTime(duration || currentTrack.duration)}</span>
               </div>
@@ -429,36 +429,36 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <div className="flex items-center justify-center space-x-4">
                 <button 
                   onClick={handleSkipBack}
-                  className="w-10 h-10 lg:w-12 lg:h-12 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors"
+                  className="w-10 h-10 lg:w-12 lg:h-12 bg-cyber-dark border border-neon-green hover:neon-glow-green rounded-none flex items-center justify-center transition-all"
                 >
-                  <SkipBack className="w-5 h-5 lg:w-6 lg:h-6" />
+                  <SkipBack className="w-5 h-5 lg:w-6 lg:h-6 neon-text-green" />
                 </button>
                 <button
                   onClick={() => onPlayPause(!isPlaying)}
                   disabled={isLoading}
-                  className="w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-full flex items-center justify-center transition-all transform hover:scale-105 disabled:opacity-50"
+                  className="w-14 h-14 lg:w-16 lg:h-16 bg-cyber-dark border-4 border-neon-green hover:neon-glow-green rounded-none flex items-center justify-center transition-all transform hover:scale-105 disabled:opacity-50"
                 >
                   {isLoading ? (
-                    <div className="w-6 h-6 lg:w-8 lg:h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-6 h-6 lg:w-8 lg:h-8 border-2 border-neon-green border-t-transparent rounded-none animate-spin"></div>
                   ) : isPlaying ? (
-                    <Pause className="w-6 h-6 lg:w-8 lg:h-8" />
+                    <Pause className="w-6 h-6 lg:w-8 lg:h-8 neon-text-green" />
                   ) : (
-                    <Play className="w-6 h-6 lg:w-8 lg:h-8" />
+                    <Play className="w-6 h-6 lg:w-8 lg:h-8 neon-text-green" />
                   )}
                 </button>
                 <button 
                   onClick={handleSkipForward}
-                  className="w-10 h-10 lg:w-12 lg:h-12 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors"
+                  className="w-10 h-10 lg:w-12 lg:h-12 bg-cyber-dark border border-neon-green hover:neon-glow-green rounded-none flex items-center justify-center transition-all"
                 >
-                  <SkipForward className="w-5 h-5 lg:w-6 lg:h-6" />
+                  <SkipForward className="w-5 h-5 lg:w-6 lg:h-6 neon-text-green" />
                 </button>
               </div>
 
               {/* Volume */}
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <Volume2 className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-400">Volume</span>
+                  <Volume2 className="w-4 h-4 text-cyber-gray" />
+                  <span className="text-sm text-cyber-gray">Volume</span>
                 </div>
                 <input
                   type="range"
@@ -466,7 +466,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   max="100"
                   value={deckAVolume}
                   onChange={(e) => setDeckAVolume(Number(e.target.value))}
-                  className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                  className="cyber-slider w-full"
                 />
               </div>
 
@@ -474,11 +474,11 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <div className="flex space-x-2">
                 <button
                   onClick={() => addCuePoint('deckA', deckAProgress)}
-                  className="flex-1 py-2 px-3 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-xs lg:text-sm transition-colors"
+                  className="cyber-button flex-1 py-2 px-3 rounded-none text-xs lg:text-sm"
                 >
                   CUE
                 </button>
-                <button className="flex-1 py-2 px-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs lg:text-sm transition-colors">
+                <button className="cyber-button cyber-button-purple flex-1 py-2 px-3 rounded-none text-xs lg:text-sm">
                   LOOP
                 </button>
               </div>
@@ -488,8 +488,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           {/* Center Controls */}
           <div className="flex flex-col justify-between">
             {/* Crossfader Section */}
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-gray-700/50 mb-4 lg:mb-6">
-              <h3 className="text-base lg:text-lg font-semibold mb-4 text-center">Crossfader</h3>
+            <div className="cyber-card rounded-none p-4 lg:p-6 mb-4 lg:mb-6">
+              <h3 className="text-base lg:text-lg font-semibold mb-4 text-center neon-text-green">Crossfader</h3>
               
               <div className="relative mb-6">
                 <input
@@ -498,9 +498,9 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   max="100"
                   value={crossfaderPosition}
                   onChange={(e) => handleCrossfaderChange(Number(e.target.value))}
-                  className="w-full h-3 lg:h-4 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                  className="cyber-slider cyber-slider-purple w-full"
                 />
-                <div className="flex justify-between text-xs text-gray-500 mt-2">
+                <div className="flex justify-between text-xs text-cyber-dim mt-2">
                   <span>A</span>
                   <span>CENTER</span>
                   <span>B</span>
@@ -511,16 +511,16 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <div className="grid grid-cols-2 gap-2 lg:gap-4">
                 <button
                   onClick={() => setBpmSync(!bpmSync)}
-                  className={`py-2 lg:py-3 px-2 lg:px-4 rounded-lg transition-colors text-xs lg:text-sm ${
-                    bpmSync ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  className={`cyber-button py-2 lg:py-3 px-2 lg:px-4 rounded-none text-xs lg:text-sm ${
+                    bpmSync ? 'neon-glow-green' : ''
                   }`}
                 >
                   BPM SYNC
                 </button>
                 <button
                   onClick={() => setAutoMix(!autoMix)}
-                  className={`py-2 lg:py-3 px-2 lg:px-4 rounded-lg transition-colors text-xs lg:text-sm ${
-                    autoMix ? 'bg-pink-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  className={`cyber-button cyber-button-purple py-2 lg:py-3 px-2 lg:px-4 rounded-none text-xs lg:text-sm ${
+                    autoMix ? 'neon-glow-purple' : ''
                   }`}
                 >
                   AUTO MIX
@@ -529,39 +529,39 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             </div>
 
             {/* Session Info */}
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-gray-700/50">
-              <h3 className="text-base lg:text-lg font-semibold mb-4">Session Info</h3>
+            <div className="cyber-card rounded-none p-4 lg:p-6">
+              <h3 className="text-base lg:text-lg font-semibold mb-4 neon-text-purple">Session Info</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Playing:</span>
-                  <span>{currentTrackIndex + 1} of {playlist.tracks.length}</span>
+                  <span className="text-cyber-gray">Playing:</span>
+                  <span className="text-cyber-white">{currentTrackIndex + 1} of {playlist.tracks.length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Remaining:</span>
-                  <span>{formatTime((playlist.tracks.length - currentTrackIndex - 1) * 180)}</span>
+                  <span className="text-cyber-gray">Remaining:</span>
+                  <span className="text-cyber-white">{formatTime((playlist.tracks.length - currentTrackIndex - 1) * 180)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">BPM:</span>
-                  <span>{currentTrack.bpm}</span>
+                  <span className="text-cyber-gray">BPM:</span>
+                  <span className="text-cyber-white">{currentTrack.bpm}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Key:</span>
-                  <span>{currentTrack.key}</span>
+                  <span className="text-cyber-gray">Key:</span>
+                  <span className="text-cyber-white">{currentTrack.key}</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Deck B */}
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-gray-700/50">
+          <div className="cyber-card rounded-none p-4 lg:p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg lg:text-xl font-semibold text-pink-400">Deck B</h2>
+              <h2 className="text-lg lg:text-xl font-semibold neon-text-purple">Deck B</h2>
               <div className="flex items-center space-x-2">
-                <button className="w-8 h-8 bg-pink-600 rounded-full flex items-center justify-center">
-                  <Play className="w-4 h-4" />
+                <button className="w-8 h-8 bg-cyber-dark border border-neon-purple rounded-none flex items-center justify-center neon-glow-purple">
+                  <Play className="w-4 h-4 neon-text-purple" />
                 </button>
-                <button className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
-                  <Pause className="w-4 h-4" />
+                <button className="w-8 h-8 bg-cyber-dark border border-neon-purple rounded-none flex items-center justify-center">
+                  <Pause className="w-4 h-4 neon-text-purple" />
                 </button>
               </div>
             </div>
@@ -570,16 +570,16 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             <div className="mb-6">
               {nextTrack ? (
                 <>
-                  <h3 className="font-semibold text-base lg:text-lg mb-1 truncate">{nextTrack.title}</h3>
-                  <p className="text-gray-400 mb-2 truncate">{nextTrack.artist}</p>
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                  <h3 className="font-semibold text-base lg:text-lg mb-1 truncate text-cyber-white">{nextTrack.title}</h3>
+                  <p className="text-cyber-gray mb-2 truncate">{nextTrack.artist}</p>
+                  <div className="flex items-center space-x-4 text-sm text-cyber-dim">
                     <span>{nextTrack.bpm} BPM</span>
                     <span>{nextTrack.key}</span>
                     <span>{formatTime(nextTrack.duration)}</span>
                   </div>
                 </>
               ) : (
-                <p className="text-gray-500">No next track loaded</p>
+                <p className="text-cyber-dim">No next track loaded</p>
               )}
             </div>
 
@@ -589,9 +589,9 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 ref={waveformCanvasB}
                 width={280}
                 height={100}
-                className="w-full h-16 lg:h-24 bg-gray-900 rounded-lg"
+                className="w-full h-16 lg:h-24 bg-cyber-black border border-neon-purple rounded-none"
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-2">
+              <div className="flex justify-between text-xs text-cyber-dim mt-2">
                 <span>0:00</span>
                 <span>{nextTrack ? formatTime(nextTrack.duration) : '--:--'}</span>
               </div>
@@ -600,22 +600,22 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             {/* Controls */}
             <div className="space-y-3 lg:space-y-4">
               <div className="flex items-center justify-center space-x-4">
-                <button className="w-10 h-10 lg:w-12 lg:h-12 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors">
-                  <SkipBack className="w-5 h-5 lg:w-6 lg:h-6" />
+                <button className="w-10 h-10 lg:w-12 lg:h-12 bg-cyber-dark border border-neon-purple hover:neon-glow-purple rounded-none flex items-center justify-center transition-all">
+                  <SkipBack className="w-5 h-5 lg:w-6 lg:h-6 neon-text-purple" />
                 </button>
-                <button className="w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 rounded-full flex items-center justify-center transition-all transform hover:scale-105">
-                  <Play className="w-6 h-6 lg:w-8 lg:h-8" />
+                <button className="w-14 h-14 lg:w-16 lg:h-16 bg-cyber-dark border-4 border-neon-purple hover:neon-glow-purple rounded-none flex items-center justify-center transition-all transform hover:scale-105">
+                  <Play className="w-6 h-6 lg:w-8 lg:h-8 neon-text-purple" />
                 </button>
-                <button className="w-10 h-10 lg:w-12 lg:h-12 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors">
-                  <SkipForward className="w-5 h-5 lg:w-6 lg:h-6" />
+                <button className="w-10 h-10 lg:w-12 lg:h-12 bg-cyber-dark border border-neon-purple hover:neon-glow-purple rounded-none flex items-center justify-center transition-all">
+                  <SkipForward className="w-5 h-5 lg:w-6 lg:h-6 neon-text-purple" />
                 </button>
               </div>
 
               {/* Volume */}
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <Volume2 className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-400">Volume</span>
+                  <Volume2 className="w-4 h-4 text-cyber-gray" />
+                  <span className="text-sm text-cyber-gray">Volume</span>
                 </div>
                 <input
                   type="range"
@@ -623,7 +623,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   max="100"
                   value={deckBVolume}
                   onChange={(e) => setDeckBVolume(Number(e.target.value))}
-                  className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                  className="cyber-slider cyber-slider-purple w-full"
                 />
               </div>
 
@@ -631,11 +631,11 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <div className="flex space-x-2">
                 <button
                   onClick={() => addCuePoint('deckB', deckBProgress)}
-                  className="flex-1 py-2 px-3 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-xs lg:text-sm transition-colors"
+                  className="cyber-button cyber-button-purple flex-1 py-2 px-3 rounded-none text-xs lg:text-sm"
                 >
                   CUE
                 </button>
-                <button className="flex-1 py-2 px-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs lg:text-sm transition-colors">
+                <button className="cyber-button flex-1 py-2 px-3 rounded-none text-xs lg:text-sm"
                   LOOP
                 </button>
               </div>

@@ -226,37 +226,33 @@ const MagicStudio: React.FC<MagicStudioProps> = ({ user, onPlaylistGenerated, on
 
   if (isProcessing) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-cyber-black flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
           {/* Animated Logo */}
-          <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-8 animate-pulse">
-            {activeMode === 'match' ? <Zap className="w-12 h-12" /> : <Wand2 className="w-12 h-12" />}
+          <div className="w-24 h-24 bg-cyber-dark border-4 border-neon-green rounded-none flex items-center justify-center mx-auto mb-8 animate-neon-pulse neon-glow-green">
+            {activeMode === 'match' ? <Zap className="w-12 h-12 neon-text-green" /> : <Wand2 className="w-12 h-12 neon-text-purple" />}
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-gray-700 rounded-full h-3 mb-6">
+          <div className="w-full bg-cyber-dark border border-neon-green rounded-none h-3 mb-6">
             <div 
-              className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-300"
+              className={`h-3 rounded-none transition-all duration-300 ${activeMode === 'match' ? 'progress-green' : 'progress-purple'}`}
               style={{ width: `${progress}%` }}
             ></div>
           </div>
 
           {/* Status Message */}
-          <h2 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+          <h2 className={`text-2xl font-bold mb-4 ${activeMode === 'match' ? 'neon-text-green' : 'neon-text-purple'}`}>
             {activeMode === 'match' ? 'MagicMatch' : 'MagicSet'} Processing
           </h2>
-          <p className="text-gray-300 text-lg">{statusMessage}</p>
+          <p className="text-cyber-gray text-lg">{statusMessage}</p>
 
           {/* Audio Visualization */}
-          <div className="flex items-center justify-center space-x-2 mt-8">
+          <div className="loading-cyber mt-8 justify-center">
             {[...Array(5)].map((_, i) => (
               <div
                 key={i}
-                className="w-2 bg-gradient-to-t from-purple-500 to-pink-500 rounded-full animate-pulse"
-                style={{
-                  height: `${20 + Math.random() * 40}px`,
-                  animationDelay: `${i * 100}ms`
-                }}
+                className={`${activeMode === 'match' ? 'bg-neon-green neon-glow-green' : 'bg-neon-purple neon-glow-purple'}`}
               ></div>
             ))}
           </div>
@@ -266,31 +262,31 @@ const MagicStudio: React.FC<MagicStudioProps> = ({ user, onPlaylistGenerated, on
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
+    <div className="min-h-screen bg-cyber-black">
       {/* Header */}
       <div className="px-4 lg:px-6 py-4 lg:py-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <button
               onClick={onBack}
-              className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors"
+              className="w-8 h-8 lg:w-10 lg:h-10 rounded-none bg-cyber-dark border border-neon-green hover:neon-glow-green flex items-center justify-center transition-all"
             >
-              <ArrowLeft className="w-4 h-4 lg:w-5 lg:h-5" />
+              <ArrowLeft className="w-4 h-4 lg:w-5 lg:h-5 neon-text-green" />
             </button>
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-6 h-6" />
+              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-cyber-dark border-2 border-neon-green rounded-none flex items-center justify-center neon-glow-green">
+                <Sparkles className="w-6 h-6 neon-text-green" />
               </div>
-              <h1 className="text-xl lg:text-2xl font-bold">Magic Studio</h1>
+              <h1 className="text-xl lg:text-2xl font-bold text-cyber-white">Magic Studio</h1>
             </div>
           </div>
           <div className="flex items-center space-x-2 lg:space-x-4">
             <div className="hidden sm:block text-right">
-              <p className="text-sm text-gray-400">Welcome back,</p>
-              <p className="font-medium truncate max-w-32 lg:max-w-none">{user?.email}</p>
+              <p className="text-sm text-cyber-dim">Welcome back,</p>
+              <p className="font-medium truncate max-w-32 lg:max-w-none text-cyber-white">{user?.email}</p>
             </div>
-            <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-              <span className="font-bold">{user?.email?.[0]?.toUpperCase()}</span>
+            <div className="w-8 h-8 lg:w-10 lg:h-10 bg-cyber-dark border-2 border-neon-purple rounded-none flex items-center justify-center neon-glow-purple">
+              <span className="font-bold neon-text-purple">{user?.email?.[0]?.toUpperCase()}</span>
             </div>
           </div>
         </div>
@@ -299,10 +295,10 @@ const MagicStudio: React.FC<MagicStudioProps> = ({ user, onPlaylistGenerated, on
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8 lg:py-12">
         <div className="text-center mb-8 lg:mb-16">
-          <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold mb-4 lg:mb-6 bg-gradient-to-r from-white via-purple-200 to-pink-200 bg-clip-text text-transparent">
+          <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold mb-4 lg:mb-6 text-cyber-white animate-slide-in-cyber">
             Choose Your Magic
           </h1>
-          <p className="text-lg lg:text-xl text-gray-300 max-w-2xl mx-auto px-4">
+          <p className="text-lg lg:text-xl text-cyber-gray max-w-2xl mx-auto px-4">
             Select how you want to create your next incredible DJ set
           </p>
         </div>
@@ -311,38 +307,38 @@ const MagicStudio: React.FC<MagicStudioProps> = ({ user, onPlaylistGenerated, on
         <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 max-w-6xl mx-auto">
           {/* MagicMatch */}
           <div className="group">
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-3xl p-6 lg:p-8 border border-gray-700/50 hover:border-purple-500/50 transition-all duration-500 lg:hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/10">
-              <div className="flex items-center justify-center w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl mb-6 lg:mb-8 mx-auto group-hover:scale-110 transition-transform">
-                <Zap className="w-10 h-10 text-white" />
+            <div className="cyber-card rounded-none p-6 lg:p-8 transition-all duration-500 lg:hover:scale-105">
+              <div className="flex items-center justify-center w-16 h-16 lg:w-20 lg:h-20 bg-cyber-dark border-4 border-neon-green rounded-none mb-6 lg:mb-8 mx-auto group-hover:scale-110 transition-transform neon-glow-green">
+                <Zap className="w-10 h-10 neon-text-green" />
               </div>
               
-              <h2 className="text-2xl lg:text-3xl font-bold mb-3 lg:mb-4 text-center">MagicMatch</h2>
-              <p className="text-sm lg:text-base text-gray-300 text-center mb-6 lg:mb-8 leading-relaxed">
+              <h2 className="text-2xl lg:text-3xl font-bold mb-3 lg:mb-4 text-center neon-text-green">MagicMatch</h2>
+              <p className="text-sm lg:text-base text-cyber-gray text-center mb-6 lg:mb-8 leading-relaxed">
                 Recognize what's playing and let AI create the perfect continuation playlist
               </p>
 
               <div className="space-y-3 lg:space-y-4">
                 <button
                   onClick={() => handleMagicMatch('mic')}
-                  className="w-full py-3 lg:py-4 px-4 lg:px-6 bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 hover:border-purple-500/60 rounded-xl transition-all duration-300 hover:bg-purple-600/30 flex items-center justify-center space-x-3 text-sm lg:text-base"
+                  className="cyber-button w-full py-3 lg:py-4 px-4 lg:px-6 rounded-none flex items-center justify-center space-x-3 text-sm lg:text-base"
                 >
-                  <Mic className="w-5 h-5 text-purple-400" />
+                  <Mic className="w-5 h-5 neon-text-green" />
                   <span>Listen via Microphone</span>
                 </button>
 
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-3 lg:py-4 px-4 lg:px-6 bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 hover:border-purple-500/60 rounded-xl transition-all duration-300 hover:bg-purple-600/30 flex items-center justify-center space-x-3 text-sm lg:text-base"
+                  className="cyber-button w-full py-3 lg:py-4 px-4 lg:px-6 rounded-none flex items-center justify-center space-x-3 text-sm lg:text-base"
                 >
-                  <Upload className="w-5 h-5 text-purple-400" />
+                  <Upload className="w-5 h-5 neon-text-green" />
                   <span>Upload Audio File</span>
                 </button>
 
                 <button
                   onClick={() => handleMagicMatch('stream')}
-                  className="w-full py-3 lg:py-4 px-4 lg:px-6 bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 hover:border-purple-500/60 rounded-xl transition-all duration-300 hover:bg-purple-600/30 flex items-center justify-center space-x-3 text-sm lg:text-base"
+                  className="cyber-button w-full py-3 lg:py-4 px-4 lg:px-6 rounded-none flex items-center justify-center space-x-3 text-sm lg:text-base"
                 >
-                  <Radio className="w-5 h-5 text-purple-400" />
+                  <Radio className="w-5 h-5 neon-text-green" />
                   <span>Capture from Stream</span>
                 </button>
               </div>
@@ -351,26 +347,26 @@ const MagicStudio: React.FC<MagicStudioProps> = ({ user, onPlaylistGenerated, on
 
           {/* MagicSet */}
           <div className="group">
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-3xl p-6 lg:p-8 border border-gray-700/50 hover:border-pink-500/50 transition-all duration-500 lg:hover:scale-105 hover:shadow-2xl hover:shadow-pink-500/10">
-              <div className="flex items-center justify-center w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl mb-6 lg:mb-8 mx-auto group-hover:scale-110 transition-transform">
-                <Wand2 className="w-10 h-10 text-white" />
+            <div className="cyber-card rounded-none p-6 lg:p-8 transition-all duration-500 lg:hover:scale-105">
+              <div className="flex items-center justify-center w-16 h-16 lg:w-20 lg:h-20 bg-cyber-dark border-4 border-neon-purple rounded-none mb-6 lg:mb-8 mx-auto group-hover:scale-110 transition-transform neon-glow-purple">
+                <Wand2 className="w-10 h-10 neon-text-purple" />
               </div>
               
-              <h2 className="text-2xl lg:text-3xl font-bold mb-3 lg:mb-4 text-center">MagicSet</h2>
-              <p className="text-sm lg:text-base text-gray-300 text-center mb-6 lg:mb-8 leading-relaxed">
+              <h2 className="text-2xl lg:text-3xl font-bold mb-3 lg:mb-4 text-center neon-text-purple">MagicSet</h2>
+              <p className="text-sm lg:text-base text-cyber-gray text-center mb-6 lg:mb-8 leading-relaxed">
                 Generate an AI-curated playlist from scratch based on your vibe and energy preferences
               </p>
 
               <div className="space-y-4 lg:space-y-6">
                 {/* Vibe Selection */}
                 <div>
-                  <label className="block text-xs lg:text-sm font-medium text-gray-300 mb-2 lg:mb-3">Choose Your Vibe</label>
+                  <label className="block text-xs lg:text-sm font-medium text-cyber-gray mb-2 lg:mb-3">Choose Your Vibe</label>
                   <div className="grid grid-cols-2 gap-2 lg:gap-3">
                     {['Electronic', 'Hip-Hop', 'House', 'Techno'].map((vibe) => (
                       <button
                         key={vibe}
                         onClick={() => handleMagicSet(vibe.toLowerCase(), 'high')}
-                        className="py-2 lg:py-3 px-3 lg:px-4 bg-gray-700/50 hover:bg-purple-600/20 border border-gray-600 hover:border-purple-500/50 rounded-lg transition-all duration-300 text-xs lg:text-sm"
+                        className="cyber-button cyber-button-purple py-2 lg:py-3 px-3 lg:px-4 rounded-none text-xs lg:text-sm"
                       >
                         {vibe}
                       </button>
@@ -380,17 +376,17 @@ const MagicStudio: React.FC<MagicStudioProps> = ({ user, onPlaylistGenerated, on
 
                 {/* Energy Level */}
                 <div>
-                  <label className="block text-xs lg:text-sm font-medium text-gray-300 mb-2 lg:mb-3">Energy Level</label>
+                  <label className="block text-xs lg:text-sm font-medium text-cyber-gray mb-2 lg:mb-3">Energy Level</label>
                   <div className="grid grid-cols-3 gap-1 lg:gap-2">
                     {[
-                      { level: 'low', label: 'Chill', color: 'from-blue-500 to-cyan-500' },
-                      { level: 'medium', label: 'Groove', color: 'from-green-500 to-blue-500' },
-                      { level: 'high', label: 'Peak', color: 'from-orange-500 to-red-500' }
-                    ].map(({ level, label, color }) => (
+                      { level: 'low', label: 'Chill', isGreen: false },
+                      { level: 'medium', label: 'Groove', isGreen: true },
+                      { level: 'high', label: 'Peak', isGreen: false }
+                    ].map(({ level, label, isGreen }) => (
                       <button
                         key={level}
                         onClick={() => handleMagicSet('electronic', level as 'low' | 'medium' | 'high')}
-                        className={`py-2 lg:py-3 px-2 lg:px-3 bg-gradient-to-r ${color} opacity-80 hover:opacity-100 rounded-lg transition-all duration-300 text-xs lg:text-sm font-medium`}
+                        className={`cyber-button ${isGreen ? '' : 'cyber-button-purple'} py-2 lg:py-3 px-2 lg:px-3 rounded-none text-xs lg:text-sm font-medium`}
                       >
                         {label}
                       </button>
@@ -404,17 +400,17 @@ const MagicStudio: React.FC<MagicStudioProps> = ({ user, onPlaylistGenerated, on
 
         {/* Quick Stats */}
         <div className="mt-12 lg:mt-20 grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-8 max-w-4xl mx-auto">
-          <div className="text-center p-4 lg:p-6 bg-gray-800/30 rounded-xl border border-gray-700/50">
-            <div className="text-2xl lg:text-3xl font-bold text-purple-400 mb-2">99.8%</div>
-            <div className="text-sm lg:text-base text-gray-400">Recognition Accuracy</div>
+          <div className="text-center p-4 lg:p-6 cyber-card rounded-none">
+            <div className="text-2xl lg:text-3xl font-bold neon-text-green mb-2 animate-neon-pulse">99.8%</div>
+            <div className="text-sm lg:text-base text-cyber-gray">Recognition Accuracy</div>
           </div>
-          <div className="text-center p-4 lg:p-6 bg-gray-800/30 rounded-xl border border-gray-700/50">
-            <div className="text-2xl lg:text-3xl font-bold text-pink-400 mb-2">&lt;3s</div>
-            <div className="text-sm lg:text-base text-gray-400">Average Processing Time</div>
+          <div className="text-center p-4 lg:p-6 cyber-card rounded-none">
+            <div className="text-2xl lg:text-3xl font-bold neon-text-purple mb-2 animate-neon-pulse">&lt;3s</div>
+            <div className="text-sm lg:text-base text-cyber-gray">Average Processing Time</div>
           </div>
-          <div className="text-center p-4 lg:p-6 bg-gray-800/30 rounded-xl border border-gray-700/50">
-            <div className="text-2xl lg:text-3xl font-bold text-blue-400 mb-2">10M+</div>
-            <div className="text-sm lg:text-base text-gray-400">Tracks in Database</div>
+          <div className="text-center p-4 lg:p-6 cyber-card rounded-none">
+            <div className="text-2xl lg:text-3xl font-bold neon-text-green mb-2 animate-neon-pulse">10M+</div>
+            <div className="text-sm lg:text-base text-cyber-gray">Tracks in Database</div>
           </div>
         </div>
       </div>
