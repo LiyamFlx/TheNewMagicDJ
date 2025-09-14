@@ -637,7 +637,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 </button>
                 <button className="cyber-button flex-1 py-2 px-3 rounded-none text-xs lg:text-sm"
                   LOOP
-                </button>
+                  LOOP
               </div>
             </div>
           </div>
