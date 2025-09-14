@@ -1,7 +1,11 @@
 import { Playlist, Track, RecognitionResult } from '../types';
 import { productionSpotifyService } from './productionSpotifyService';
 import { mockSpotifyService } from './mockSpotifyService';
+import { acoustidService } from './acoustidService';
+import { auddService } from './auddService';
+import { lastfmService } from './lastfmService';
 import { logger } from '../utils/logger';
+import { errorHandler } from '../utils/errorHandler';
 
 const USE_MOCK_SERVICES = import.meta.env.VITE_USE_MOCK_SERVICES === 'true';
 
@@ -18,7 +22,13 @@ class PlaylistService {
         if (fingerprint) {
           // Try to recognize the track from fingerprint
           try {
-            const recognition = await this.recognizeTrack(fingerprint);
+            let recognition = await this.recognizeTrack(fingerprint);
+            
+            // If basic recognition failed, try enhanced recognition
+            if (!recognition) {
+              recognition = await this.enhancedRecognition(fingerprint);
+            }
+            
             if (recognition) {
               recognizedTrack = {
                 id: recognition.spotify_id || `recognized-${Date.now()}`,
@@ -41,12 +51,29 @@ class PlaylistService {
         if (baseTrack) {
           // Get recommendations based on the recognized/seed track
           try {
-            tracks = await this.spotifyService.getRecommendations({
-              seed_tracks: [baseTrack.spotify_id || baseTrack.id],
-              limit: 15,
-              target_energy: 0.7,
-              target_danceability: 0.8
-            });
+            // Try Spotify first
+            if (baseTrack.spotify_id) {
+              tracks = await this.spotifyService.getRecommendations({
+                seed_tracks: [baseTrack.spotify_id],
+                limit: 15,
+                target_energy: 0.7,
+                target_danceability: 0.8
+              });
+            }
+            
+            // Enhance with Last.fm similar tracks if available
+            if (tracks.length < 10 && lastfmService.isConfigured()) {
+              try {
+                const similarTracks = await lastfmService.getSimilarTracks(
+                  baseTrack.artist,
+                  baseTrack.title,
+                  10
+                );
+                tracks = [...tracks, ...similarTracks];
+              } catch (error) {
+                logger.warn('PlaylistService', 'Last.fm enhancement failed', error);
+              }
+            }
           } catch (error) {
             logger.warn('PlaylistService', 'Failed to get track-based recommendations, using genre-based', error);
           }
@@ -150,26 +177,100 @@ class PlaylistService {
       'PlaylistService',
       'recognizeTrack',
       async () => {
-        // This would integrate with AcoustID, AudD, or other recognition services
-        // For now, return a mock result
-        return {
-          title: 'Recognized Track',
-          artist: 'Unknown Artist',
-          confidence: 0.85,
-          duration: 180
-        };
+        // Try AudD first (faster for real-time)
+        if (auddService.isConfigured()) {
+          try {
+            const result = await auddService.recognizeAudio(fingerprint);
+            if (result) {
+              return result;
+            }
+          } catch (error) {
+            logger.warn('PlaylistService', 'AudD recognition failed', error);
+          }
+        }
+        
+        // Fallback to AcoustID
+        if (acoustidService.isConfigured()) {
+          try {
+            const result = await acoustidService.recognizeFingerprint(fingerprint, 30);
+            if (result) {
+              return result;
+            }
+          } catch (error) {
+            logger.warn('PlaylistService', 'AcoustID recognition failed', error);
+          }
+        }
+        
+        return null;
       },
       { fingerprint }
     );
   }
 
+  private async enhancedRecognition(fingerprint: string): Promise<RecognitionResult | null> {
+    return logger.trackOperation(
+      'PlaylistService',
+      'enhancedRecognition',
+      async () => {
+        // Try multiple recognition strategies
+        const strategies = [];
+        
+        if (auddService.isConfigured()) {
+          strategies.push(() => auddService.recognizeAudio(fingerprint));
+        }
+        
+        if (acoustidService.isConfigured()) {
+          strategies.push(() => acoustidService.recognizeFingerprint(fingerprint, 30));
+        }
+        
+        // Try each strategy with timeout
+        for (const strategy of strategies) {
+          try {
+            const result = await Promise.race([
+              strategy(),
+              new Promise<null>((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout')), 10000)
+              )
+            ]);
+            
+            if (result) {
+              return result;
+            }
+          } catch (error) {
+            logger.debug('PlaylistService', 'Recognition strategy failed', error);
+          }
+        }
+        
+        return null;
+      },
+      { fingerprint }
+    );
+  }
   async recognizeFromAudioFile(file: File): Promise<Track | null> {
     return logger.trackOperation(
       'PlaylistService',
       'recognizeFromAudioFile',
       async () => {
-        // This would process the audio file and recognize it
-        // For now, return null to trigger fingerprint fallback
+        // Try direct file recognition with AudD
+        if (auddService.isConfigured()) {
+          try {
+            const result = await auddService.recognizeAudio(file);
+            if (result) {
+              return {
+                id: `recognized-${Date.now()}`,
+                title: result.title,
+                artist: result.artist,
+                album: result.album,
+                duration: result.duration || 180,
+                preview_url: result.preview_url,
+                spotify_id: result.spotify_id
+              };
+            }
+          } catch (error) {
+            logger.warn('PlaylistService', 'Direct file recognition failed', error);
+          }
+        }
+        
         return null;
       },
       { fileName: file.name, fileSize: file.size }

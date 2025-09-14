@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import ErrorBoundary from './components/ErrorBoundary';
+import NotificationSystem from './components/NotificationSystem';
 import LandingPage from './components/LandingPage';
 import MagicStudio from './components/MagicStudio';
 import ProfessionalMagicPlayer from './components/ProfessionalMagicPlayer';
@@ -79,30 +81,34 @@ function App() {
   };
 
   return (
-    <div className="App">
-      {currentView === 'landing' && (
-        <LandingPage onStartMixing={handleStartMixing} />
-      )}
-      
-      {currentView === 'studio' && (
-        <MagicStudio
-          user={user}
-          onPlaylistGenerated={handlePlaylistGenerated}
-          onBack={handleBackToLanding}
-        />
-      )}
-      
-      {currentView === 'player' && (
-        <ProfessionalMagicPlayer
-          playlist={currentPlaylist}
-          session={currentSession}
-          isPlaying={isPlaying}
-          onPlayPause={handlePlayPause}
-          onSessionEnd={handleSessionEnd}
-          onBack={handleBackToStudio}
-        />
-      )}
-    </div>
+    <ErrorBoundary>
+      <div className="App">
+        <NotificationSystem />
+        
+        {currentView === 'landing' && (
+          <LandingPage onStartMixing={handleStartMixing} />
+        )}
+        
+        {currentView === 'studio' && (
+          <MagicStudio
+            user={user}
+            onPlaylistGenerated={handlePlaylistGenerated}
+            onBack={handleBackToLanding}
+          />
+        )}
+        
+        {currentView === 'player' && (
+          <ProfessionalMagicPlayer
+            playlist={currentPlaylist}
+            session={currentSession}
+            isPlaying={isPlaying}
+            onPlayPause={handlePlayPause}
+            onSessionEnd={handleSessionEnd}
+            onBack={handleBackToStudio}
+          />
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }
 
