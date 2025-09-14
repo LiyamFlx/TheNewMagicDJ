@@ -409,7 +409,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({ user, onPlaylistGenerated, on
             <div className="text-sm lg:text-base text-gray-400">Recognition Accuracy</div>
           </div>
           <div className="text-center p-4 lg:p-6 bg-gray-800/30 rounded-xl border border-gray-700/50">
-            <div className="text-2xl lg:text-3xl font-bold text-pink-400 mb-2"><3s</div>
+            <div className="text-2xl lg:text-3xl font-bold text-pink-400 mb-2">&lt;3s</div>
             <div className="text-sm lg:text-base text-gray-400">Average Processing Time</div>
           </div>
           <div className="text-center p-4 lg:p-6 bg-gray-800/30 rounded-xl border border-gray-700/50">
