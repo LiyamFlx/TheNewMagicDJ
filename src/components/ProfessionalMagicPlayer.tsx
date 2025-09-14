@@ -635,9 +635,9 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 >
                   CUE
                 </button>
-                <button className="cyber-button flex-1 py-2 px-3 rounded-none text-xs lg:text-sm"
+                <button className="cyber-button flex-1 py-2 px-3 rounded-none text-xs lg:text-sm">
                   LOOP
-                  LOOP
+                </button>
               </div>
             </div>
           </div>
