@@ -26,16 +26,29 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
-          setError(error.message);
+          // Provide better guidance for common auth errors
+          if (error.message.includes('Invalid login credentials') || error.message.includes('invalid_credentials')) {
+            setError('No account found with these credentials. Try signing up first or check your email/password.');
+          } else if (error.message.includes('Email not confirmed')) {
+            setError('Please check your email and confirm your account before logging in.');
+          } else {
+            setError(error.message);
+          }
         } else {
           onClose();
         }
       } else {
         const { error } = await signUp(email, password);
         if (error) {
-          setError(error.message);
+          if (error.message.includes('User already registered')) {
+            setError('Account already exists with this email. Try logging in instead.');
+          } else {
+            setError(error.message);
+          }
         } else {
-          onClose();
+          setError('');
+          setIsLogin(true);
+          alert('Account created successfully! You can now log in.');
         }
       }
     } catch (error) {
