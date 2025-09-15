@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, SkipForward, SkipBack, Volume2, Headphones, Settings, ArrowLeft, Square, Repeat, Shuffle, Menu, X, List, Activity, Music, Zap, Radio, Crosshair, RotateCcw } from 'lucide-react';
 import { Playlist, Session, Track } from '../types';
 import MagicDancer from './MagicDancer';
@@ -33,9 +33,11 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const [autoMix, setAutoMix] = useState(false);
   const [cuePoints, setCuePoints] = useState<{ [key: string]: number[] }>({});
   
-  // Audio playback state
-  const [audioA, setAudioA] = useState<HTMLAudioElement | null>(null);
-  const [audioB, setAudioB] = useState<HTMLAudioElement | null>(null);
+  // Audio elements using refs for stability
+  const audioARef = useRef<HTMLAudioElement | null>(null);
+  const audioBRef = useRef<HTMLAudioElement | null>(null);
+  
+  // Audio state
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -46,127 +48,285 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const waveformCanvasA = useRef<HTMLCanvasElement>(null);
   const waveformCanvasB = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
+  const autoMixIntervalRef = useRef<number>();
+  const fadeIntervalRef = useRef<number>();
+
+  // Store listener references for proper cleanup
+  const audioAListenersRef = useRef<{
+    loadedmetadata?: () => void;
+    timeupdate?: () => void;
+    ended?: () => void;
+    error?: (e: Event) => void;
+  }>({});
+
+  const audioBListenersRef = useRef<{
+    loadedmetadata?: () => void;
+    timeupdate?: () => void;
+    ended?: () => void;
+    error?: (e: Event) => void;
+  }>({});
 
   const currentTrack = playlist?.tracks[currentTrackIndex];
   const nextTrack = playlist?.tracks[currentTrackIndex + 1];
 
+  // Memoized waveform data for performance
+  const waveformDataA = useRef<number[]>([]);
+  const waveformDataB = useRef<number[]>([]);
+
+  // Generate waveform data when track changes
   useEffect(() => {
-    // Initialize audio elements
-    if (currentTrack && !audioA) {
-      const audio = new Audio();
-      audio.crossOrigin = 'anonymous';
-      audio.preload = 'metadata';
-      
-      audio.addEventListener('loadedmetadata', () => {
-        setDuration(audio.duration);
-        setIsLoading(false);
-      });
-      
-      audio.addEventListener('timeupdate', () => {
-        setCurrentTime(audio.currentTime);
-        const progress = (audio.currentTime / audio.duration) * 100;
-        setDeckAProgress(progress);
-      });
-      
-      audio.addEventListener('ended', handleTrackEnd);
-      audio.addEventListener('error', (e) => {
-        const target = e.target as HTMLAudioElement;
-        const error = target.error;
-        logger.error('ProfessionalMagicPlayer', 'Audio playback error', {
-          code: error?.code,
-          message: error?.message,
-          src: target.src,
-          networkState: target.networkState,
-          readyState: target.readyState
-        });
-        setIsLoading(false);
-        setDuration(currentTrack.duration ?? 180);
-      });
-      
-      if (currentTrack.preview_url && currentTrack.preview_url.trim() !== '') {
-        if (currentTrack.preview_url.includes('youtube.com')) {
-          audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-        } else {
-          audio.src = currentTrack.preview_url;
-        }
-      } else {
-        audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-      }
-      
-      setAudioA(audio);
-      setIsLoading(true);
+    if (currentTrack) {
+      waveformDataA.current = generateWaveformData(320);
+    }
+  }, [currentTrack]);
+
+  useEffect(() => {
+    if (nextTrack) {
+      waveformDataB.current = generateWaveformData(320);
+    }
+  }, [nextTrack]);
+
+  const generateWaveformData = (width: number): number[] => {
+    const bars = Math.floor(width / 3);
+    const data: number[] = [];
+    
+    for (let i = 0; i < bars; i++) {
+      const frequency = (i / bars) * 10 + 1;
+      const baseAmplitude = Math.sin(frequency * 0.5) * 0.3 + 0.7;
+      data.push(baseAmplitude);
     }
     
-    if (nextTrack && !audioB) {
-      const audio = new Audio();
-      audio.crossOrigin = 'anonymous';
-      audio.preload = 'metadata';
-      
-      if (nextTrack.preview_url && nextTrack.preview_url.trim() !== '') {
-        if (nextTrack.preview_url.includes('youtube.com')) {
-          audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-        } else {
-          audio.src = nextTrack.preview_url;
-        }
-      } else {
-        audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-      }
-      
-      setAudioB(audio);
+    return data;
+  };
+
+  const handleTrackEnd = useCallback(() => {
+    if (currentTrackIndex < (playlist?.tracks.length ?? 0) - 1) {
+      setCurrentTrackIndex(prev => prev + 1);
+      setDeckAProgress(0);
+    } else {
+      onSessionEnd();
     }
+  }, [currentTrackIndex, playlist?.tracks.length, onSessionEnd]);
+
+  // Initialize Audio A
+  useEffect(() => {
+    if (!currentTrack) return;
+
+    // Clean up existing audio
+    if (audioARef.current) {
+      const audio = audioARef.current;
+      const listeners = audioAListenersRef.current;
+      
+      audio.pause();
+      if (listeners.loadedmetadata) audio.removeEventListener('loadedmetadata', listeners.loadedmetadata);
+      if (listeners.timeupdate) audio.removeEventListener('timeupdate', listeners.timeupdate);
+      if (listeners.ended) audio.removeEventListener('ended', listeners.ended);
+      if (listeners.error) audio.removeEventListener('error', listeners.error);
+    }
+
+    const audio = new Audio();
+    audio.crossOrigin = 'anonymous';
+    audio.preload = 'metadata';
     
-    return () => {
-      if (audioA) {
-        audioA.pause();
-        audioA.removeEventListener('loadedmetadata', () => {});
-        audioA.removeEventListener('timeupdate', () => {});
-        audioA.removeEventListener('ended', handleTrackEnd);
-      }
+    // Create listener functions
+    const onLoadedMetadata = () => {
+      setDuration(audio.duration || 180);
+      setIsLoading(false);
     };
-  }, [currentTrack, nextTrack]);
-
-  useEffect(() => {
-    if (audioA) {
-      if (isPlaying) {
-        audioA.play().catch(e => console.error('Play failed:', e));
+    
+    const onTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
+      const progress = audio.duration > 0 ? (audio.currentTime / audio.duration) * 100 : 0;
+      setDeckAProgress(progress);
+    };
+    
+    const onError = (e: Event) => {
+      const target = e.target as HTMLAudioElement;
+      const error = target.error;
+      logger.error('ProfessionalMagicPlayer', 'Audio A playback error', {
+        code: error?.code,
+        message: error?.message,
+        src: target.src,
+        networkState: target.networkState,
+        readyState: target.readyState
+      });
+      setIsLoading(false);
+      setDuration(currentTrack.duration ?? 180);
+    };
+    
+    // Store listeners for cleanup
+    audioAListenersRef.current = {
+      loadedmetadata: onLoadedMetadata,
+      timeupdate: onTimeUpdate,
+      ended: handleTrackEnd,
+      error: onError
+    };
+    
+    // Add listeners
+    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('ended', handleTrackEnd);
+    audio.addEventListener('error', onError);
+    
+    // Set audio source
+    if (currentTrack.preview_url && currentTrack.preview_url.trim() !== '') {
+      if (currentTrack.preview_url.includes('youtube.com')) {
+        audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
       } else {
-        audioA.pause();
+        audio.src = currentTrack.preview_url;
       }
+    } else {
+      audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
     }
-  }, [isPlaying, audioA]);
+    
+    audioARef.current = audio;
+    setIsLoading(true);
 
+    return () => {
+      const listeners = audioAListenersRef.current;
+      if (listeners.loadedmetadata) audio.removeEventListener('loadedmetadata', listeners.loadedmetadata);
+      if (listeners.timeupdate) audio.removeEventListener('timeupdate', listeners.timeupdate);
+      if (listeners.ended) audio.removeEventListener('ended', listeners.ended);
+      if (listeners.error) audio.removeEventListener('error', listeners.error);
+      audio.pause();
+    };
+  }, [currentTrack, handleTrackEnd]);
+
+  // Initialize Audio B
   useEffect(() => {
+    if (!nextTrack) {
+      if (audioBRef.current) {
+        const audio = audioBRef.current;
+        const listeners = audioBListenersRef.current;
+        
+        audio.pause();
+        if (listeners.loadedmetadata) audio.removeEventListener('loadedmetadata', listeners.loadedmetadata);
+        if (listeners.timeupdate) audio.removeEventListener('timeupdate', listeners.timeupdate);
+        if (listeners.ended) audio.removeEventListener('ended', listeners.ended);
+        if (listeners.error) audio.removeEventListener('error', listeners.error);
+        audioBRef.current = null;
+      }
+      return;
+    }
+
+    const audio = new Audio();
+    audio.crossOrigin = 'anonymous';
+    audio.preload = 'metadata';
+    
+    // Create listener functions for deck B
+    const onLoadedMetadata = () => {
+      // Deck B metadata loaded
+    };
+    
+    const onTimeUpdate = () => {
+      const progress = audio.duration > 0 ? (audio.currentTime / audio.duration) * 100 : 0;
+      setDeckBProgress(progress);
+    };
+    
+    const onError = (e: Event) => {
+      const target = e.target as HTMLAudioElement;
+      const error = target.error;
+      logger.error('ProfessionalMagicPlayer', 'Audio B playback error', {
+        code: error?.code,
+        message: error?.message,
+        src: target.src
+      });
+    };
+    
+    // Store listeners for cleanup
+    audioBListenersRef.current = {
+      loadedmetadata: onLoadedMetadata,
+      timeupdate: onTimeUpdate,
+      error: onError
+    };
+    
+    // Add listeners
+    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('error', onError);
+    
+    // Set audio source
+    if (nextTrack.preview_url && nextTrack.preview_url.trim() !== '') {
+      if (nextTrack.preview_url.includes('youtube.com')) {
+        audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+      } else {
+        audio.src = nextTrack.preview_url;
+      }
+    } else {
+      audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+    }
+    
+    audioBRef.current = audio;
+
+    return () => {
+      const listeners = audioBListenersRef.current;
+      if (listeners.loadedmetadata) audio.removeEventListener('loadedmetadata', listeners.loadedmetadata);
+      if (listeners.timeupdate) audio.removeEventListener('timeupdate', listeners.timeupdate);
+      if (listeners.error) audio.removeEventListener('error', listeners.error);
+      audio.pause();
+    };
+  }, [nextTrack]);
+
+  // Handle play/pause
+  useEffect(() => {
+    const audio = audioARef.current;
+    if (!audio) return;
+
+    if (isPlaying) {
+      audio.play().catch(e => console.error('Play failed:', e));
+    } else {
+      audio.pause();
+    }
+  }, [isPlaying]);
+
+  // Handle volume changes
+  useEffect(() => {
+    const audioA = audioARef.current;
+    const audioB = audioBRef.current;
+
     if (audioA) {
       const deckAVol = (deckAVolume / 100) * (masterVolume / 100);
       const crossfadeA = crossfaderPosition <= 0 ? 1 : Math.max(0, 1 - (crossfaderPosition / 100));
-      audioA.volume = deckAVol * crossfadeA;
+      audioA.volume = Math.max(0, Math.min(1, deckAVol * crossfadeA));
     }
+    
     if (audioB) {
       const deckBVol = (deckBVolume / 100) * (masterVolume / 100);
       const crossfadeB = crossfaderPosition >= 0 ? 1 : Math.max(0, 1 + (crossfaderPosition / 100));
-      audioB.volume = deckBVol * crossfadeB;
+      audioB.volume = Math.max(0, Math.min(1, deckBVol * crossfadeB));
     }
-  }, [deckAVolume, deckBVolume, crossfaderPosition, masterVolume, audioA, audioB]);
+  }, [deckAVolume, deckBVolume, crossfaderPosition, masterVolume]);
 
+  // Auto mix functionality with proper cleanup
   useEffect(() => {
-    if (isPlaying) {
-      const interval = setInterval(() => {
-        if (audioA && autoMix && nextTrack) {
+    if (autoMixIntervalRef.current) {
+      clearInterval(autoMixIntervalRef.current);
+    }
+
+    if (isPlaying && autoMix && nextTrack) {
+      autoMixIntervalRef.current = window.setInterval(() => {
+        const audioA = audioARef.current;
+        if (audioA && audioA.duration > 0) {
           const progress = (audioA.currentTime / audioA.duration) * 100;
           if (progress >= 75) {
             handleAutoTransition();
           }
         }
       }, 100);
-
-      return () => clearInterval(interval);
     }
-  }, [isPlaying, currentTrackIndex, autoMix, nextTrack, audioA]);
 
+    return () => {
+      if (autoMixIntervalRef.current) {
+        clearInterval(autoMixIntervalRef.current);
+      }
+    };
+  }, [isPlaying, autoMix, nextTrack]);
+
+  // Animation loop
   useEffect(() => {
     const animate = () => {
-      drawWaveform(waveformCanvasA.current, currentTrack, deckAProgress, 'green');
-      drawWaveform(waveformCanvasB.current, nextTrack, deckBProgress, 'purple');
+      drawWaveform(waveformCanvasA.current, currentTrack, deckAProgress, 'green', waveformDataA.current);
+      drawWaveform(waveformCanvasB.current, nextTrack, deckBProgress, 'purple', waveformDataB.current);
       animationFrameRef.current = requestAnimationFrame(animate);
     };
     
@@ -179,7 +339,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     };
   }, [currentTrack, nextTrack, deckAProgress, deckBProgress, isPlaying]);
 
-  const drawWaveform = (canvas: HTMLCanvasElement | null, track: Track | undefined, progress: number, color: 'green' | 'purple') => {
+  const drawWaveform = (
+    canvas: HTMLCanvasElement | null, 
+    track: Track | undefined, 
+    progress: number, 
+    color: 'green' | 'purple',
+    waveformData: number[]
+  ) => {
     if (!canvas || !track) return;
 
     const ctx = canvas.getContext('2d');
@@ -201,19 +367,17 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       ctx.stroke();
     }
 
-    // Generate more realistic waveform data
-    const bars = Math.floor(width / 3);
+    // Draw waveform using precomputed data
     const time = Date.now() * 0.001;
+    const progressWidth = (width * progress) / 100;
     
-    for (let i = 0; i < bars; i++) {
+    for (let i = 0; i < waveformData.length; i++) {
       const x = i * 3;
-      const frequency = (i / bars) * 10 + 1;
-      const baseAmplitude = Math.sin(frequency * time) * 0.3 + 0.7;
+      const baseAmplitude = waveformData[i];
       const energyMultiplier = isPlaying ? (track.energy ?? 0.5) : 0.3;
-      const amplitude = baseAmplitude * energyMultiplier;
+      const animatedAmplitude = baseAmplitude * energyMultiplier * (1 + Math.sin(time * 2 + i * 0.1) * 0.1);
       
-      const barHeight = (height * amplitude) / 2;
-      const progressWidth = (width * progress) / 100;
+      const barHeight = (height * animatedAmplitude) / 2;
       
       // Determine color based on progress and deck
       let fillColor, shadowColor;
@@ -246,23 +410,25 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     }
 
     // Draw playhead
-    const playheadX = (width * progress) / 100;
+    const playheadX = progressWidth;
     ctx.strokeStyle = color === 'green' ? '#00FF41' : '#9D00FF';
     ctx.lineWidth = 3;
     ctx.shadowColor = color === 'green' ? 'rgba(0, 255, 65, 1)' : 'rgba(157, 0, 255, 1)';
     ctx.shadowBlur = 15;
     ctx.beginPath();
-    ctx.moveTo(playheadX, 0);
-    ctx.lineTo(playheadX, height);
+    ctx.moveTo(Math.round(playheadX), 0);
+    ctx.lineTo(Math.round(playheadX), height);
     ctx.stroke();
     ctx.shadowBlur = 0;
 
-    // Draw BPM markers - FIXED operator precedence issue
-    if (track.bpm && track.bpm > 0) {
-      const safeDuration = track.duration && track.duration > 0 ? track.duration : 180;
-      const beatInterval = (60 / track.bpm) * (width / safeDuration);
+    // Draw BPM markers - FIXED with proper safety checks
+    const trackBpm = track.bpm;
+    if (trackBpm && trackBpm > 0) {
+      const trackDuration = track.duration;
+      const safeDuration = (trackDuration && trackDuration > 0) ? trackDuration : 180;
+      const beatInterval = (60 / trackBpm) * (width / safeDuration);
       
-      if (beatInterval > 0 && beatInterval < width) {
+      if (beatInterval > 0 && beatInterval < width && !isNaN(beatInterval)) {
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
         ctx.lineWidth = 1;
         
@@ -278,37 +444,33 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     }
   };
 
-  const handleAutoTransition = () => {
-    if (nextTrack && audioB) {
-      audioB.play().catch(e => console.error('Next track play failed:', e));
-      
-      const fadeInterval = setInterval(() => {
-        setCrossfaderPosition(prev => {
-          const newPos = prev + 15;
-          if (newPos >= 50) {
-            clearInterval(fadeInterval);
-            setCurrentTrackIndex(prev => prev + 1);
-            setAudioA(audioB);
-            setAudioB(null);
-            setCrossfaderPosition(-50);
-            setDeckBProgress(0);
-            return -50;
-          }
-          return newPos;
-        });
-      }, 150);
-    }
-  };
+  const handleAutoTransition = useCallback(() => {
+    const audioB = audioBRef.current;
+    if (!nextTrack || !audioB) return;
 
-  const handleTrackEnd = () => {
-    if (currentTrackIndex < (playlist?.tracks.length ?? 0) - 1) {
-      setCurrentTrackIndex(prev => prev + 1);
-      setAudioA(null);
-      setDeckAProgress(0);
-    } else {
-      onSessionEnd();
+    // Clear any existing fade interval
+    if (fadeIntervalRef.current) {
+      clearInterval(fadeIntervalRef.current);
     }
-  };
+
+    audioB.play().catch(e => console.error('Next track play failed:', e));
+    
+    fadeIntervalRef.current = window.setInterval(() => {
+      setCrossfaderPosition(prev => {
+        const newPos = prev + 15;
+        if (newPos >= 50) {
+          if (fadeIntervalRef.current) {
+            clearInterval(fadeIntervalRef.current);
+          }
+          setCurrentTrackIndex(prev => prev + 1);
+          setCrossfaderPosition(-50);
+          setDeckBProgress(0);
+          return -50;
+        }
+        return newPos;
+      });
+    }, 150);
+  }, [nextTrack]);
 
   const handleCrossfaderChange = (value: number) => {
     setCrossfaderPosition(value);
@@ -317,14 +479,15 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const addCuePoint = (deckId: string, position: number) => {
     setCuePoints(prev => ({
       ...prev,
-      [deckId]: [...(prev[deckId] || []), position]
+      [deckId]: [...(prev[deckId] || []), position].slice(-5) // Limit to 5 cue points
     }));
   };
 
   const handleSeek = (percentage: number) => {
-    if (audioA && duration) {
+    const audio = audioARef.current;
+    if (audio && duration > 0) {
       const newTime = (percentage / 100) * duration;
-      audioA.currentTime = newTime;
+      audio.currentTime = newTime;
       setCurrentTime(newTime);
     }
   };
@@ -332,7 +495,6 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const handleSkipForward = () => {
     if (currentTrackIndex < (playlist?.tracks.length ?? 0) - 1) {
       setCurrentTrackIndex(prev => prev + 1);
-      setAudioA(null);
       setDeckAProgress(0);
     }
   };
@@ -340,13 +502,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const handleSkipBack = () => {
     if (currentTrackIndex > 0) {
       setCurrentTrackIndex(prev => prev - 1);
-      setAudioA(null);
       setDeckAProgress(0);
     }
   };
 
-  const formatTime = (seconds: number) => {
-    if (!seconds || isNaN(seconds)) return '0:00';
+  const formatTime = (seconds: number): string => {
+    if (!seconds || isNaN(seconds) || seconds < 0) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -354,7 +515,6 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
   const handleTrackSelect = (index: number) => {
     setCurrentTrackIndex(index);
-    setAudioA(null);
     setDeckAProgress(0);
   };
 
@@ -364,10 +524,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     const newTracks = playlist.tracks.filter((_, i) => i !== index);
     const updatedPlaylist = { ...playlist, tracks: newTracks };
     
+    // Propagate changes to parent
+    handlePlaylistUpdate(updatedPlaylist);
+    
     if (index < currentTrackIndex) {
       setCurrentTrackIndex(prev => prev - 1);
     } else if (index === currentTrackIndex && index >= newTracks.length) {
-      setCurrentTrackIndex(newTracks.length - 1);
+      setCurrentTrackIndex(Math.max(0, newTracks.length - 1));
     }
   };
 
@@ -380,6 +543,9 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     
     const updatedPlaylist = { ...playlist, tracks: newTracks };
     
+    // Propagate changes to parent
+    handlePlaylistUpdate(updatedPlaylist);
+    
     if (fromIndex === currentTrackIndex) {
       setCurrentTrackIndex(toIndex);
     } else if (fromIndex < currentTrackIndex && toIndex >= currentTrackIndex) {
@@ -390,8 +556,18 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   };
 
   const handlePlaylistUpdate = (updatedPlaylist: Playlist) => {
-    // Playlist update logic would go here
+    // Playlist update logic - in a real app this would update the parent state
+    console.log('Playlist updated:', updatedPlaylist);
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (autoMixIntervalRef.current) clearInterval(autoMixIntervalRef.current);
+      if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    };
+  }, []);
 
   // Guard clause - return early if no playlist or current track
   if (!playlist || !currentTrack) {
@@ -412,6 +588,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         <div className="flex items-center space-x-4">
           <button
             onClick={onBack}
+            aria-label="Go back to playlist selection"
             className="w-10 h-10 lg:w-12 lg:h-12 rounded-sm bg-cyber-medium border-2 border-neon-green hover:neon-glow-green flex items-center justify-center transition-all duration-300 hover:scale-105"
           >
             <ArrowLeft className="w-5 h-5 lg:w-6 lg:h-6 neon-text-green" />
@@ -419,6 +596,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Close mobile menu" : "Open mobile menu"}
             className="lg:hidden w-10 h-10 rounded-sm bg-cyber-medium border-2 border-neon-green hover:neon-glow-green flex items-center justify-center transition-all duration-300"
           >
             {mobileMenuOpen ? <X className="w-5 h-5 neon-text-green" /> : <Menu className="w-5 h-5 neon-text-green" />}
@@ -438,6 +616,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         <div className="flex items-center space-x-3 lg:space-x-4">
           <button
             onClick={() => setShowPlaylistEditor(!showPlaylistEditor)}
+            aria-label={showPlaylistEditor ? "Hide playlist editor" : "Show playlist editor"}
             className={`cyber-button cyber-button-purple px-3 lg:px-4 py-2 rounded-sm flex items-center space-x-2 text-sm lg:text-base ${showPlaylistEditor ? 'active-neon-purple' : ''}`}
           >
             <List className="w-4 h-4 lg:w-5 lg:h-5" />
@@ -445,6 +624,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           </button>
           <button
             onClick={() => setShowMagicDancer(!showMagicDancer)}
+            aria-label={showMagicDancer ? "Hide magic dancer" : "Show magic dancer"}
             className={`cyber-button px-3 lg:px-4 py-2 rounded-sm flex items-center space-x-2 text-sm lg:text-base ${showMagicDancer ? 'active-neon-green' : ''}`}
           >
             <Activity className="w-4 h-4 lg:w-5 lg:h-5" />
@@ -456,6 +636,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           </div>
           <button
             onClick={onSessionEnd}
+            aria-label="End DJ session"
             className="cyber-button cyber-button-purple px-3 lg:px-4 py-2 rounded-sm flex items-center space-x-2 text-sm lg:text-base"
           >
             <Square className="w-4 h-4 lg:w-5 lg:h-5" />
@@ -492,6 +673,11 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 const percentage = ((e.clientX - rect.left) / rect.width) * 100;
                 handleSeek(percentage);
               }}
+              role="slider"
+              aria-label="Seek track position"
+              aria-valuenow={deckAProgress}
+              aria-valuemin={0}
+              aria-valuemax={100}
             >
               <div 
                 className="h-3 progress-green rounded-sm transition-all duration-300"
@@ -507,6 +693,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           <div className="flex items-center justify-center space-x-6">
             <button 
               onClick={handleSkipBack}
+              aria-label="Skip to previous track"
               className="w-12 h-12 deck-card deck-card-a rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105"
             >
               <SkipBack className="w-6 h-6 neon-text-green" />
@@ -514,6 +701,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             <button
               onClick={() => onPlayPause(!isPlaying)}
               disabled={isLoading}
+              aria-label={isPlaying ? "Pause playback" : "Start playback"}
               className="w-16 h-16 deck-card deck-card-a rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105 disabled:opacity-50"
             >
               {isLoading ? (
@@ -526,6 +714,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             </button>
             <button 
               onClick={handleSkipForward}
+              aria-label="Skip to next track"
               className="w-12 h-12 deck-card deck-card-a rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105"
             >
               <SkipForward className="w-6 h-6 neon-text-green" />
@@ -548,10 +737,16 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 <h2 className="text-xl lg:text-2xl font-bold neon-text-green tracking-wider">DECK A</h2>
               </div>
               <div className="flex items-center space-x-2">
-                <button className="w-10 h-10 bg-cyber-dark border-2 border-neon-green rounded-sm flex items-center justify-center neon-glow-green hover:scale-105 transition-all">
+                <button 
+                  aria-label="Play deck A"
+                  className="w-10 h-10 bg-cyber-dark border-2 border-neon-green rounded-sm flex items-center justify-center neon-glow-green hover:scale-105 transition-all"
+                >
                   <Play className="w-5 h-5 neon-text-green" />
                 </button>
-                <button className="w-10 h-10 bg-cyber-dark border-2 border-neon-green rounded-sm flex items-center justify-center hover:neon-glow-green hover:scale-105 transition-all">
+                <button 
+                  aria-label="Pause deck A"
+                  className="w-10 h-10 bg-cyber-dark border-2 border-neon-green rounded-sm flex items-center justify-center hover:neon-glow-green hover:scale-105 transition-all"
+                >
                   <Pause className="w-5 h-5 neon-text-green" />
                 </button>
               </div>
@@ -589,6 +784,11 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   const percentage = ((e.clientX - rect.left) / rect.width) * 100;
                   handleSeek(percentage);
                 }}
+                role="slider"
+                aria-label="Track waveform and seek control"
+                aria-valuenow={deckAProgress}
+                aria-valuemin={0}
+                aria-valuemax={100}
               />
               <div className="flex justify-between text-xs text-cyber-dim mt-2 font-mono">
                 <span>{formatTime(currentTime)}</span>
@@ -602,6 +802,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <div className="flex items-center justify-center space-x-4">
                 <button 
                   onClick={handleSkipBack}
+                  aria-label="Previous track"
                   className="w-12 h-12 lg:w-14 lg:h-14 bg-cyber-dark border-2 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105"
                 >
                   <SkipBack className="w-6 h-6 lg:w-7 lg:h-7 neon-text-green" />
@@ -609,6 +810,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 <button
                   onClick={() => onPlayPause(!isPlaying)}
                   disabled={isLoading}
+                  aria-label={isPlaying ? "Pause" : "Play"}
                   className="w-16 h-16 lg:w-20 lg:h-20 bg-cyber-dark border-4 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105 disabled:opacity-50 animate-deck-glow"
                 >
                   {isLoading ? (
@@ -621,6 +823,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 </button>
                 <button 
                   onClick={handleSkipForward}
+                  aria-label="Next track"
                   className="w-12 h-12 lg:w-14 lg:h-14 bg-cyber-dark border-2 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105"
                 >
                   <SkipForward className="w-6 h-6 lg:w-7 lg:h-7 neon-text-green" />
@@ -643,6 +846,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   value={deckAVolume}
                   onChange={(e) => setDeckAVolume(Number(e.target.value))}
                   className="cyber-slider w-full"
+                  aria-label="Deck A volume"
                 />
               </div>
 
@@ -650,12 +854,16 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => addCuePoint('deckA', deckAProgress)}
+                  aria-label="Add cue point"
                   className="cyber-button flex-1 py-3 px-4 rounded-sm text-sm font-bold flex items-center justify-center space-x-2"
                 >
                   <Crosshair className="w-4 h-4" />
                   <span>CUE</span>
                 </button>
-                <button className="cyber-button cyber-button-blue flex-1 py-3 px-4 rounded-sm text-sm font-bold flex items-center justify-center space-x-2">
+                <button 
+                  aria-label="Create loop"
+                  className="cyber-button cyber-button-blue flex-1 py-3 px-4 rounded-sm text-sm font-bold flex items-center justify-center space-x-2"
+                >
                   <RotateCcw className="w-4 h-4" />
                   <span>LOOP</span>
                 </button>
@@ -680,6 +888,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   value={crossfaderPosition}
                   onChange={(e) => handleCrossfaderChange(Number(e.target.value))}
                   className="cyber-slider cyber-slider-blue w-full"
+                  aria-label="Crossfader position"
+                  aria-valuetext={`${crossfaderPosition > 0 ? 'Deck B' : crossfaderPosition < 0 ? 'Deck A' : 'Center'}`}
                 />
                 <div className="flex justify-between text-xs text-cyber-dim mt-3 font-mono font-bold">
                   <span className="neon-text-green">A</span>
@@ -707,6 +917,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   value={masterVolume}
                   onChange={(e) => setMasterVolume(Number(e.target.value))}
                   className="cyber-slider cyber-slider-blue w-full"
+                  aria-label="Master volume"
                 />
               </div>
 
@@ -714,6 +925,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setBpmSync(!bpmSync)}
+                  aria-label={`BPM sync ${bpmSync ? 'enabled' : 'disabled'}`}
                   className={`cyber-button py-3 px-4 rounded-sm text-sm font-bold ${
                     bpmSync ? 'active-neon-green' : ''
                   }`}
@@ -722,6 +934,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 </button>
                 <button
                   onClick={() => setAutoMix(!autoMix)}
+                  aria-label={`Auto mix ${autoMix ? 'enabled' : 'disabled'}`}
                   className={`cyber-button cyber-button-purple py-3 px-4 rounded-sm text-sm font-bold ${
                     autoMix ? 'active-neon-purple' : ''
                   }`}
@@ -772,10 +985,16 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 <h2 className="text-xl lg:text-2xl font-bold neon-text-purple tracking-wider">DECK B</h2>
               </div>
               <div className="flex items-center space-x-2">
-                <button className="w-10 h-10 bg-cyber-dark border-2 border-neon-purple rounded-sm flex items-center justify-center neon-glow-purple hover:scale-105 transition-all">
+                <button 
+                  aria-label="Play deck B"
+                  className="w-10 h-10 bg-cyber-dark border-2 border-neon-purple rounded-sm flex items-center justify-center neon-glow-purple hover:scale-105 transition-all"
+                >
                   <Play className="w-5 h-5 neon-text-purple" />
                 </button>
-                <button className="w-10 h-10 bg-cyber-dark border-2 border-neon-purple rounded-sm flex items-center justify-center hover:neon-glow-purple hover:scale-105 transition-all">
+                <button 
+                  aria-label="Pause deck B"
+                  className="w-10 h-10 bg-cyber-dark border-2 border-neon-purple rounded-sm flex items-center justify-center hover:neon-glow-purple hover:scale-105 transition-all"
+                >
                   <Pause className="w-5 h-5 neon-text-purple" />
                 </button>
               </div>
@@ -817,6 +1036,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 width={320}
                 height={120}
                 className="w-full h-20 lg:h-28 bg-cyber-black border-2 border-neon-purple rounded-sm"
+                aria-label="Deck B waveform display"
               />
               <div className="flex justify-between text-xs text-cyber-dim mt-2 font-mono">
                 <span>0:00</span>
@@ -828,13 +1048,22 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             {/* Enhanced Controls */}
             <div className="space-y-4">
               <div className="flex items-center justify-center space-x-4">
-                <button className="w-12 h-12 lg:w-14 lg:h-14 bg-cyber-dark border-2 border-neon-purple hover:neon-glow-purple rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105">
+                <button 
+                  aria-label="Deck B previous"
+                  className="w-12 h-12 lg:w-14 lg:h-14 bg-cyber-dark border-2 border-neon-purple hover:neon-glow-purple rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105"
+                >
                   <SkipBack className="w-6 h-6 lg:w-7 lg:h-7 neon-text-purple" />
                 </button>
-                <button className="w-16 h-16 lg:w-20 lg:h-20 bg-cyber-dark border-4 border-neon-purple hover:neon-glow-purple rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105 animate-deck-glow">
+                <button 
+                  aria-label="Play deck B"
+                  className="w-16 h-16 lg:w-20 lg:h-20 bg-cyber-dark border-4 border-neon-purple hover:neon-glow-purple rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105 animate-deck-glow"
+                >
                   <Play className="w-8 h-8 lg:w-10 lg:h-10 neon-text-purple" />
                 </button>
-                <button className="w-12 h-12 lg:w-14 lg:h-14 bg-cyber-dark border-2 border-neon-purple hover:neon-glow-purple rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105">
+                <button 
+                  aria-label="Deck B next"
+                  className="w-12 h-12 lg:w-14 lg:h-14 bg-cyber-dark border-2 border-neon-purple hover:neon-glow-purple rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105"
+                >
                   <SkipForward className="w-6 h-6 lg:w-7 lg:h-7 neon-text-purple" />
                 </button>
               </div>
@@ -855,6 +1084,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   value={deckBVolume}
                   onChange={(e) => setDeckBVolume(Number(e.target.value))}
                   className="cyber-slider cyber-slider-purple w-full"
+                  aria-label="Deck B volume"
                 />
               </div>
 
@@ -862,12 +1092,16 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => addCuePoint('deckB', deckBProgress)}
+                  aria-label="Add cue point to deck B"
                   className="cyber-button cyber-button-purple flex-1 py-3 px-4 rounded-sm text-sm font-bold flex items-center justify-center space-x-2"
                 >
                   <Crosshair className="w-4 h-4" />
                   <span>CUE</span>
                 </button>
-                <button className="cyber-button flex-1 py-3 px-4 rounded-sm text-sm font-bold flex items-center justify-center space-x-2">
+                <button 
+                  aria-label="Create loop on deck B"
+                  className="cyber-button flex-1 py-3 px-4 rounded-sm text-sm font-bold flex items-center justify-center space-x-2"
+                >
                   <RotateCcw className="w-4 h-4" />
                   <span>LOOP</span>
                 </button>
@@ -915,12 +1149,14 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 <div className="flex flex-col space-y-3">
                   <button
                     onClick={() => setShowMagicDancer(true)}
+                    aria-label="Show magic dancer"
                     className="cyber-button py-3 px-4 rounded-sm text-sm font-bold"
                   >
                     MAGIC DANCER
                   </button>
                   <button
                     onClick={() => setShowPlaylistEditor(true)}
+                    aria-label="Show playlist editor"
                     className="cyber-button cyber-button-purple py-3 px-4 rounded-sm text-sm font-bold"
                   >
                     PLAYLIST EDITOR
