@@ -46,6 +46,7 @@ function App() {
         connectionSuccess: connectionTest.success,
         authSuccess: authTest.success,
         authenticated: !!(authTest as any).authenticated,
+      });
 
       if (!connectionTest.success) {
         logger.warn('App', 'Supabase connection issues detected', {
