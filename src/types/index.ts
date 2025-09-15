@@ -1,30 +1,30 @@
-// src/types.ts
-
 export interface Track {
   id: string;
   title: string;
   artist: string;
-  duration?: number; // optional to match all reducers/usages
+  duration?: number;
   energy?: number;
   key?: string;
-  album?: string; // added for Spotify/LastFM/mock data
-  preview_url?: string | null; // allow null as Spotify may return null
+  preview_url?: string;
   bpm?: number;
   danceability?: number;
   valence?: number;
-  user_id?: string; // used in services
+  album?: string;
+  images?: { url: string; height: number; width: number }[];
+  external_urls?: { [key: string]: string };
+  spotify_id?: string;
 }
 
 export interface Playlist {
   id: string;
   name: string;
   tracks: Track[];
-  type?: "magic_match" | "magic_set"; // stricter type for LibraryProfile
+  type?: string;
   total_duration?: number;
   description?: string;
   created_at?: string;
   metadata?: Record<string, any>;
-  user_id?: string; // added for playlistService
+  user_id?: string;
 }
 
 export interface Session {
@@ -33,35 +33,12 @@ export interface Session {
   playlist_id: string;
   started_at: string;
   ended_at?: string;
-  status: "active" | "completed";
+  status: 'active' | 'completed';
 }
 
 export interface User {
   id: string;
   email: string;
-  name?: string; // optional because Supabase.User has no name
+  name: string;
   created_at: string;
-}
-
-// For supabase connection test
-export interface ConnectionTestResult {
-  success: boolean;
-  error?: string;
-  needsMigration?: boolean;
-  data?: any;
-  warning?: string; // added for App.tsx usage
-}
-
-// Recognition results (AcoustID / Audd / PlaylistService)
-export interface RecognitionResult {
-  album?: string;
-  artist: string;
-  title: string;
-  duration?: number;
-}
-
-// Audio fingerprint type (AudioProcessingService)
-export interface AudioFingerprint {
-  hash: string;
-  duration: number;
 }
