@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import LandingPage from './components/LandingPage';
 import StudioView from './components/StudioView';
 import PlayerView from './components/PlayerView';
@@ -15,14 +15,17 @@ function App() {
   const [savedPlaylists, setSavedPlaylists] = useState<Playlist[]>([]);
   const [recentSessions, setRecentSessions] = useState<any[]>([]);
     
-    // Load recent sessions (mock data)
+  const [currentPlaylist, setCurrentPlaylist] = useState<Playlist | null>(null);
+  const [currentSession, setCurrentSession] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
+
+  // Load recent sessions (mock data) - only once on mount
+  useEffect(() => {
     setRecentSessions([
       { id: '1', name: 'Electronic Night', tracks: 15, created_at: new Date(Date.now() - 86400000).toISOString() },
       { id: '2', name: 'House Party Mix', tracks: 20, created_at: new Date(Date.now() - 172800000).toISOString() }
     ]);
-  const [currentPlaylist, setCurrentPlaylist] = useState<Playlist | null>(null);
-  const [currentSession, setCurrentSession] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
+  }, []);
 
   const handleStartMixing = () => {
     setCurrentView('studio');
