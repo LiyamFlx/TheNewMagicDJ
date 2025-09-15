@@ -1,8 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { withIdempotency } from '../src/utils/idempotency';
 
 const ACOUSTID_URL = 'https://api.acoustid.org/v2/lookup';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function acoustidHandler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
@@ -38,4 +39,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(500).json({ error: 'AcoustID proxy failed', message: e?.message });
   }
 }
+
+export default withIdempotency(acoustidHandler);
 

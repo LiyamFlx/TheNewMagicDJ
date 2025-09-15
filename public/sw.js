@@ -1,5 +1,8 @@
-// Very small offline-first SW for static assets
-const CACHE_NAME = 'magicdj-cache-v1';
+// Enhanced service worker with proper caching strategies
+const CACHE_NAME = 'magicdj-cache-v2';
+const RUNTIME_CACHE = 'magicdj-runtime-v2';
+
+// Assets to precache
 const PRECACHE = [
   '/',
   '/index.html',
@@ -8,55 +11,103 @@ const PRECACHE = [
   '/icon-512.png'
 ];
 
+// Cache strategies
+const CACHE_STRATEGIES = {
+  HTML: 'network-first',
+  ASSETS: 'stale-while-revalidate',
+  API: 'network-only'
+};
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(PRECACHE))
+      .then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.map((k) => k !== CACHE_NAME && caches.delete(k)))).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) => Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME && key !== RUNTIME_CACHE) {
+            return caches.delete(key);
+          }
+        })
+      ))
+      .then(() => self.clients.claim())
   );
 });
 
+function isHTML(request) {
+  return request.destination === 'document' ||
+         request.mode === 'navigate' ||
+         request.headers.get('accept')?.includes('text/html');
+}
+
+function isAsset(request) {
+  return ['script', 'style', 'image', 'font'].includes(request.destination);
+}
+
+function isAPI(request) {
+  const url = new URL(request.url);
+  return url.pathname.startsWith('/api/');
+}
+
+async function networkFirst(request) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(RUNTIME_CACHE);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    const cached = await caches.match(request);
+    return cached || new Response('Offline', { status: 503 });
+  }
+}
+
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(RUNTIME_CACHE);
+  const cached = await cache.match(request);
+
+  const fetchPromise = fetch(request).then(response => {
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  });
+
+  return cached || fetchPromise;
+}
+
 self.addEventListener('fetch', (event) => {
   const request = event.request;
+
   if (request.method !== 'GET') return;
 
-  // Do not intercept cross-origin requests; let the browser handle them
+  // Skip cross-origin requests
   try {
     const url = new URL(request.url);
     if (url.origin !== self.location.origin) {
-      return; // no respondWith => not intercepted
+      return;
     }
   } catch {
-    // If URL parsing fails, don't intercept
     return;
   }
 
-  event.respondWith((async () => {
-    const cached = await caches.match(request);
-    try {
-      const response = await fetch(request);
-      // Cache same-origin successful responses
-      try {
-        const url = new URL(request.url);
-        if (url.origin === self.location.origin && response && response.status === 200) {
-          const clone = response.clone();
-          const cache = await caches.open(CACHE_NAME);
-          await cache.put(request, clone);
-        }
-      } catch {}
-      return response;
-    } catch (e) {
-      if (cached) return cached;
-      // Offline fallback: return cached index for navigations
-      if (request.mode === 'navigate') {
-        const fallback = await caches.match('/index.html');
-        if (fallback) return fallback;
-      }
-      return new Response('Offline', { status: 503, statusText: 'Offline' });
-    }
-  })());
+  if (isAPI(request)) {
+    // API calls: network only
+    return;
+  }
+
+  if (isHTML(request)) {
+    // HTML: network-first
+    event.respondWith(networkFirst(request));
+  } else if (isAsset(request)) {
+    // Assets: stale-while-revalidate
+    event.respondWith(staleWhileRevalidate(request));
+  }
 });

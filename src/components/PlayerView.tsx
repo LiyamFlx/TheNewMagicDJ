@@ -23,16 +23,16 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
 
     // Update audio source when track changes
     // Ensure we always have a playable source
-    audio.crossOrigin = 'anonymous';
     audio.preload = 'metadata';
     if (currentTrack.preview_url && currentTrack.preview_url.trim() !== '') {
       audio.src = currentTrack.preview_url;
     } else {
+      // Use local demo audio files to avoid CORS issues
       const demoAudioSources = [
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
+        '/audio/demo-1.mp3',
+        '/audio/demo-2.mp3',
+        '/audio/demo-3.mp3',
+        '/audio/demo-4.mp3'
       ];
       const audioIndex = Math.abs(currentTrack.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % demoAudioSources.length;
       audio.src = demoAudioSources[audioIndex];

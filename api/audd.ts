@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { withIdempotency } from '../src/utils/idempotency';
 
 const AUDD_URL = 'https://api.audd.io/';
 
@@ -8,7 +9,7 @@ export const config = {
   },
 };
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function auddHandler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
@@ -57,4 +58,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(500).json({ error: 'AudD proxy failed', message: e?.message });
   }
 }
+
+export default withIdempotency(auddHandler);
 

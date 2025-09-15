@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { withIdempotency } from '../src/utils/idempotency';
+import { requireAuth } from '../src/utils/apiAuth';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
@@ -37,4 +39,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(500).json({ error: 'Token request failed', message: e?.message });
   }
 }
+
+export default withIdempotency(requireAuth(spotifyTokenHandler));
 
