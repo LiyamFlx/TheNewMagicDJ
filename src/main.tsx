@@ -5,7 +5,11 @@ import './index.css'
 
 // Clear any existing Service Workers in development
 if (import.meta.env.DEV) {
-  import('./utils/clearServiceWorkers');
+  import('./utils/clearServiceWorkers').then(() => {
+    console.log('Service Workers cleanup initialized');
+  }).catch(err => {
+    console.warn('Service Workers cleanup failed:', err);
+  });
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

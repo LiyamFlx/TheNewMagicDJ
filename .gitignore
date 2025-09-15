@@ -89,3 +89,6 @@ temp/
 fix-build.sh
 final_fix.sh
 
+
+# Local Netlify folder
+.netlify
