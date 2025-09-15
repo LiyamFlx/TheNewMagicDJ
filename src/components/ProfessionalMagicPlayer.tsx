@@ -80,7 +80,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           readyState: target.readyState
         });
         setIsLoading(false);
-        setDuration(currentTrack.duration);
+        setDuration(currentTrack.duration ?? 180);
       });
       
       if (currentTrack.preview_url && currentTrack.preview_url.trim() !== '') {
@@ -209,7 +209,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       const x = i * 3;
       const frequency = (i / bars) * 10 + 1;
       const baseAmplitude = Math.sin(frequency * time) * 0.3 + 0.7;
-      const energyMultiplier = isPlaying ? (track.energy || 0.5) : 0.3;
+      const energyMultiplier = isPlaying ? (track.energy ?? 0.5) : 0.3;
       const amplitude = baseAmplitude * energyMultiplier;
       
       const barHeight = (height * amplitude) / 2;
@@ -257,16 +257,23 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     ctx.stroke();
     ctx.shadowBlur = 0;
 
-    // Draw BPM markers
-    if (track.bpm) {
-      const beatInterval = (60 / track.bpm) * (width / (track.duration ?? 0 || 180));
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-      ctx.lineWidth = 1;
-      for (let beat = 0; beat < width; beat += beatInterval) {
-        ctx.beginPath();
-        ctx.moveTo(beat, height - 10);
-        ctx.lineTo(beat, height);
-        ctx.stroke();
+    // Draw BPM markers - FIXED operator precedence issue
+    if (track.bpm && track.bpm > 0) {
+      const safeDuration = track.duration && track.duration > 0 ? track.duration : 180;
+      const beatInterval = (60 / track.bpm) * (width / safeDuration);
+      
+      if (beatInterval > 0 && beatInterval < width) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 1;
+        
+        for (let beat = 0; beat < width; beat += beatInterval) {
+          if (beat <= width) {
+            ctx.beginPath();
+            ctx.moveTo(Math.round(beat), height - 10);
+            ctx.lineTo(Math.round(beat), height);
+            ctx.stroke();
+          }
+        }
       }
     }
   };
@@ -294,7 +301,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   };
 
   const handleTrackEnd = () => {
-    if (currentTrackIndex < (playlist?.tracks.length || 0) - 1) {
+    if (currentTrackIndex < (playlist?.tracks.length ?? 0) - 1) {
       setCurrentTrackIndex(prev => prev + 1);
       setAudioA(null);
       setDeckAProgress(0);
@@ -323,7 +330,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   };
 
   const handleSkipForward = () => {
-    if (currentTrackIndex < (playlist?.tracks.length || 0) - 1) {
+    if (currentTrackIndex < (playlist?.tracks.length ?? 0) - 1) {
       setCurrentTrackIndex(prev => prev + 1);
       setAudioA(null);
       setDeckAProgress(0);
@@ -339,6 +346,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   };
 
   const formatTime = (seconds: number) => {
+    if (!seconds || isNaN(seconds)) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -385,7 +393,17 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     // Playlist update logic would go here
   };
 
-  if (!playlist || !currentTrack) return null;
+  // Guard clause - return early if no playlist or current track
+  if (!playlist || !currentTrack) {
+    return (
+      <div className="min-h-screen bg-cyber-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-neon-green border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-cyber-white font-mono">Loading playlist...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-cyber-black overflow-hidden font-dj">
@@ -457,8 +475,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <h3 className="font-bold truncate text-cyber-white text-lg">{currentTrack.title}</h3>
               <p className="text-sm text-neon-green truncate font-mono">{currentTrack.artist}</p>
               <div className="flex items-center space-x-3 text-xs text-cyber-dim mt-1">
-                <span className="font-mono">{currentTrack.bpm} BPM</span>
-                <span className="font-mono">{currentTrack.key}</span>
+                <span className="font-mono">{currentTrack.bpm ?? 128} BPM</span>
+                <span className="font-mono">{currentTrack.key ?? 'C'}</span>
               </div>
             </div>
             {isLoading && (
@@ -545,15 +563,15 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <p className="text-neon-green mb-3 truncate font-mono text-base">{currentTrack.artist}</p>
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div className="text-center">
-                  <div className="text-neon-green font-bold text-lg">{currentTrack.bpm}</div>
+                  <div className="text-neon-green font-bold text-lg">{currentTrack.bpm ?? 128}</div>
                   <div className="text-cyber-dim text-xs">BPM</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-neon-green font-bold text-lg">{currentTrack.key}</div>
+                  <div className="text-neon-green font-bold text-lg">{currentTrack.key ?? 'C'}</div>
                   <div className="text-cyber-dim text-xs">KEY</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-neon-green font-bold text-lg">{formatTime(currentTrack.duration)}</div>
+                  <div className="text-neon-green font-bold text-lg">{formatTime(currentTrack.duration ?? 180)}</div>
                   <div className="text-cyber-dim text-xs">TIME</div>
                 </div>
               </div>
@@ -575,7 +593,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <div className="flex justify-between text-xs text-cyber-dim mt-2 font-mono">
                 <span>{formatTime(currentTime)}</span>
                 <span className="text-neon-green">{Math.round(deckAProgress)}%</span>
-                <span>{formatTime(duration || currentTrack.duration)}</span>
+                <span>{formatTime(duration || (currentTrack.duration ?? 180))}</span>
               </div>
             </div>
 
@@ -730,15 +748,15 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 </div>
                 <div className="flex justify-between items-center p-2 bg-cyber-darker rounded-sm">
                   <span className="text-cyber-gray font-mono">BPM:</span>
-                  <span className="text-neon-green font-bold">{currentTrack.bpm}</span>
+                  <span className="text-neon-green font-bold">{currentTrack.bpm ?? 128}</span>
                 </div>
                 <div className="flex justify-between items-center p-2 bg-cyber-darker rounded-sm">
                   <span className="text-cyber-gray font-mono">Key:</span>
-                  <span className="text-neon-green font-bold">{currentTrack.key}</span>
+                  <span className="text-neon-green font-bold">{currentTrack.key ?? 'C'}</span>
                 </div>
                 <div className="flex justify-between items-center p-2 bg-cyber-darker rounded-sm">
                   <span className="text-cyber-gray font-mono">Energy:</span>
-                  <span className="text-neon-blue font-bold">{Math.round((currentTrack.energy || 0.5) * 100)}%</span>
+                  <span className="text-neon-blue font-bold">{Math.round((currentTrack.energy ?? 0.5) * 100)}%</span>
                 </div>
               </div>
             </div>
@@ -771,15 +789,15 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   <p className="text-neon-purple mb-3 truncate font-mono text-base">{nextTrack.artist}</p>
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div className="text-center">
-                      <div className="text-neon-purple font-bold text-lg">{nextTrack.bpm}</div>
+                      <div className="text-neon-purple font-bold text-lg">{nextTrack.bpm ?? 128}</div>
                       <div className="text-cyber-dim text-xs">BPM</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-neon-purple font-bold text-lg">{nextTrack.key}</div>
+                      <div className="text-neon-purple font-bold text-lg">{nextTrack.key ?? 'C'}</div>
                       <div className="text-cyber-dim text-xs">KEY</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-neon-purple font-bold text-lg">{formatTime(nextTrack.duration)}</div>
+                      <div className="text-neon-purple font-bold text-lg">{formatTime(nextTrack.duration ?? 180)}</div>
                       <div className="text-cyber-dim text-xs">TIME</div>
                     </div>
                   </div>
@@ -803,7 +821,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <div className="flex justify-between text-xs text-cyber-dim mt-2 font-mono">
                 <span>0:00</span>
                 <span className="text-neon-purple">{Math.round(deckBProgress)}%</span>
-                <span>{nextTrack ? formatTime(nextTrack.duration) : '--:--'}</span>
+                <span>{nextTrack ? formatTime(nextTrack.duration ?? 180) : '--:--'}</span>
               </div>
             </div>
 
@@ -865,8 +883,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 currentTrack={currentTrack ? {
                   title: currentTrack.title,
                   artist: currentTrack.artist,
-                  bpm: currentTrack.bpm || 128,
-                  energy: currentTrack.energy || 0.7
+                  bpm: currentTrack.bpm ?? 128,
+                  energy: currentTrack.energy ?? 0.7
                 } : undefined}
                 onEnergyChange={(energy) => {
                   console.log('Crowd energy:', energy);
