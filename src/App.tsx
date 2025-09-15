@@ -14,8 +14,8 @@ function App() {
   const [recentSessions, setRecentSessions] = useState<any[]>([]);
     
   const [currentPlaylist, setCurrentPlaylist] = useState<Playlist | null>(null);
-  const [currentSession, setCurrentSession] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
+  const [currentSession, _setCurrentSession] = useState<any>(null);
+  const [user, _setUser] = useState<any>(null);
 
   // Load recent sessions (mock data) - only once on mount
   useEffect(() => {
@@ -49,17 +49,17 @@ function App() {
     setCurrentPlaylist(null);
   };
 
-  const handleSessionEnd = () => {
-    console.log('App', 'Session ended, showing analytics');
-    if (currentSession) {
-      setCurrentView('analytics');
-    }
-  };
+  // const handleSessionEnd = () => {
+  //   console.log('App', 'Session ended, showing analytics');
+  //   if (currentSession) {
+  //     setCurrentView('analytics');
+  //   }
+  // };
 
-  const handleBackToEditor = () => {
-    console.log('App', 'Returning to editor');
-    setCurrentView('editor');
-  };
+  // const handleBackToEditor = () => {
+  //   console.log('App', 'Returning to editor');
+  //   setCurrentView('editor');
+  // };
 
   const handleLibraryAccess = () => {
     console.log('App', 'Accessing library');
