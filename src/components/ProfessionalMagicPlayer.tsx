@@ -130,7 +130,6 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     }
 
     const audio = new Audio();
-    audio.crossOrigin = 'anonymous';
     audio.preload = 'metadata';
     
     // Create listener functions
@@ -177,12 +176,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     if (currentTrack.preview_url && currentTrack.preview_url.trim() !== '') {
       audio.src = currentTrack.preview_url;
     } else {
-      // Fallback to demo audio sources
+      // Use local demo audio files to avoid CORS issues
       const demoAudioSources = [
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
+        '/audio/demo-1.mp3',
+        '/audio/demo-2.mp3',
+        '/audio/demo-3.mp3',
+        '/audio/demo-4.mp3'
       ];
 
       const audioIndex = Math.abs(currentTrack.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % demoAudioSources.length;
@@ -223,7 +222,6 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     }
 
     const audio = new Audio();
-    audio.crossOrigin = 'anonymous';
     audio.preload = 'metadata';
     
     // Create listener functions for deck B
@@ -262,12 +260,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     if (nextTrack.preview_url && nextTrack.preview_url.trim() !== '') {
       audio.src = nextTrack.preview_url;
     } else {
-      // Fallback to demo audio sources
+      // Use local demo audio files to avoid CORS issues
       const demoAudioSources = [
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
+        '/audio/demo-1.mp3',
+        '/audio/demo-2.mp3',
+        '/audio/demo-3.mp3',
+        '/audio/demo-4.mp3'
       ];
 
       const audioIndex = Math.abs(nextTrack.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % demoAudioSources.length;
