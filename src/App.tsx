@@ -6,13 +6,8 @@ import MagicStudio from './components/MagicStudio';
 import ProfessionalMagicPlayer from './components/ProfessionalMagicPlayer';
 import PlaylistEditor from './components/PlaylistEditor';
 import LibraryProfile from './components/LibraryProfile';
-import AuthModal from './components/AuthModal';
 import { User as AppUser, Playlist, Session } from './types';
-import { useAuth } from './hooks/useAuth';
-import { supabasePlaylistService } from './services/supabasePlaylistService';
-import { supabase } from './lib/supabase';
 import { logger } from './utils/logger';
-import { testSupabaseAuth, testSupabaseConnection } from './utils/supabaseTest';
 import { ArrowLeft, Play } from 'lucide-react';
 
 function App() {
@@ -21,88 +16,63 @@ function App() {
   const [currentSession, setCurrentSession] = useState<Session | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [recentSessions, setRecentSessions] = useState<Session[]>([]);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [userPlaylists, setUserPlaylists] = useState<Playlist[]>([]);
 
-  const { user, loading: authLoading, isAuthenticated } = useAuth();
-
-  // Map Supabase user -> AppUser shape for components that expect App types
-  const appUser: AppUser | null = user
-    ? {
-        id: user.id,
-        email: user.email ?? '',
-        name: (user.user_metadata as any)?.display_name || user.email || 'DJ',
-        created_at: new Date().toISOString(),
-      }
-    : null;
-
-  useEffect(() => {
-    // Test Supabase connectivity once on mount
-    const initializeApp = async () => {
-      const connectionTest = await testSupabaseConnection();
-      const authTest = await testSupabaseAuth();
-
-      logger.info('App', 'Supabase initialization complete', {
-        connectionSuccess: connectionTest.success,
-        authSuccess: authTest.success,
-        authenticated: !!(authTest as any).authenticated,
-      });
-
-      if (!connectionTest.success) {
-        logger.warn('App', 'Supabase connection issues detected', {
-          error: connectionTest.error,
-          message: 'Database tables may need to be created. Some features may not work until migration is applied.',
-        });
-      }
-    };
-    initializeApp();
-  }, []);
-
-  // Refresh user data when auth changes
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      loadUserData();
-    } else {
-      setRecentSessions([]);
-      setUserPlaylists([]);
-      setCurrentPlaylist(null);
-      setCurrentSession(null);
-    }
-  }, [isAuthenticated, user]);
-
-  const loadUserData = async () => {
-    if (!user) return;
-
-    try {
-      // Load user's recent sessions
-      const { data: sessions, error: sessionsError } = await supabase
-        .from('sessions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('started_at', { ascending: false });
-      if (!sessionsError && sessions) {
-        setRecentSessions(sessions.slice(0, 10));
-      }
-
-      // Load user's playlists
-      const playlists = await supabasePlaylistService.getPlaylists(user.id);
-      setUserPlaylists((playlists as unknown) as Playlist[]);
-
-      logger.info('App', 'User data loaded successfully', {
-        userId: user.id,
-        sessionCount: sessions?.length || 0,
-        playlistCount: (playlists as any[])?.length || 0,
-      });
-    } catch (error) {
-      logger.error('App', 'Failed to load user data', error);
-    }
+  // Create a demo user for components that need user data
+  const demoUser: AppUser = {
+    id: 'demo-user',
+    email: 'demo@magicdj.com',
+    name: 'Demo DJ',
+    created_at: new Date().toISOString(),
   };
 
+  useEffect(() => {
+    logger.info('App', 'MagicDJ initialized without authentication');
+    
+    // Load demo data
+    const demoSessions: Session[] = [
+      {
+        id: 'demo-session-1',
+        user_id: 'demo-user',
+        playlist_id: 'demo-playlist-1',
+        started_at: new Date(Date.now() - 86400000).toISOString(), // Yesterday
+        status: 'completed'
+      },
+      {
+        id: 'demo-session-2',
+        user_id: 'demo-user',
+        playlist_id: 'demo-playlist-2',
+        started_at: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+        status: 'completed'
+      }
+    ];
+    
+    const demoPlaylists: Playlist[] = [
+      {
+        id: 'demo-playlist-1',
+        name: 'Electronic Vibes',
+        tracks: [],
+        type: 'magic_set',
+        total_duration: 3600,
+        created_at: new Date().toISOString(),
+        user_id: 'demo-user'
+      },
+      {
+        id: 'demo-playlist-2',
+        name: 'House Session',
+        tracks: [],
+        type: 'magic_match',
+        total_duration: 2400,
+        created_at: new Date().toISOString(),
+        user_id: 'demo-user'
+      }
+    ];
+    
+    setRecentSessions(demoSessions);
+    setUserPlaylists(demoPlaylists);
+  }, []);
+
   const handleStartMixing = () => {
-    if (!isAuthenticated) {
-      setShowAuthModal(true);
-      return;
-    }
     logger.info('App', 'User started mixing session');
     setCurrentView('studio');
   };
@@ -123,31 +93,18 @@ function App() {
     });
     setCurrentPlaylist(playlist);
 
-    if (user) {
-      try {
-        const { data: session, error } = await supabase
-          .from('sessions')
-          .insert([
-            {
-              user_id: user.id,
-              playlist_id: playlist.id,
-              status: 'active',
-              started_at: new Date().toISOString(),
-            },
-          ])
-          .select()
-          .single();
-        if (error) throw error;
-        setCurrentSession((session as unknown) as Session);
-      } catch (err) {
-        logger.error('App', 'Failed to create session', err);
-      }
-    }
-
+    // Create a demo session
+    const demoSession: Session = {
+      id: `session-${Date.now()}`,
+      user_id: 'demo-user',
+      playlist_id: playlist.id,
+      started_at: new Date().toISOString(),
+      status: 'active'
+    };
+    
+    setCurrentSession(demoSession);
     setCurrentView('player');
   };
-
-  // Save-to-library is handled within specific components/services when needed
 
   const handleBackToStudio = () => {
     logger.info('App', 'Returning to studio');
@@ -164,13 +121,7 @@ function App() {
     setCurrentSession(null);
   };
 
-  // No-op placeholder removed: back to editor handled by navigation buttons
-
   const handleLibraryAccess = () => {
-    if (!isAuthenticated) {
-      setShowAuthModal(true);
-      return;
-    }
     logger.info('App', 'Accessing library');
     setCurrentView('library');
   };
@@ -180,8 +131,6 @@ function App() {
     setCurrentPlaylist(playlist);
     setCurrentView('editor');
   };
-
-  // No-op placeholder removed: edit again handled via editor navigation
 
   const handleTrackReorder = (fromIndex: number, toIndex: number) => {
     if (!currentPlaylist) return;
@@ -230,46 +179,31 @@ function App() {
     setIsPlaying(playing);
   };
 
-  const handleSessionEnd = async () => {
+  const handleSessionEnd = () => {
     if (!currentSession) return;
-    try {
-      const { data, error } = await supabase
-        .from('sessions')
-        .update({ status: 'completed', ended_at: new Date().toISOString() })
-        .eq('id', currentSession.id)
-        .select()
-        .single();
-      if (error) throw error;
-      setCurrentSession((data as unknown) as Session);
-      setIsPlaying(false);
-    } catch (err) {
-      logger.error('App', 'Failed to end session', err);
-    }
+    
+    // Update session to completed
+    const completedSession = {
+      ...currentSession,
+      status: 'completed' as const,
+      ended_at: new Date().toISOString()
+    };
+    
+    setCurrentSession(completedSession);
+    setIsPlaying(false);
+    logger.info('App', 'Session ended', { sessionId: completedSession.id });
   };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-cyber-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-neon-green border-t-transparent animate-spin mx-auto mb-4"></div>
-          <p className="text-cyber-gray font-mono">Initializing MagicDJ...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-cyber-black">
         <NotificationSystem />
 
-        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
-
         {currentView === 'landing' && <LandingPage onStartMixing={handleStartMixing} />}
 
         {currentView === 'studio' && (
           <MagicStudio
-            user={appUser}
+            user={demoUser}
             onPlaylistGenerated={handlePlaylistGenerated}
             onBack={handleBackToLanding}
             onLibraryAccess={handleLibraryAccess}
@@ -329,7 +263,7 @@ function App() {
 
         {currentView === 'library' && (
           <LibraryProfile
-            user={appUser}
+            user={demoUser}
             onBack={handleBackToStudio}
             onPlaylistSelect={handlePlaylistSelect}
             onCreateNew={handleBackToStudio}
