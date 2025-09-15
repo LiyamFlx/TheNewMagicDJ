@@ -1,13 +1,14 @@
 import { Playlist, Track, RecognitionResult } from '../types';
 import { youtubeService } from './youtubeService';
 import { mockSpotifyService } from './mockSpotifyService';
+import { supabasePlaylistService } from './supabasePlaylistService';
 import { logger } from '../utils/logger';
 import { errorHandler } from '../utils/errorHandler';
 
 class PlaylistService {
   private musicService = youtubeService;
 
-  async generateMagicMatchPlaylist(fingerprint?: string, seedTrack?: Track): Promise<Playlist> {
+  async generateMagicMatchPlaylist(fingerprint?: string, seedTrack?: Track, userId?: string): Promise<Playlist> {
     return logger.trackOperation(
       'PlaylistService',
       'generateMagicMatchPlaylist',
@@ -98,7 +99,7 @@ class PlaylistService {
           tracks,
           total_duration: tracks.reduce((sum, track) => sum + track.duration, 0),
           created_at: new Date().toISOString(),
-          user_id: 'demo-user',
+          user_id: userId || 'demo-user',
           type: 'magic_match',
           metadata: {
             seed_track: recognizedTrack || undefined,
@@ -112,7 +113,7 @@ class PlaylistService {
     );
   }
 
-  async generateMagicSetPlaylist(vibe: string, energyLevel: 'low' | 'medium' | 'high'): Promise<Playlist> {
+  async generateMagicSetPlaylist(vibe: string, energyLevel: 'low' | 'medium' | 'high', userId?: string): Promise<Playlist> {
     return logger.trackOperation(
       'PlaylistService',
       'generateMagicSetPlaylist',
@@ -154,7 +155,7 @@ class PlaylistService {
           tracks,
           total_duration: tracks.reduce((sum, track) => sum + track.duration, 0),
           created_at: new Date().toISOString(),
-          user_id: 'demo-user',
+          user_id: userId || 'demo-user',
           type: 'magic_set',
           metadata: {
             vibe,

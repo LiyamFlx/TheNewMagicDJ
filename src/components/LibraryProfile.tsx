@@ -18,13 +18,15 @@ interface LibraryProfileProps {
   onBack: () => void;
   onPlaylistSelect: (playlist: Playlist) => void;
   onCreateNew: () => void;
+  savedPlaylists?: Playlist[];
 }
 
 const LibraryProfile: React.FC<LibraryProfileProps> = ({
   user,
   onBack,
   onPlaylistSelect,
-  onCreateNew
+  onCreateNew,
+  savedPlaylists = []
 }) => {
   const [library, setLibrary] = useState<LibraryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,58 +36,20 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading library data
-    const loadLibrary = async () => {
-      setIsLoading(true);
-      
-      // Mock data - in real app, this would come from your database
-      const mockLibrary: LibraryItem[] = [
-        {
-          id: '1',
-          name: 'Electronic Vibes Set',
-          type: 'magic_set',
-          tracks: 15,
-          duration: 3600,
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          energy: 85
-        },
-        {
-          id: '2',
-          name: 'Recognized Track Mix',
-          type: 'magic_match',
-          tracks: 12,
-          duration: 2880,
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-          energy: 72
-        },
-        {
-          id: '3',
-          name: 'House Party Playlist',
-          type: 'magic_set',
-          tracks: 20,
-          duration: 4800,
-          created_at: new Date(Date.now() - 259200000).toISOString(),
-          energy: 90
-        },
-        {
-          id: '4',
-          name: 'Chill Afternoon',
-          type: 'magic_set',
-          tracks: 8,
-          duration: 1920,
-          created_at: new Date(Date.now() - 345600000).toISOString(),
-          energy: 45
-        }
-      ];
-      
-      setTimeout(() => {
-        setLibrary(mockLibrary);
-        setIsLoading(false);
-      }, 1000);
-    };
-
-    loadLibrary();
-  }, []);
+    // Convert saved playlists to library items
+    const libraryItems: LibraryItem[] = savedPlaylists.map(playlist => ({
+      id: playlist.id,
+      name: playlist.name,
+      type: playlist.type,
+      tracks: playlist.tracks.length,
+      duration: playlist.total_duration,
+      created_at: playlist.created_at,
+      energy: Math.round((playlist.tracks.reduce((sum, track) => sum + (track.energy || 0.5), 0) / playlist.tracks.length) * 100) || 75
+    }));
+    
+    setLibrary(libraryItems);
+    setIsLoading(false);
+  }, [savedPlaylists]);
 
   const filteredLibrary = library
     .filter(item => {
@@ -127,26 +91,16 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
   };
 
   const handlePlaylistClick = (item: LibraryItem) => {
-    // Convert LibraryItem to Playlist format
-    const playlist: Playlist = {
-      id: item.id,
-      name: item.name,
-      description: `${item.type === 'magic_match' ? 'AI-matched' : 'AI-generated'} playlist`,
-      tracks: [], // Would be loaded from database
-      total_duration: item.duration,
-      created_at: item.created_at,
-      user_id: user?.id || 'demo-user',
-      type: item.type,
-      metadata: {
-        energy_level: item.energy > 80 ? 'high' : item.energy > 60 ? 'medium' : 'low'
-      }
-    };
+    // Find the corresponding playlist from savedPlaylists
+    const playlist = savedPlaylists.find(p => p.id === item.id);
+    if (!playlist) return;
     
     onPlaylistSelect(playlist);
   };
 
   const handleDelete = (id: string) => {
     setLibrary(prev => prev.filter(item => item.id !== id));
+    // TODO: Implement actual deletion from Supabase
   };
 
   if (isLoading) {

@@ -150,7 +150,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
       }
 
       try {
-        const playlist = await playlistService.generateMagicSetPlaylist(vibe, energy);
+        const playlist = await playlistService.generateMagicSetPlaylist(vibe, energy, user?.id);
         logger.info('MagicStudio', 'MagicSet playlist generated successfully', {
           vibe,
           energy,
