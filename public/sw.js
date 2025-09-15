@@ -24,6 +24,17 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
 
+  // Do not intercept cross-origin requests; let the browser handle them
+  try {
+    const url = new URL(request.url);
+    if (url.origin !== self.location.origin) {
+      return; // no respondWith => not intercepted
+    }
+  } catch {
+    // If URL parsing fails, don't intercept
+    return;
+  }
+
   event.respondWith((async () => {
     const cached = await caches.match(request);
     try {
