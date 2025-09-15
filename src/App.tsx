@@ -9,6 +9,7 @@ import AnalyticsExport from './components/AnalyticsExport';
 import LibraryProfile from './components/LibraryProfile';
 import { User, Playlist, Session } from './types';
 import { logger } from './utils/logger';
+import { ArrowLeft, Play } from 'lucide-react';
 
 function App() {
   const [currentView, setCurrentView] = useState<'landing' | 'studio' | 'editor' | 'player' | 'analytics' | 'library'>('landing');
@@ -128,14 +129,6 @@ function App() {
     setCurrentView('editor');
   };
 
-  const handleBackToLanding = () => {
-    logger.info('App', 'Returning to landing page');
-    setCurrentView('landing');
-    setCurrentPlaylist(null);
-    setCurrentSession(null);
-    setIsPlaying(false);
-  };
-
   const handleTrackReorder = (fromIndex: number, toIndex: number) => {
     if (!currentPlaylist) return;
     
@@ -149,11 +142,19 @@ function App() {
 
   const handleTrackRemove = (index: number) => {
     if (!currentPlaylist) return;
+    const newTracks = [...currentPlaylist.tracks];
+    newTracks.splice(index, 1);
     const updatedPlaylist = { ...currentPlaylist, tracks: newTracks };
     setCurrentPlaylist(updatedPlaylist);
   };
 
   const handlePlaylistUpdate = (playlist: Playlist) => {
+    setCurrentPlaylist(playlist);
+  };
+
+  return (
+    <ErrorBoundary>
+      <div className="min-h-screen bg-cyber-black">
         <NotificationSystem />
         
         {currentView === 'landing' && (
