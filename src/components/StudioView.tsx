@@ -11,76 +11,61 @@ const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) 
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMode, setProcessingMode] = useState<'match' | 'generate' | null>(null);
   const [progress, setProgress] = useState(0);
-  const [selectedGenre, setSelectedGenre] = useState<string>('Electronic');
-  const [selectedEnergy, setSelectedEnergy] = useState<string>('Groove');
 
   const generateMockPlaylist = (type: 'match' | 'generate'): Playlist => {
-    // Generate tracks based on selected preferences for Magic Generate
-    const genreTrackData = {
-      'Electronic': [
-        { title: 'Electric Dreams', artist: 'Synthwave Pro', bpm: 128 },
-        { title: 'Digital Pulse', artist: 'Cyber DJ', bpm: 126 },
-        { title: 'Neon Circuits', artist: 'Tech Master', bpm: 130 },
-        { title: 'Binary Waves', artist: 'Data Flow', bpm: 132 },
-        { title: 'Voltage Rise', artist: 'Circuit Breaker', bpm: 134 }
-      ],
-      'Hip-Hop': [
-        { title: 'Urban Legends', artist: 'Street Poet', bpm: 90 },
-        { title: 'City Nights', artist: 'Metro Beats', bpm: 94 },
-        { title: 'Flow State', artist: 'Rhythm King', bpm: 88 },
-        { title: 'Block Party', artist: 'Hood Classic', bpm: 92 },
-        { title: 'Beat Drop', artist: 'Bass Heavy', bpm: 96 }
-      ],
-      'House': [
-        { title: 'Bassline Thunder', artist: 'Deep House Master', bpm: 124 },
-        { title: 'Groove Machine', artist: 'House Legend', bpm: 126 },
-        { title: 'Disco Fever', artist: 'Funk Master', bpm: 122 },
-        { title: 'Dance Floor', artist: 'Club King', bpm: 128 },
-        { title: 'Midnight Groove', artist: 'Studio 54', bpm: 125 }
-      ],
-      'Techno': [
-        { title: 'Industrial Mind', artist: 'Techno Viking', bpm: 140 },
-        { title: 'Machine Soul', artist: 'Steel Beats', bpm: 138 },
-        { title: 'Dark Factory', artist: 'Underground', bpm: 142 },
-        { title: 'Cyber Punk', artist: 'Future Sound', bpm: 136 },
-        { title: 'Metal Heart', artist: 'Robot Dance', bpm: 144 }
-      ]
-    };
-
-    const energyLevels = {
-      'Chill': { min: 0.3, max: 0.5 },
-      'Groove': { min: 0.6, max: 0.8 },
-      'Peak': { min: 0.8, max: 1.0 }
-    };
-
-    // For Magic Generate, use selected genre. For Magic Match, mix genres for variety
-    const tracks = type === 'generate'
-      ? genreTrackData[selectedGenre as keyof typeof genreTrackData]
-      : [
-          ...genreTrackData['Electronic'].slice(0, 2),
-          ...genreTrackData['House'].slice(0, 2),
-          ...genreTrackData['Techno'].slice(0, 1)
-        ];
-    const energyRange = type === 'generate' ? energyLevels[selectedEnergy as keyof typeof energyLevels] : { min: 0.6, max: 0.9 };
-
-    // Shuffle tracks for variety (except for specific genre selection in Generate mode)
-    const shuffledTracks = type === 'match' ? [...tracks].sort(() => Math.random() - 0.5) : tracks;
-
-    const mockTracks: Track[] = shuffledTracks.map((track, index) => ({
-      id: `${type}-${Date.now()}-${index}`,
-      title: track.title,
-      artist: track.artist,
-      duration: 180 + Math.floor(Math.random() * 180), // 3-6 minutes
-      bpm: track.bpm,
-      energy: energyRange.min + Math.random() * (energyRange.max - energyRange.min),
-      preview_url: `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(index % 4) + 1}.mp3`
-    }));
+    const mockTracks: Track[] = [
+      {
+        id: '1',
+        title: 'Electric Dreams',
+        artist: 'Synthwave Pro',
+        duration: 245,
+        bpm: 128,
+        energy: 0.8,
+        preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+      },
+      {
+        id: '2', 
+        title: 'Midnight Drive',
+        artist: 'Neon Nights',
+        duration: 320,
+        bpm: 132,
+        energy: 0.7,
+        preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'
+      },
+      {
+        id: '3',
+        title: 'Digital Pulse',
+        artist: 'Cyber DJ',
+        duration: 380,
+        bpm: 126,
+        energy: 0.9,
+        preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'
+      },
+      {
+        id: '4',
+        title: 'Bassline Thunder',
+        artist: 'Deep House Master',
+        duration: 290,
+        bpm: 124,
+        energy: 0.6,
+        preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
+      },
+      {
+        id: '5',
+        title: 'Euphoric Heights',
+        artist: 'Trance Producer',
+        duration: 420,
+        bpm: 136,
+        energy: 0.85,
+        preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3'
+      }
+    ];
 
     return {
       id: `playlist-${Date.now()}`,
       name: type === 'match' ? 'AI Recognition Set' : 'Generated Mix',
       tracks: mockTracks,
-      total_duration: mockTracks.reduce((sum, track) => sum + (track.duration ?? 0), 0),
+      total_duration: mockTracks.reduce((sum, track) => sum + track.duration, 0),
       type: type === 'match' ? 'magic_match' : 'magic_set',
       created_at: new Date().toISOString()
     };
@@ -247,12 +232,7 @@ const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) 
                     {['Electronic', 'Hip-Hop', 'House', 'Techno'].map((genre) => (
                       <button
                         key={genre}
-                        onClick={() => setSelectedGenre(genre)}
-                        className={`py-3 px-4 font-medium rounded-lg transition-all duration-300 border ${
-                          selectedGenre === genre
-                            ? 'bg-purple-500/50 border-purple-400 text-white shadow-lg shadow-purple-500/25'
-                            : 'bg-white/10 hover:bg-purple-500/30 text-white border-white/20 hover:border-purple-400'
-                        }`}
+                        className="py-3 px-4 bg-white/10 hover:bg-purple-500/30 text-white font-medium rounded-lg transition-all duration-300 border border-white/20 hover:border-purple-400"
                       >
                         {genre}
                       </button>
@@ -266,12 +246,7 @@ const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) 
                     {['Chill', 'Groove', 'Peak'].map((energy) => (
                       <button
                         key={energy}
-                        onClick={() => setSelectedEnergy(energy)}
-                        className={`py-3 px-4 font-medium rounded-lg transition-all duration-300 border ${
-                          selectedEnergy === energy
-                            ? 'bg-pink-500/50 border-pink-400 text-white shadow-lg shadow-pink-500/25'
-                            : 'bg-white/10 hover:bg-pink-500/30 text-white border-white/20 hover:border-pink-400'
-                        }`}
+                        className="py-3 px-4 bg-white/10 hover:bg-pink-500/30 text-white font-medium rounded-lg transition-all duration-300 border border-white/20 hover:border-pink-400"
                       >
                         {energy}
                       </button>

@@ -6,19 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MagicDJ - AI-Powered DJ Platform</title>
     <meta name="description" content="Create, perform, and analyze your DJ sets with AI-powered tools. Experience the future of DJing." />
-    <meta name="theme-color" content="#8b5cf6" />
   </head>
   <body>
     <div id="root"></div>
-    <script>
-      // Only load manifest in production to avoid Service Worker conflicts with Vite HMR
-      if (!location.hostname.includes('localhost') && !location.hostname.includes('127.0.0.1') && location.port !== '5173') {
-        const manifestLink = document.createElement('link');
-        manifestLink.rel = 'manifest';
-        manifestLink.href = '/manifest.json';
-        document.head.appendChild(manifestLink);
-      }
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
