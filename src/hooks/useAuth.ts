@@ -56,7 +56,7 @@ export const useAuth = () => {
     getInitialSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.supabase.supabase.auth.onAuthStateChange((event, session) => {
       logger.info('useAuth', 'Auth state changed', { event, userId: session?.user?.id });
       
       setAuthState(prev => ({
