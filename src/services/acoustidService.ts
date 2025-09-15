@@ -43,9 +43,7 @@ class AcoustIDService {
       'AcoustIDService',
       'recognizeFingerprint',
       async () => {
-        if (!this.apiKey) {
-          throw errorHandler.createAuthError('AcoustID');
-        }
+        const useProxy = !this.apiKey;
 
         // Check rate limit
         const limitCheck = await rateLimiter.checkLimit('acoustid');
@@ -56,17 +54,18 @@ class AcoustIDService {
         }
 
         const params = new URLSearchParams({
-          client: this.apiKey,
           meta: 'recordings+releasegroups+compress',
           fingerprint,
           duration: duration.toString(),
           format: 'json'
         });
+        if (this.apiKey) params.set('client', this.apiKey);
 
         const startTime = Date.now();
 
         try {
-          const response = await fetchWithRetry(`${this.baseUrl}?${params.toString()}`, {
+          const url = useProxy ? `/api/acoustid?${new URLSearchParams({ fingerprint, duration: duration.toString() }).toString()}` : `${this.baseUrl}?${params.toString()}`;
+          const response = await fetchWithRetry(url, {
             method: 'GET',
             headers: {
               'User-Agent': 'MagicDJ/1.0'

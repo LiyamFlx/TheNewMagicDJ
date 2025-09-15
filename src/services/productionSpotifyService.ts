@@ -41,29 +41,6 @@ interface SpotifyRecommendationsResponse {
 class ProductionSpotifyService {
   private accessToken: string | null = null;
   private tokenExpiry: number = 0;
-  private clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-  private clientSecret = import.meta.env.VITE_SPOTIFY_CLIENT_SECRET;
-
-  constructor() {
-    this.validateCredentials();
-  }
-
-  private validateCredentials(): void {
-    if (!this.clientId || !this.clientSecret) {
-      logger.error('ProductionSpotifyService', 'Missing Spotify credentials', {
-        hasClientId: !!this.clientId,
-        hasClientSecret: !!this.clientSecret,
-        clientIdLength: this.clientId?.length || 0,
-        clientSecretLength: this.clientSecret?.length || 0
-      });
-      throw new Error('Spotify credentials not configured');
-    }
-    
-    logger.info('ProductionSpotifyService', 'Credentials validated', {
-      clientIdLength: this.clientId.length,
-      clientSecretLength: this.clientSecret.length
-    });
-  }
 
   private async authenticate(): Promise<string> {
     return logger.trackOperation(
@@ -74,17 +51,9 @@ class ProductionSpotifyService {
           return this.accessToken;
         }
 
-        const credentials = btoa(`${this.clientId}:${this.clientSecret}`);
-        
         try {
-          const response = await fetchWithRetry('https://accounts.spotify.com/api/token', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Basic ${credentials}`,
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'grant_type=client_credentials',
-          }, { timeoutMs: 12000, retries: 2 });
+          // Request token from serverless proxy to avoid exposing secrets in client
+          const response = await fetchWithRetry('/api/spotify-token', { method: 'GET' }, { timeoutMs: 12000, retries: 2 });
 
           if (!response.ok) {
             const errorText = await response.text();

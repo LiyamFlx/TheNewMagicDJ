@@ -46,9 +46,8 @@ class AudDService {
       'AudDService',
       'recognizeAudio',
       async () => {
-        if (!this.apiToken) {
-          throw errorHandler.createAuthError('AudD');
-        }
+        // If no client token, use serverless proxy
+        const useProxy = !this.apiToken;
 
         // Check rate limit
         const limitCheck = await rateLimiter.checkLimit('audd');
@@ -59,7 +58,7 @@ class AudDService {
         }
 
         const formData = new FormData();
-        formData.append('api_token', this.apiToken);
+        if (this.apiToken) formData.append('api_token', this.apiToken);
         formData.append('return', 'apple_music,spotify');
 
         if (typeof audioData === 'string') {
@@ -73,7 +72,7 @@ class AudDService {
         const startTime = Date.now();
 
         try {
-          const response = await fetchWithRetry(this.baseUrl, {
+          const response = await fetchWithRetry(useProxy ? '/api/audd' : this.baseUrl, {
             method: 'POST',
             body: formData
           }, { timeoutMs: 15000, retries: 2 });
