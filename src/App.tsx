@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import LandingPage from './components/LandingPage';
 import StudioView from './components/StudioView';
 import PlayerView from './components/PlayerView';
@@ -7,8 +7,6 @@ import AnalyticsExport from './components/AnalyticsExport';
 import LibraryProfile from './components/LibraryProfile';
 import { Playlist } from './types';
 import { ArrowLeft, Play } from 'lucide-react';
-
-type ViewType = 'landing' | 'studio' | 'player';
 
 function App() {
   const [currentView, setCurrentView] = useState<'landing' | 'studio' | 'editor' | 'player' | 'analytics' | 'library'>('landing');
@@ -191,6 +189,7 @@ function App() {
       {currentView === 'library' && (
         <LibraryProfile
           user={user}
+          savedPlaylists={savedPlaylists}
           onBack={handleBackToStudio}
           onPlaylistSelect={handlePlaylistSelect}
           onCreateNew={handleBackToStudio}
