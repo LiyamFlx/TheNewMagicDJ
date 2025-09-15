@@ -89,7 +89,7 @@ function App() {
     setCurrentView('editor');
   };
 
-  const handlePlaylistEdited = (playlist: Playlist) => {
+  const handlePlaylistEdited = async (playlist: Playlist) => {
     logger.info('App', 'Playlist edited, switching to player', {
       playlistId: playlist.id,
       trackCount: playlist.tracks.length
