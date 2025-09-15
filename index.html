@@ -17,6 +17,13 @@
         manifestLink.rel = 'manifest';
         manifestLink.href = '/manifest.json';
         document.head.appendChild(manifestLink);
+
+        // Register a very simple service worker for installability
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('/sw.js').catch(() => {
+            // ignore
+          });
+        }
       }
     </script>
     <script type="module" src="/src/main.tsx"></script>

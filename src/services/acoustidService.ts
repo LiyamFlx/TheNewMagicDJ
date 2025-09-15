@@ -2,6 +2,7 @@ import { logger } from '../utils/logger';
 import { rateLimiter } from '../utils/rateLimiter';
 import { errorHandler } from '../utils/errorHandler';
 import { RecognitionResult } from '../types';
+import { fetchWithRetry } from '../utils/http';
 
 interface AcoustIDResponse {
   status: string;
@@ -65,12 +66,12 @@ class AcoustIDService {
         const startTime = Date.now();
 
         try {
-          const response = await fetch(`${this.baseUrl}?${params.toString()}`, {
+          const response = await fetchWithRetry(`${this.baseUrl}?${params.toString()}`, {
             method: 'GET',
             headers: {
               'User-Agent': 'MagicDJ/1.0'
             }
-          });
+          }, { timeoutMs: 15000, retries: 2 });
 
           const responseTime = Date.now() - startTime;
           logger.trackAPICall('acoustid', 'lookup', responseTime, response.ok);

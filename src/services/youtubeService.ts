@@ -1,6 +1,7 @@
 import { Track } from "../types";
 import { logger } from "../utils/logger";
 import { errorHandler } from "../utils/errorHandler";
+import { fetchWithRetry } from "../utils/http";
 
 interface YouTubeSearchResponse {
   items: Array<{
@@ -27,7 +28,9 @@ export class YouTubeService {
         key: this.apiKey,
       });
 
-      const res = await fetch(`${this.baseUrl}/search?${params.toString()}`);
+      const res = await fetchWithRetry(`${this.baseUrl}/search?${params.toString()}` , {
+        method: 'GET'
+      }, { timeoutMs: 12000, retries: 2 });
       if (!res.ok) throw new Error(`YouTube API error: ${res.statusText}`);
 
       const data: YouTubeSearchResponse = await res.json();

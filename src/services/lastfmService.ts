@@ -2,6 +2,7 @@ import { logger } from '../utils/logger';
 import { rateLimiter } from '../utils/rateLimiter';
 import { errorHandler } from '../utils/errorHandler';
 import { Track } from '../types';
+import { fetchWithRetry } from '../utils/http';
 
 interface LastFmTrackInfo {
   track: {
@@ -82,7 +83,7 @@ class LastFmService {
         const startTime = Date.now();
 
         try {
-          const response = await fetch(`${this.baseUrl}?${params.toString()}`);
+          const response = await fetchWithRetry(`${this.baseUrl}?${params.toString()}`, {}, { timeoutMs: 12000, retries: 2 });
           const responseTime = Date.now() - startTime;
           logger.trackAPICall('lastfm', 'track.getInfo', responseTime, response.ok);
 
@@ -162,7 +163,7 @@ class LastFmService {
         const startTime = Date.now();
 
         try {
-          const response = await fetch(`${this.baseUrl}?${params.toString()}`);
+          const response = await fetchWithRetry(`${this.baseUrl}?${params.toString()}`, {}, { timeoutMs: 12000, retries: 2 });
           const responseTime = Date.now() - startTime;
           logger.trackAPICall('lastfm', 'track.getSimilar', responseTime, response.ok);
 

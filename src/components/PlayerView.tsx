@@ -166,6 +166,7 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
             <button
               onClick={onBack}
               className="w-12 h-12 bg-cyber-medium border-2 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all"
+              aria-label="Back"
             >
               <ArrowLeft className="w-6 h-6 neon-text-green" />
             </button>
@@ -244,7 +245,7 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
 
         {/* Enhanced Player Controls */}
         <div className="flex items-center justify-center space-x-8 mb-12">
-          <button className="w-16 h-16 bg-cyber-dark border-2 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all hover:scale-110">
+          <button className="w-16 h-16 bg-cyber-dark border-2 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all hover:scale-110" aria-label="Shuffle">
             <Shuffle className="w-8 h-8 neon-text-green" />
           </button>
 
@@ -272,7 +273,7 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
             <SkipForward className="w-10 h-10 neon-text-purple" />
           </button>
 
-          <button className="w-16 h-16 bg-cyber-dark border-2 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all hover:scale-110">
+          <button className="w-16 h-16 bg-cyber-dark border-2 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all hover:scale-110" aria-label="Repeat">
             <Repeat className="w-8 h-8 neon-text-green" />
           </button>
         </div>

@@ -2,6 +2,7 @@ import { logger } from '../utils/logger';
 import { rateLimiter } from '../utils/rateLimiter';
 import { errorHandler } from '../utils/errorHandler';
 import { RecognitionResult } from '../types';
+import { fetchWithRetry } from '../utils/http';
 
 interface AudDResponse {
   status: string;
@@ -72,10 +73,10 @@ class AudDService {
         const startTime = Date.now();
 
         try {
-          const response = await fetch(this.baseUrl, {
+          const response = await fetchWithRetry(this.baseUrl, {
             method: 'POST',
             body: formData
-          });
+          }, { timeoutMs: 15000, retries: 2 });
 
           const responseTime = Date.now() - startTime;
           logger.trackAPICall('audd', 'recognize', responseTime, response.ok);

@@ -1,5 +1,6 @@
 import { Track } from '../types';
 import { logger } from '../utils/logger';
+import { fetchWithRetry } from '../utils/http';
 
 interface SpotifyRecommendationParams {
   seed_tracks?: string[];
@@ -76,14 +77,14 @@ class ProductionSpotifyService {
         const credentials = btoa(`${this.clientId}:${this.clientSecret}`);
         
         try {
-          const response = await fetch('https://accounts.spotify.com/api/token', {
+          const response = await fetchWithRetry('https://accounts.spotify.com/api/token', {
             method: 'POST',
             headers: {
               'Authorization': `Basic ${credentials}`,
               'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: 'grant_type=client_credentials',
-          });
+          }, { timeoutMs: 12000, retries: 2 });
 
           if (!response.ok) {
             const errorText = await response.text();
@@ -151,12 +152,12 @@ class ProductionSpotifyService {
 
           const url = `https://api.spotify.com/v1/recommendations?${queryParams.toString()}`;
           
-          const response = await fetch(url, {
+          const response = await fetchWithRetry(url, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
-          });
+          }, { timeoutMs: 12000, retries: 2 });
 
           if (!response.ok) {
             const errorText = await response.text();
