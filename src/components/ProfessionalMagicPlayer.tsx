@@ -174,15 +174,19 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     audio.addEventListener('error', onError);
     
     // Set audio source
-    if (currentTrack.preview_url && currentTrack.preview_url.trim() !== '') {
-      if (currentTrack.preview_url.includes('youtube.com')) {
-        audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-      } else {
-        audio.src = currentTrack.preview_url;
-      }
-    } else {
-      audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-    }
+    // Use reliable demo audio sources
+    const demoAudioSources = [
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
+    ];
+    
+    const audioIndex = Math.abs(currentTrack.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % demoAudioSources.length;
+    audio.src = demoAudioSources[audioIndex];
+    
+    // Set volume immediately
+    audio.volume = 0.7;
     
     audioARef.current = audio;
     setIsLoading(true);
@@ -251,15 +255,19 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     audio.addEventListener('error', onError);
     
     // Set audio source
-    if (nextTrack.preview_url && nextTrack.preview_url.trim() !== '') {
-      if (nextTrack.preview_url.includes('youtube.com')) {
-        audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-      } else {
-        audio.src = nextTrack.preview_url;
-      }
-    } else {
-      audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-    }
+    // Use reliable demo audio sources
+    const demoAudioSources = [
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
+    ];
+    
+    const audioIndex = Math.abs(nextTrack.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % demoAudioSources.length;
+    audio.src = demoAudioSources[audioIndex];
+    
+    // Set volume immediately  
+    audio.volume = 0.5;
     
     audioBRef.current = audio;
 
@@ -275,10 +283,25 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   // Handle play/pause
   useEffect(() => {
     const audio = audioARef.current;
-    if (!audio) return;
+    if (!audio || isLoading) return;
 
     if (isPlaying) {
-      audio.play().catch(e => console.error('Play failed:', e));
+      // Ensure audio is ready before playing
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            logger.info('ProfessionalMagicPlayer', 'Audio playback started successfully');
+          })
+          .catch(error => {
+            logger.error('ProfessionalMagicPlayer', 'Audio play failed', error);
+            setIsPlaying(false);
+            // Try to reload the audio
+            setTimeout(() => {
+              audio.load();
+            }, 1000);
+          });
+      }
     } else {
       audio.pause();
     }
@@ -287,7 +310,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   // Handle volume changes
   useEffect(() => {
     const audioA = audioARef.current;
-    const audioB = audioBRef.current;
+                className="w-16 h-16 deck-card deck-card-a rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105 disabled:opacity-50 active:scale-95"
 
     if (audioA) {
       const deckAVol = (deckAVolume / 100) * (masterVolume / 100);
@@ -816,7 +839,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   onClick={() => onPlayPause(!isPlaying)}
                   disabled={isLoading}
                   aria-label={isPlaying ? "Pause" : "Play"}
-                  className="w-16 h-16 lg:w-20 lg:h-20 bg-cyber-dark border-4 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105 disabled:opacity-50 animate-deck-glow"
+                  className="w-16 h-16 lg:w-20 lg:h-20 bg-cyber-dark border-4 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105 disabled:opacity-50 animate-deck-glow active:scale-95"
                 >
                   {isLoading ? (
                     <div className="w-8 h-8 lg:w-10 lg:h-10 border-3 border-neon-green border-t-transparent rounded-sm animate-spin"></div>
