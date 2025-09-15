@@ -41,7 +41,15 @@ function App() {
       });
       
       if (!connectionTest.success) {
-        logger.error('App', 'Supabase connection failed - some features may not work');
+        logger.warn('App', 'Supabase connection issues detected', {
+          error: connectionTest.error,
+          message: 'Database tables may need to be created. Some features may not work until migration is applied.'
+        });
+      } else if (connectionTest.warning) {
+        logger.warn('App', 'Supabase connected with warnings', {
+          warning: connectionTest.warning,
+          message: 'Run database migration to enable all features'
+        });
       }
     };
     
