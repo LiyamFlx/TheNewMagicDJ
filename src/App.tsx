@@ -128,27 +128,18 @@ function App() {
     if (user) {
       try {
         const { data: session, error } = await supabase.from("sessions").insert([{ user_id: user.id }]), {
-      const { data: session, error } = await supabase
-        .from("sessions")
-        .insert([{ user_id: user.id, playlist_id: playlist.id, name: `${playlist.name} Session`, status: "active" }])
-        .select()
-        .single();
-      if (error) throw error;
-      setCurrentSession(session);    setCurrentView('player');
-  };
-
-  const handlePlayPause = (playing: boolean) => {
-        });
-        
-        if (updatedSession) {
-          setCurrentSession(updatedSession);
-        }
-      } catch (error) {
-        logger.error('App', 'Failed to update session', error);
-      }
-    }
-    
-    setCurrentView('analytics');
+  useEffect(() => {
+    const fetchSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) console.error("Error fetching session:", error);
+      setSession(session);
+    };
+    fetchSession();
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);    setCurrentView('analytics');
   };
 
   const handleSaveToLibrary = async (playlist: Playlist) => {
