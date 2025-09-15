@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Volume2, Headphones, Settings, ArrowLeft, Square, Repeat, Shuffle, Menu, X, List, Activity, Music, Zap, Radio, Crosshair, RotateCcw } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Volume2, Headphones, Settings, ArrowLeft, Square, Menu, X, List, Activity, Music, Zap, Radio, Crosshair, RotateCcw } from 'lucide-react';
 import { Playlist, Session, Track } from '../types';
 import MagicDancer from './MagicDancer';
 import PlaylistEditor from './PlaylistEditor';
@@ -31,7 +31,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const [deckBProgress, setDeckBProgress] = useState(0);
   const [bpmSync, setBpmSync] = useState(true);
   const [autoMix, setAutoMix] = useState(false);
-  const [cuePoints, setCuePoints] = useState<{ [key: string]: number[] }>({});
+  const [, setCuePoints] = useState<{ [key: string]: number[] }>({});
   
   // Audio elements using refs for stability
   const audioARef = useRef<HTMLAudioElement | null>(null);
@@ -68,6 +68,11 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
   const currentTrack = playlist?.tracks[currentTrackIndex];
   const nextTrack = playlist?.tracks[currentTrackIndex + 1];
+
+  // Touch session to avoid TS unused var warning and provide traceability
+  useEffect(() => {
+    logger.info('ProfessionalMagicPlayer', 'Session active', { sessionId: session?.id });
+  }, [session]);
 
   // Memoized waveform data for performance
   const waveformDataA = useRef<number[]>([]);

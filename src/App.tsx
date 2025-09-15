@@ -1,35 +1,43 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
 import NotificationSystem from './components/NotificationSystem';
 import LandingPage from './components/LandingPage';
 import MagicStudio from './components/MagicStudio';
 import ProfessionalMagicPlayer from './components/ProfessionalMagicPlayer';
 import PlaylistEditor from './components/PlaylistEditor';
-import AnalyticsExport from './components/AnalyticsExport';
 import LibraryProfile from './components/LibraryProfile';
 import AuthModal from './components/AuthModal';
-import { User, Playlist, Session } from './types';
+import { User as AppUser, Playlist, Session } from './types';
 import { useAuth } from './hooks/useAuth';
 import { supabasePlaylistService } from './services/supabasePlaylistService';
 import { supabase } from './lib/supabase';
 import { logger } from './utils/logger';
-import { testSupabaseConnection, testSupabaseAuth } from './utils/supabaseTest';
+import { testSupabaseAuth, testSupabaseConnection } from './utils/supabaseTest';
 import { ArrowLeft, Play } from 'lucide-react';
 
 function App() {
-  const [currentView, setCurrentView] = useState<'landing' | 'studio' | 'editor' | 'player' | 'analytics' | 'library'>('landing');
+  const [currentView, setCurrentView] = useState<'landing' | 'studio' | 'editor' | 'player' | 'library'>('landing');
   const [currentPlaylist, setCurrentPlaylist] = useState<Playlist | null>(null);
   const [currentSession, setCurrentSession] = useState<Session | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [savedPlaylists, setSavedPlaylists] = useState<Playlist[]>([]);
   const [recentSessions, setRecentSessions] = useState<Session[]>([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [userPlaylists, setUserPlaylists] = useState<Playlist[]>([]);
 
   const { user, loading: authLoading, isAuthenticated } = useAuth();
 
-  // Initialize Supabase + check auth state
+  // Map Supabase user -> AppUser shape for components that expect App types
+  const appUser: AppUser | null = user
+    ? {
+        id: user.id,
+        email: user.email ?? '',
+        name: (user.user_metadata as any)?.display_name || user.email || 'DJ',
+        created_at: new Date().toISOString(),
+      }
+    : null;
+
   useEffect(() => {
+    // Test Supabase connectivity once on mount
     const initializeApp = async () => {
       const connectionTest = await testSupabaseConnection();
       const authTest = await testSupabaseAuth();
@@ -37,27 +45,17 @@ function App() {
       logger.info('App', 'Supabase initialization complete', {
         connectionSuccess: connectionTest.success,
         authSuccess: authTest.success,
-        authenticated: authTest.authenticated,
+        authenticated: !!(authTest as any).authenticated,
       });
 
       if (!connectionTest.success) {
         logger.warn('App', 'Supabase connection issues detected', {
           error: connectionTest.error,
-          message: 'Database tables may need migration.',
-        });
-      } else if (connectionTest.warning) {
-        logger.warn('App', 'Supabase connected with warnings', {
-          warning: connectionTest.warning,
-          message: 'Run migration to enable all features.',
+          message: 'Database tables may need to be created. Some features may not work until migration is applied.',
         });
       }
     };
-
     initializeApp();
-
-    if (isAuthenticated && user) {
-      loadUserData();
-    }
   }, []);
 
   // Refresh user data when auth changes
@@ -76,22 +74,24 @@ function App() {
     if (!user) return;
 
     try {
+      // Load user's recent sessions
       const { data: sessions, error: sessionsError } = await supabase
         .from('sessions')
         .select('*')
-        .eq('user_id', user.id);
-
+        .eq('user_id', user.id)
+        .order('started_at', { ascending: false });
       if (!sessionsError && sessions) {
         setRecentSessions(sessions.slice(0, 10));
       }
 
+      // Load user's playlists
       const playlists = await supabasePlaylistService.getPlaylists(user.id);
-      setUserPlaylists(playlists);
+      setUserPlaylists((playlists as unknown) as Playlist[]);
 
       logger.info('App', 'User data loaded successfully', {
         userId: user.id,
         sessionCount: sessions?.length || 0,
-        playlistCount: playlists.length,
+        playlistCount: (playlists as any[])?.length || 0,
       });
     } catch (error) {
       logger.error('App', 'Failed to load user data', error);
@@ -117,11 +117,10 @@ function App() {
   };
 
   const handlePlaylistEdited = async (playlist: Playlist) => {
-    logger.info('App', 'Playlist edited', {
+    logger.info('App', 'Playlist edited, switching to player', {
       playlistId: playlist.id,
       trackCount: playlist.tracks.length,
     });
-
     setCurrentPlaylist(playlist);
 
     if (user) {
@@ -132,43 +131,23 @@ function App() {
             {
               user_id: user.id,
               playlist_id: playlist.id,
-              name: `${playlist.name} Session`,
               status: 'active',
+              started_at: new Date().toISOString(),
             },
           ])
           .select()
           .single();
-
         if (error) throw error;
-        setCurrentSession(session);
-      } catch (error) {
-        logger.error('App', 'Failed to create session', error);
+        setCurrentSession((session as unknown) as Session);
+      } catch (err) {
+        logger.error('App', 'Failed to create session', err);
       }
     }
 
-    setCurrentView('analytics');
+    setCurrentView('player');
   };
 
-  const handleSaveToLibrary = async (playlist: Playlist) => {
-    if (!user) return;
-
-    try {
-      await supabasePlaylistService.createPlaylist(
-        user.id,
-        playlist.name,
-        playlist.type,
-        playlist.tracks,
-        playlist.metadata
-      );
-
-      const updatedPlaylists = await supabasePlaylistService.getPlaylists(user.id);
-      setUserPlaylists(updatedPlaylists);
-
-      logger.info('App', 'Playlist saved to library', { playlistId: playlist.id });
-    } catch (error) {
-      logger.error('App', 'Failed to save playlist', error);
-    }
-  };
+  // Save-to-library is handled within specific components/services when needed
 
   const handleBackToStudio = () => {
     logger.info('App', 'Returning to studio');
@@ -185,10 +164,7 @@ function App() {
     setCurrentSession(null);
   };
 
-  const handleBackToEditor = () => {
-    logger.info('App', 'Returning to editor');
-    setCurrentView('editor');
-  };
+  // No-op placeholder removed: back to editor handled by navigation buttons
 
   const handleLibraryAccess = () => {
     if (!isAuthenticated) {
@@ -205,10 +181,7 @@ function App() {
     setCurrentView('editor');
   };
 
-  const handleEditAgain = () => {
-    logger.info('App', 'Edit again requested');
-    setCurrentView('editor');
-  };
+  // No-op placeholder removed: edit again handled via editor navigation
 
   const handleTrackReorder = (fromIndex: number, toIndex: number) => {
     if (!currentPlaylist) return;
@@ -253,14 +226,25 @@ function App() {
     });
   };
 
-  const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
+  const handlePlayPause = (playing: boolean) => {
+    setIsPlaying(playing);
   };
 
-  const handleSessionEnd = () => {
-    logger.info('App', 'Session ended');
-    setCurrentSession(null);
-    setCurrentView('studio');
+  const handleSessionEnd = async () => {
+    if (!currentSession) return;
+    try {
+      const { data, error } = await supabase
+        .from('sessions')
+        .update({ status: 'completed', ended_at: new Date().toISOString() })
+        .eq('id', currentSession.id)
+        .select()
+        .single();
+      if (error) throw error;
+      setCurrentSession((data as unknown) as Session);
+      setIsPlaying(false);
+    } catch (err) {
+      logger.error('App', 'Failed to end session', err);
+    }
   };
 
   if (authLoading) {
@@ -285,7 +269,7 @@ function App() {
 
         {currentView === 'studio' && (
           <MagicStudio
-            user={user}
+            user={appUser}
             onPlaylistGenerated={handlePlaylistGenerated}
             onBack={handleBackToLanding}
             onLibraryAccess={handleLibraryAccess}
@@ -332,7 +316,7 @@ function App() {
           </div>
         )}
 
-        {currentView === 'player' && currentPlaylist && (
+        {currentView === 'player' && (
           <ProfessionalMagicPlayer
             playlist={currentPlaylist}
             session={currentSession}
@@ -343,18 +327,9 @@ function App() {
           />
         )}
 
-        {currentView === 'analytics' && currentPlaylist && currentSession && (
-          <AnalyticsExport
-            playlist={currentPlaylist}
-            session={currentSession}
-            onBack={handleBackToStudio}
-            onSaveToLibrary={handleSaveToLibrary}
-            onEditAgain={handleEditAgain}
-          />
-        )}
-
         {currentView === 'library' && (
           <LibraryProfile
+            user={appUser}
             onBack={handleBackToStudio}
             onPlaylistSelect={handlePlaylistSelect}
             onCreateNew={handleBackToStudio}
