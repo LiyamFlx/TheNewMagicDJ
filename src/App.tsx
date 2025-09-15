@@ -25,16 +25,16 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [userPlaylists, setUserPlaylists] = useState<Playlist[]>([]);
 
-  const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const { user: authUser, loading: authLoading, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && authUser) {
       loadUserData();
     }
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && authUser) {
       loadUserData();
     } else {
       // Clear user data when not authenticated
@@ -46,21 +46,21 @@ function App() {
   }, [isAuthenticated, user]);
 
   const loadUserData = async () => {
-    if (!user) return;
+    if (!authUser) return;
 
     try {
       // Load user's recent sessions
-      const { data: sessions, error: sessionsError } = await db.getSessions(user.id);
+      const { data: sessions, error: sessionsError } = await db.getSessions(authUser.id);
       if (!sessionsError && sessions) {
         setRecentSessions(sessions.slice(0, 10)); // Get last 10 sessions
       }
 
       // Load user's playlists
-      const playlists = await supabasePlaylistService.getUserPlaylists(user.id);
+      const playlists = await supabasePlaylistService.getUserPlaylists(authUser.id);
       setUserPlaylists(playlists);
 
       logger.info('App', 'User data loaded successfully', {
-        userId: user.id,
+        userId: authUser.id,
         sessionCount: sessions?.length || 0,
         playlistCount: playlists.length
       });
@@ -98,10 +98,10 @@ function App() {
     setCurrentPlaylist(playlist);
     
     // Create a new session in the database
-    if (user) {
+    if (authUser) {
       try {
         const { data: session, error } = await db.createSession({
-          user_id: user.id,
+          user_id: authUser.id,
           playlist_id: playlist.id,
           name: `${playlist.name} Session`,
           status: 'active'
@@ -126,7 +126,7 @@ function App() {
   const handleSessionEnd = async () => {
     logger.info('App', 'Session ended, showing analytics');
     
-    if (currentSession && user) {
+    if (currentSession && authUser) {
       try {
         const { data: updatedSession } = await db.updateSession(currentSession.id, {
           ended_at: new Date().toISOString(),
@@ -145,11 +145,11 @@ function App() {
   };
 
   const handleSaveToLibrary = async (playlist: Playlist) => {
-    if (!user) return;
+    if (!authUser) return;
 
     try {
       await supabasePlaylistService.createPlaylist(
-        user.id,
+        authUser.id,
         playlist.name,
         playlist.type,
         playlist.tracks,
@@ -157,7 +157,7 @@ function App() {
       );
       
       // Reload user playlists
-      const updatedPlaylists = await supabasePlaylistService.getUserPlaylists(user.id);
+      const updatedPlaylists = await supabasePlaylistService.getUserPlaylists(authUser.id);
       setUserPlaylists(updatedPlaylists);
       
       logger.info('App', 'Playlist saved to library', { playlistId: playlist.id });
@@ -285,7 +285,7 @@ function App() {
         
         {currentView === 'studio' && (
           <MagicStudio
-            user={user}
+            user={authUser}
             onPlaylistGenerated={handlePlaylistGenerated}
             onBack={handleBackToLanding}
             onLibraryAccess={handleLibraryAccess}
@@ -355,7 +355,7 @@ function App() {
         
         {currentView === 'library' && (
           <LibraryProfile
-            user={user}
+            user={authUser}
             onBack={handleBackToStudio}
             onPlaylistSelect={handlePlaylistSelect}
             onCreateNew={handleBackToStudio}
