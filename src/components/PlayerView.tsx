@@ -108,6 +108,30 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-8">
+        {/* Navigation Breadcrumb */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={onBack}
+              className="flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors text-white font-medium"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Studio</span>
+            </button>
+            <div className="text-gray-400">
+              <span className="text-purple-400">Studio</span> → <span className="text-white">Now Playing</span>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            <button className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl text-white font-medium transition-all">
+              Save Playlist
+            </button>
+            <button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-white font-medium transition-colors">
+              Share
+            </button>
+          </div>
+        </div>
+
         {/* Current Track Display */}
         <div className="text-center mb-12">
           <div className="w-64 h-64 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mx-auto mb-8 flex items-center justify-center shadow-2xl">
