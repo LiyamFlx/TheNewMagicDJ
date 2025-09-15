@@ -166,11 +166,6 @@ function App() {
     }
   };
 
-  const handleSaveToLibrary = (playlist: Playlist) => {
-    setSavedPlaylists(prev => [...prev, playlist]);
-    logger.info('App', 'Playlist saved to library', { playlistId: playlist.id });
-  };
-
   const handleBackToStudio = () => {
     logger.info('App', 'Returning to studio');
     setCurrentView('studio');
