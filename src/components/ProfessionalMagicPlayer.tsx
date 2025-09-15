@@ -32,7 +32,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const [bpmSync, setBpmSync] = useState(true);
   const [autoMix, setAutoMix] = useState(false);
   const [, setCuePoints] = useState<{ [key: string]: number[] }>({});
-  
+
   // Audio elements using refs for stability
   const audioARef = useRef<HTMLAudioElement | null>(null);
   const audioBRef = useRef<HTMLAudioElement | null>(null);
@@ -173,17 +173,21 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     audio.addEventListener('ended', handleTrackEnd);
     audio.addEventListener('error', onError);
     
-    // Set audio source
-    // Use reliable demo audio sources
-    const demoAudioSources = [
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
-    ];
-    
-    const audioIndex = Math.abs(currentTrack.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % demoAudioSources.length;
-    audio.src = demoAudioSources[audioIndex];
+    // Set audio source - prioritize track's preview_url
+    if (currentTrack.preview_url && currentTrack.preview_url.trim() !== '') {
+      audio.src = currentTrack.preview_url;
+    } else {
+      // Fallback to demo audio sources
+      const demoAudioSources = [
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
+      ];
+
+      const audioIndex = Math.abs(currentTrack.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % demoAudioSources.length;
+      audio.src = demoAudioSources[audioIndex];
+    }
     
     // Set volume immediately
     audio.volume = 0.7;
@@ -254,17 +258,21 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('error', onError);
     
-    // Set audio source
-    // Use reliable demo audio sources
-    const demoAudioSources = [
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
-    ];
-    
-    const audioIndex = Math.abs(nextTrack.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % demoAudioSources.length;
-    audio.src = demoAudioSources[audioIndex];
+    // Set audio source - prioritize track's preview_url
+    if (nextTrack.preview_url && nextTrack.preview_url.trim() !== '') {
+      audio.src = nextTrack.preview_url;
+    } else {
+      // Fallback to demo audio sources
+      const demoAudioSources = [
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
+      ];
+
+      const audioIndex = Math.abs(nextTrack.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % demoAudioSources.length;
+      audio.src = demoAudioSources[audioIndex];
+    }
     
     // Set volume immediately  
     audio.volume = 0.5;
@@ -295,7 +303,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           })
           .catch(error => {
             logger.error('ProfessionalMagicPlayer', 'Audio play failed', error);
-            setIsPlaying(false);
+            onPlayPause(false);
             // Try to reload the audio
             setTimeout(() => {
               audio.load();
@@ -310,7 +318,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   // Handle volume changes
   useEffect(() => {
     const audioA = audioARef.current;
-                className="w-16 h-16 deck-card deck-card-a rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105 disabled:opacity-50 active:scale-95"
+    const audioB = audioBRef.current;
 
     if (audioA) {
       const deckAVol = (deckAVolume / 100) * (masterVolume / 100);
@@ -522,6 +530,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
   const handleSkipForward = () => {
     if (currentTrackIndex < (playlist?.tracks.length ?? 0) - 1) {
+      const newIndex = currentTrackIndex + 1;
+      logger.info('ProfessionalMagicPlayer', 'Skipping forward', {
+        from: currentTrackIndex,
+        to: newIndex,
+        currentTrack: currentTrack?.title,
+        nextTrack: playlist?.tracks[newIndex]?.title
+      });
       setCurrentTrackIndex(prev => prev + 1);
       setDeckAProgress(0);
     }

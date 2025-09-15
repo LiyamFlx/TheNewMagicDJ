@@ -31,6 +31,8 @@ const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportFormat, setExportFormat] = useState<'json' | 'csv' | 'pdf'>('json');
+  const [showFlyerPreview, setShowFlyerPreview] = useState(false);
+  const [flyerCanvas, setFlyerCanvas] = useState<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     // Generate analytics data
@@ -162,21 +164,106 @@ Analytics:
     }
   };
 
+  const generateFlyer = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1080;
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) return null;
+
+    // Background gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#0a0a0a');
+    gradient.addColorStop(0.5, '#1a1a2e');
+    gradient.addColorStop(1, '#0a0a0a');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Add neon border
+    ctx.strokeStyle = '#00ff41';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+
+    // Title
+    ctx.fillStyle = '#00ff41';
+    ctx.font = 'bold 80px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('MAGIC DJ', canvas.width / 2, 150);
+
+    // Playlist name
+    ctx.fillStyle = '#9d00ff';
+    ctx.font = 'bold 60px monospace';
+    ctx.fillText(playlist.name.toUpperCase(), canvas.width / 2, 250);
+
+    // Stats
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 40px monospace';
+    ctx.fillText(`${analytics?.tracksPlayed} TRACKS`, canvas.width / 2, 400);
+    ctx.fillText(`${analytics?.averageEnergy.toFixed(1)}% AVG ENERGY`, canvas.width / 2, 470);
+    ctx.fillText(`${analytics?.peakMoments.length} PEAK MOMENTS`, canvas.width / 2, 540);
+
+    // Energy visualization
+    const barWidth = 40;
+    const barSpacing = 50;
+    const startX = (canvas.width - (analytics?.energyCurve.length || 0) * barSpacing) / 2;
+
+    analytics?.energyCurve.forEach((energy, index) => {
+      const barHeight = (energy / 100) * 300;
+      const x = startX + index * barSpacing;
+      const y = 850 - barHeight;
+
+      ctx.fillStyle = energy > 80 ? '#00ff41' : energy > 60 ? '#ffff00' : '#9d00ff';
+      ctx.fillRect(x, y, barWidth, barHeight);
+    });
+
+    // Footer
+    ctx.fillStyle = '#00ff41';
+    ctx.font = 'bold 30px monospace';
+    ctx.fillText('AI-POWERED DJ PLATFORM', canvas.width / 2, 950);
+
+    return canvas;
+  };
+
   const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${playlist.name} - DJ Set Analytics`,
-          text: `Check out my DJ set analytics: ${analytics?.averageEnergy.toFixed(1)}% average energy, ${analytics?.peakMoments.length} peak moments!`,
-          url: window.location.href
-        });
-      } catch (error) {
-        console.error('Share failed:', error);
+    // Generate flyer image
+    const canvas = generateFlyer();
+    if (!canvas) return;
+
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+
+      const file = new File([blob], `${playlist.name.replace(/\s+/g, '_')}_flyer.png`, { type: 'image/png' });
+
+      if (navigator.share && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            title: `${playlist.name} - DJ Set Analytics`,
+            text: `Check out my DJ set analytics: ${analytics?.averageEnergy.toFixed(1)}% average energy, ${analytics?.peakMoments.length} peak moments!`,
+            files: [file]
+          });
+        } catch (error) {
+          console.error('Share failed:', error);
+          downloadFlyer(canvas);
+        }
+      } else {
+        downloadFlyer(canvas);
       }
-    } else {
-      // Fallback: copy to clipboard
-      const shareText = `${playlist.name} - Average Energy: ${analytics?.averageEnergy.toFixed(1)}%`;
-      navigator.clipboard.writeText(shareText);
+    }, 'image/png');
+  };
+
+  const downloadFlyer = (canvas: HTMLCanvasElement) => {
+    const link = document.createElement('a');
+    link.download = `${playlist.name.replace(/\s+/g, '_')}_flyer.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+  };
+
+  const handlePreviewFlyer = () => {
+    const canvas = generateFlyer();
+    if (canvas) {
+      setFlyerCanvas(canvas);
+      setShowFlyerPreview(true);
     }
   };
 
@@ -395,43 +482,103 @@ Analytics:
           </div>
         </div>
 
-        {/* Export Section */}
+        {/* Enhanced Export Section */}
         <div className="mt-8 cyber-card rounded-none p-6">
-          <h3 className="text-xl font-bold neon-text-green mb-4">Export & Share</h3>
-          
-          <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 sm:space-x-4">
-            <div className="flex items-center space-x-4">
-              <select
-                value={exportFormat}
-                onChange={(e) => setExportFormat(e.target.value as 'json' | 'csv' | 'pdf')}
-                className="bg-cyber-dark border border-neon-green rounded-none px-3 py-2 text-cyber-white focus:outline-none focus:border-neon-purple"
+          <h3 className="text-xl font-bold neon-text-green mb-6 flex items-center space-x-2">
+            <Download className="w-5 h-5" />
+            <span>EXPORT & SHARE</span>
+          </h3>
+
+          {/* Flyer Section */}
+          <div className="mb-8 p-4 bg-cyber-dark border-2 border-neon-purple rounded-sm neon-glow-purple">
+            <h4 className="text-lg font-bold neon-text-purple mb-4 font-mono">SOCIAL MEDIA FLYER</h4>
+            <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4">
+              <button
+                onClick={handlePreviewFlyer}
+                className="cyber-button cyber-button-purple px-4 py-3 rounded-sm flex items-center space-x-2 font-bold tracking-wider"
               >
-                <option value="json">JSON</option>
-                <option value="csv">CSV</option>
-                <option value="pdf">PDF</option>
-              </select>
-            </div>
-            
-            <div className="flex items-center space-x-4">
+                <div className="w-5 h-5 border-2 border-neon-purple rounded-sm"></div>
+                <span>PREVIEW FLYER</span>
+              </button>
               <button
                 onClick={handleShare}
-                className="cyber-button cyber-button-purple px-4 py-2 rounded-none flex items-center space-x-2"
+                className="cyber-button px-4 py-3 rounded-sm flex items-center space-x-2 font-bold tracking-wider"
               >
-                <Share2 className="w-4 h-4 neon-text-purple" />
-                <span>Share</span>
+                <Share2 className="w-5 h-5" />
+                <span>SHARE FLYER</span>
               </button>
-              
+            </div>
+          </div>
+
+          {/* Data Export Section */}
+          <div className="p-4 bg-cyber-dark border-2 border-neon-green rounded-sm neon-glow-green">
+            <h4 className="text-lg font-bold neon-text-green mb-4 font-mono">DATA EXPORT</h4>
+            <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 sm:space-x-4">
+              <div className="flex items-center space-x-4">
+                <select
+                  value={exportFormat}
+                  onChange={(e) => setExportFormat(e.target.value as 'json' | 'csv' | 'pdf')}
+                  className="bg-cyber-darker border-2 border-neon-green rounded-sm px-4 py-3 text-cyber-white focus:outline-none focus:border-neon-purple font-mono text-base"
+                >
+                  <option value="json">JSON FORMAT</option>
+                  <option value="csv">CSV FORMAT</option>
+                  <option value="pdf">PDF REPORT</option>
+                </select>
+              </div>
+
               <button
                 onClick={handleExport}
                 disabled={isExporting}
-                className="cyber-button px-4 py-2 rounded-none flex items-center space-x-2"
+                className="cyber-button px-4 py-3 rounded-sm flex items-center space-x-2 font-bold tracking-wider"
               >
-                <Download className="w-4 h-4 neon-text-green" />
-                <span>{isExporting ? 'Exporting...' : 'Export'}</span>
+                <Download className="w-5 h-5" />
+                <span>{isExporting ? 'EXPORTING...' : 'EXPORT DATA'}</span>
               </button>
             </div>
           </div>
         </div>
+
+        {/* Flyer Preview Modal */}
+        {showFlyerPreview && flyerCanvas && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowFlyerPreview(false)}>
+            <div className="bg-cyber-dark border-4 border-neon-green rounded-sm p-6 max-w-lg mx-4 neon-glow-green" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold neon-text-green font-mono">FLYER PREVIEW</h3>
+                <button
+                  onClick={() => setShowFlyerPreview(false)}
+                  className="w-8 h-8 bg-cyber-darker border-2 border-red-500 rounded-sm flex items-center justify-center hover:bg-red-900/20"
+                >
+                  <span className="text-red-400 font-bold">×</span>
+                </button>
+              </div>
+
+              <div className="mb-6">
+                <img
+                  src={flyerCanvas.toDataURL()}
+                  alt="DJ Set Flyer"
+                  className="w-full border-2 border-neon-purple rounded-sm"
+                />
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => downloadFlyer(flyerCanvas)}
+                  className="cyber-button flex-1 py-3 rounded-sm flex items-center justify-center space-x-2 font-bold tracking-wider"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>DOWNLOAD</span>
+                </button>
+                <button
+                  onClick={handleShare}
+                  className="cyber-button cyber-button-purple flex-1 py-3 rounded-sm flex items-center justify-center space-x-2 font-bold tracking-wider"
+                >
+                  <Share2 className="w-5 h-5" />
+                  <span>SHARE</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

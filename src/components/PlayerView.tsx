@@ -19,7 +19,12 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || !currentTrack) return;
+
+    // Update audio source when track changes
+    audio.src = currentTrack.preview_url || '';
+    audio.load();
+    setCurrentTime(0);
 
     const updateTime = () => setCurrentTime(audio.currentTime);
     const updateDuration = () => setDuration(audio.duration);
@@ -33,7 +38,7 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
       audio.removeEventListener('loadedmetadata', updateDuration);
       audio.removeEventListener('ended', handleNext);
     };
-  }, [currentTrackIndex]);
+  }, [currentTrackIndex, currentTrack]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -87,73 +92,113 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
     setCurrentTime(newTime);
   };
 
+  const handleSavePlaylist = () => {
+    // Save playlist to localStorage for now
+    const savedPlaylists = JSON.parse(localStorage.getItem('savedPlaylists') || '[]');
+    const playlistToSave = {
+      ...playlist,
+      savedAt: new Date().toISOString()
+    };
+
+    savedPlaylists.push(playlistToSave);
+    localStorage.setItem('savedPlaylists', JSON.stringify(savedPlaylists));
+
+    // Show success message
+    alert(`Playlist "${playlist.name}" saved successfully!`);
+  };
+
+  const handleSharePlaylist = () => {
+    const shareData = {
+      title: `${playlist.name} - MagicDJ Playlist`,
+      text: `Check out this amazing ${playlist.tracks.length}-track playlist I created with MagicDJ AI!`,
+      url: window.location.href
+    };
+
+    if (navigator.share) {
+      navigator.share(shareData);
+    } else {
+      // Fallback: copy to clipboard
+      const shareText = `${shareData.title}\n${shareData.text}\n${shareData.url}`;
+      navigator.clipboard.writeText(shareText).then(() => {
+        alert('Playlist link copied to clipboard!');
+      });
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900">
-      {/* Header */}
-      <div className="px-6 py-4 bg-white/5 backdrop-blur-md border-b border-white/10">
+    <div className="min-h-screen bg-cyber-black">
+      {/* Enhanced Header */}
+      <div className="px-6 py-4 bg-cyber-dark border-b-2 border-neon-green backdrop-blur-md">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <button
               onClick={onBack}
-              className="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center transition-colors"
+              className="w-12 h-12 bg-cyber-medium border-2 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all"
             >
-              <ArrowLeft className="w-6 h-6 text-white" />
+              <ArrowLeft className="w-6 h-6 neon-text-green" />
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-white">{playlist.name}</h1>
-              <p className="text-gray-400">{playlist.tracks.length} tracks</p>
+              <h1 className="text-2xl font-bold neon-text-green font-mono tracking-wider">{playlist.name}</h1>
+              <p className="text-cyber-gray font-mono">{playlist.tracks.length} TRACKS</p>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-8">
-        {/* Navigation Breadcrumb */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
+        {/* Enhanced Navigation Breadcrumb */}
+        <div className="flex items-center justify-between mb-8 p-4 bg-cyber-dark border-2 border-neon-green rounded-sm neon-glow-green">
+          <div className="flex items-center space-x-6">
             <button
               onClick={onBack}
-              className="flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors text-white font-medium"
+              className="cyber-button px-4 py-2 rounded-sm flex items-center space-x-2 font-bold tracking-wider"
             >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Studio</span>
+              <ArrowLeft className="w-5 h-5" />
+              <span>BACK TO STUDIO</span>
             </button>
-            <div className="text-gray-400">
-              <span className="text-purple-400">Studio</span> → <span className="text-white">Now Playing</span>
+            <div className="text-cyber-gray font-mono">
+              <span className="text-neon-purple">STUDIO</span> → <span className="neon-text-green">NOW PLAYING</span>
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <button className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl text-white font-medium transition-all">
-              Save Playlist
+            <button
+              onClick={handleSavePlaylist}
+              className="cyber-button cyber-button-purple px-4 py-2 rounded-sm font-bold tracking-wider"
+            >
+              SAVE PLAYLIST
             </button>
-            <button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-white font-medium transition-colors">
-              Share
+            <button
+              onClick={handleSharePlaylist}
+              className="cyber-button px-4 py-2 rounded-sm font-bold tracking-wider"
+            >
+              SHARE
             </button>
           </div>
         </div>
 
-        {/* Current Track Display */}
+        {/* Enhanced Current Track Display */}
         <div className="text-center mb-12">
-          <div className="w-64 h-64 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mx-auto mb-8 flex items-center justify-center shadow-2xl">
-            <div className="w-48 h-48 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center">
-              <div className="text-6xl">🎵</div>
+          <div className="w-80 h-80 bg-cyber-dark border-4 border-neon-green rounded-sm mx-auto mb-8 flex items-center justify-center neon-glow-green animate-pulse-light">
+            <div className="w-64 h-64 bg-cyber-darker border-2 border-neon-purple rounded-sm flex items-center justify-center neon-glow-purple">
+              <div className="text-8xl">🎵</div>
             </div>
           </div>
-          
-          <h2 className="text-3xl font-bold text-white mb-2">{currentTrack.title}</h2>
-          <p className="text-xl text-gray-300 mb-4">{currentTrack.artist}</p>
-          <div className="flex items-center justify-center space-x-4 text-sm text-gray-400">
-            <span>{currentTrack.bpm} BPM</span>
-            <span>•</span>
-            <span>Energy: {Math.round((currentTrack.energy || 0.5) * 100)}%</span>
+
+          <h2 className="text-4xl font-bold neon-text-green mb-3 font-mono tracking-wider">{currentTrack.title}</h2>
+          <p className="text-2xl neon-text-purple mb-6 font-mono">{currentTrack.artist}</p>
+          <div className="flex items-center justify-center space-x-8 text-lg font-mono font-bold">
+            <span className="text-neon-green">{currentTrack.bpm} BPM</span>
+            <span className="text-cyber-gray">•</span>
+            <span className="text-neon-purple">ENERGY: {Math.round((currentTrack.energy || 0.5) * 100)}%</span>
           </div>
         </div>
 
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2 text-sm text-gray-400">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration || currentTrack.duration || 0)}</span>
+        {/* Enhanced Progress Bar */}
+        <div className="mb-12 p-4 bg-cyber-dark border-2 border-neon-green rounded-sm neon-glow-green">
+          <div className="flex items-center justify-between mb-4 text-lg font-mono font-bold">
+            <span className="neon-text-green">{formatTime(currentTime)}</span>
+            <span className="text-cyber-gray">PLAYING</span>
+            <span className="neon-text-green">{formatTime(duration || currentTrack.duration || 0)}</span>
           </div>
           <input
             type="range"
@@ -161,48 +206,49 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
             max={duration || currentTrack.duration || 300}
             value={currentTime}
             onChange={handleSeek}
-            className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider"
+            className="cyber-slider w-full"
           />
         </div>
 
-        {/* Player Controls */}
-        <div className="flex items-center justify-center space-x-6 mb-8">
-          <button className="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors">
-            <Shuffle className="w-6 h-6 text-white" />
+        {/* Enhanced Player Controls */}
+        <div className="flex items-center justify-center space-x-8 mb-12">
+          <button className="w-16 h-16 bg-cyber-dark border-2 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all hover:scale-110">
+            <Shuffle className="w-8 h-8 neon-text-green" />
           </button>
-          
+
           <button
             onClick={handlePrevious}
-            className="w-14 h-14 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+            className="w-20 h-20 bg-cyber-dark border-2 border-neon-purple hover:neon-glow-purple rounded-sm flex items-center justify-center transition-all hover:scale-110"
           >
-            <SkipBack className="w-7 h-7 text-white" />
+            <SkipBack className="w-10 h-10 neon-text-purple" />
           </button>
-          
+
           <button
             onClick={handlePlayPause}
-            className="w-20 h-20 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-full flex items-center justify-center transition-all duration-300 transform hover:scale-105 shadow-lg"
+            className="w-28 h-28 bg-cyber-dark border-4 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all duration-300 transform hover:scale-110 animate-deck-glow"
           >
-            {isPlaying ? 
-              <Pause className="w-10 h-10 text-white" /> : 
-              <Play className="w-10 h-10 text-white ml-1" />
+            {isPlaying ?
+              <Pause className="w-14 h-14 neon-text-green" /> :
+              <Play className="w-14 h-14 neon-text-green ml-1" />
             }
           </button>
-          
+
           <button
             onClick={handleNext}
-            className="w-14 h-14 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+            className="w-20 h-20 bg-cyber-dark border-2 border-neon-purple hover:neon-glow-purple rounded-sm flex items-center justify-center transition-all hover:scale-110"
           >
-            <SkipForward className="w-7 h-7 text-white" />
+            <SkipForward className="w-10 h-10 neon-text-purple" />
           </button>
-          
-          <button className="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors">
-            <Repeat className="w-6 h-6 text-white" />
+
+          <button className="w-16 h-16 bg-cyber-dark border-2 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all hover:scale-110">
+            <Repeat className="w-8 h-8 neon-text-green" />
           </button>
         </div>
 
-        {/* Volume Control */}
-        <div className="flex items-center justify-center space-x-4 mb-12">
-          <Volume2 className="w-5 h-5 text-gray-400" />
+        {/* Enhanced Volume Control */}
+        <div className="flex items-center justify-center space-x-6 mb-12 p-4 bg-cyber-dark border-2 border-neon-purple rounded-sm neon-glow-purple">
+          <Volume2 className="w-6 h-6 neon-text-purple" />
+          <span className="text-lg font-mono font-bold neon-text-purple">VOLUME</span>
           <input
             type="range"
             min="0"
@@ -210,44 +256,45 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
             step="0.01"
             value={volume}
             onChange={(e) => setVolume(parseFloat(e.target.value))}
-            className="w-32 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer"
+            className="cyber-slider cyber-slider-purple w-48"
           />
+          <span className="text-lg font-mono font-bold neon-text-purple w-12">{Math.round(volume * 100)}%</span>
         </div>
 
-        {/* Playlist */}
-        <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-6">
-          <h3 className="text-xl font-bold text-white mb-6 flex items-center space-x-2">
-            <span>Playlist</span>
-            <Heart className="w-5 h-5 text-pink-400" />
+        {/* Enhanced Playlist */}
+        <div className="bg-cyber-dark border-2 border-neon-green rounded-sm p-6 neon-glow-green">
+          <h3 className="text-2xl font-bold neon-text-green mb-6 flex items-center space-x-3 font-mono tracking-wider">
+            <span>PLAYLIST</span>
+            <Heart className="w-6 h-6 text-neon-purple" />
           </h3>
-          
-          <div className="space-y-3 max-h-64 overflow-y-auto">
+
+          <div className="space-y-2 max-h-80 overflow-y-auto custom-scrollbar">
             {playlist.tracks.map((track, index) => (
               <div
                 key={track.id}
                 onClick={() => setCurrentTrackIndex(index)}
-                className={`flex items-center space-x-4 p-3 rounded-xl transition-all cursor-pointer ${
-                  index === currentTrackIndex 
-                    ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 border border-purple-400/50' 
-                    : 'bg-white/5 hover:bg-white/10'
+                className={`group flex items-center space-x-4 p-4 rounded-sm border-2 transition-all cursor-pointer ${
+                  index === currentTrackIndex
+                    ? 'bg-cyber-medium border-neon-green neon-glow-green animate-pulse-light'
+                    : 'bg-cyber-darker border-cyber-light hover:bg-cyber-medium hover:border-neon-purple hover:neon-glow-purple'
                 }`}
               >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  index === currentTrackIndex ? 'bg-purple-500' : 'bg-white/10'
+                <div className={`w-10 h-10 rounded-sm border-2 flex items-center justify-center ${
+                  index === currentTrackIndex ? 'border-neon-green bg-cyber-dark' : 'border-cyber-light bg-cyber-darker'
                 }`}>
                   {index === currentTrackIndex && isPlaying ? (
-                    <Pause className="w-4 h-4 text-white" />
+                    <Pause className="w-5 h-5 neon-text-green" />
                   ) : (
-                    <Play className="w-4 h-4 text-white" />
+                    <Play className="w-5 h-5 neon-text-green" />
                   )}
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-white truncate">{track.title}</h4>
-                  <p className="text-sm text-gray-400 truncate">{track.artist}</p>
+                  <h4 className="font-bold neon-text-green truncate font-mono text-lg group-hover:neon-text-purple transition-colors">{track.title}</h4>
+                  <p className="text-base text-neon-purple truncate font-mono">{track.artist}</p>
                 </div>
-                
-                <div className="text-sm text-gray-400">
+
+                <div className="text-base neon-text-green font-mono font-bold">
                   {formatTime(track.duration || 300)}
                 </div>
               </div>
@@ -257,7 +304,7 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
       </div>
 
       {/* Hidden Audio Element */}
-      <audio ref={audioRef} src={currentTrack.preview_url} preload="metadata" />
+      <audio ref={audioRef} preload="metadata" />
     </div>
   );
 };
