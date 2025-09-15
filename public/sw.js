@@ -21,25 +21,31 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  // Only handle GET requests
+  const request = event.request;
   if (request.method !== 'GET') return;
 
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      const fetchPromise = fetch(request).then((networkResponse) => {
-        // Cache same-origin successful responses
-        try {
-          const url = new URL(request.url);
-          if (url.origin === self.location.origin && networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-        } catch {}
-        return networkResponse;
-      }).catch(() => cached);
-      return cached || fetchPromise;
-    })
-  );
+  event.respondWith((async () => {
+    const cached = await caches.match(request);
+    try {
+      const response = await fetch(request);
+      // Cache same-origin successful responses
+      try {
+        const url = new URL(request.url);
+        if (url.origin === self.location.origin && response && response.status === 200) {
+          const clone = response.clone();
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(request, clone);
+        }
+      } catch {}
+      return response;
+    } catch (e) {
+      if (cached) return cached;
+      // Offline fallback: return cached index for navigations
+      if (request.mode === 'navigate') {
+        const fallback = await caches.match('/index.html');
+        if (fallback) return fallback;
+      }
+      return new Response('Offline', { status: 503, statusText: 'Offline' });
+    }
+  })());
 });
-

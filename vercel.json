@@ -7,8 +7,8 @@
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "Referrer-Policy", "value": "no-referrer" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' https://www.soundhelix.com https://www.soundjay.com blob:; connect-src 'self' https://www.googleapis.com https://api.audd.io https://api.acoustid.org https://accounts.spotify.com https://api.spotify.com https://ws.audioscrobbler.com; frame-ancestors 'none';" }
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(self), geolocation=()" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com data:; media-src 'self' https://www.soundhelix.com https://www.soundjay.com blob:; connect-src 'self' https://www.googleapis.com https://api.audd.io https://api.acoustid.org https://accounts.spotify.com https://api.spotify.com https://ws.audioscrobbler.com; worker-src 'self'; frame-ancestors 'none';" }
       ]
     }
   ],
