@@ -25,6 +25,7 @@ interface PlaylistEditorProps {
   onTrackRemove: (index: number) => void;
   onTrackReorder: (fromIndex: number, toIndex: number) => void;
   onPlaylistUpdate: (playlist: Playlist) => void;
+  onSendToPlayer?: () => void;
   className?: string;
 }
 
@@ -36,6 +37,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
   onTrackRemove,
   onTrackReorder,
   onPlaylistUpdate,
+  onSendToPlayer,
   className = ''
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -205,6 +207,15 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
         </div>
         
         <div className="flex items-center space-x-3">
+          {onSendToPlayer && (
+            <button
+              onClick={onSendToPlayer}
+              className="cyber-button px-4 py-3 rounded-sm flex items-center space-x-2 text-base font-bold tracking-wider"
+            >
+              <Music className="w-5 h-5" />
+              <span className="hidden sm:inline">SEND TO PLAYER</span>
+            </button>
+          )}
           <button
             onClick={shufflePlaylist}
             className="cyber-button cyber-button-purple px-4 py-3 rounded-sm flex items-center space-x-2 text-base font-bold tracking-wider"

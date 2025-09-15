@@ -50,6 +50,7 @@ body {
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -75,4 +76,51 @@ body {
 
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+
+/* Navigation specific styles */
+.nav-item-active {
+  @apply bg-neon-green text-cyber-black border border-neon-green;
+}
+
+.nav-item-inactive {
+  @apply text-cyber-white hover:bg-cyber-medium hover:text-neon-green;
+}
+
+.nav-item-disabled {
+  @apply text-cyber-dim cursor-not-allowed opacity-50;
+}
+
+/* Breadcrumb styles */
+.breadcrumb-separator {
+  @apply text-cyber-dim;
+}
+
+.breadcrumb-active {
+  @apply text-cyber-gray;
+}
+
+.breadcrumb-clickable {
+  @apply text-neon-green hover:text-neon-green-bright transition-colors cursor-pointer;
+}
+
+/* Mobile menu animations */
+.mobile-menu-enter {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.mobile-menu-enter-active {
+  transform: translateX(0);
+  opacity: 1;
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+/* Quick actions bar */
+.quick-actions {
+  @apply bg-cyber-darker border-b border-cyber-light;
+}
+
+.quick-action-link {
+  @apply text-neon-green hover:text-neon-green-bright transition-colors cursor-pointer;
 }

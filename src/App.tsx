@@ -1,18 +1,27 @@
 import { useState, useEffect } from 'react';
+import Navigation, { NavigationView } from './components/Navigation';
+import { useNavigation } from './hooks/useNavigation';
+import { Playlist } from './types';
 import LandingPage from './components/LandingPage';
-import StudioView from './components/StudioView';
+import MagicStudio from './components/MagicStudio';
 import PlayerView from './components/PlayerView';
 import PlaylistEditor from './components/PlaylistEditor';
 import AnalyticsExport from './components/AnalyticsExport';
 import LibraryProfile from './components/LibraryProfile';
-import { Playlist } from './types';
-import { ArrowLeft, Play } from 'lucide-react';
 
 function App() {
-  const [currentView, setCurrentView] = useState<'landing' | 'studio' | 'editor' | 'player' | 'analytics' | 'library'>('landing');
+  const { 
+    currentView, 
+    navigate, 
+    goBack, 
+    setBreadcrumbs, 
+    clearBreadcrumbs, 
+    canGoBack,
+    breadcrumbs 
+  } = useNavigation('home');
+  
   const [savedPlaylists, setSavedPlaylists] = useState<Playlist[]>([]);
   const [recentSessions, setRecentSessions] = useState<any[]>([]);
-    
   const [currentPlaylist, setCurrentPlaylist] = useState<Playlist | null>(null);
   const [currentSession, _setCurrentSession] = useState<any>(null);
   const [user, _setUser] = useState<any>(null);
@@ -25,58 +34,55 @@ function App() {
     ]);
   }, []);
 
+  // Handle navigation with proper breadcrumbs
+  const handleNavigation = (view: NavigationView) => {
+    clearBreadcrumbs();
+    navigate(view);
+  };
+
   const handleStartMixing = () => {
-    setCurrentView('studio');
+    navigate('create');
+    setBreadcrumbs([{ label: 'Create', onClick: () => navigate('create') }]);
   };
 
   const handlePlaylistGenerated = (playlist: Playlist) => {
     setCurrentPlaylist(playlist);
-    setCurrentView('editor');
+    navigate('create'); // Stay in create view but show editor
+    setBreadcrumbs([
+      { label: 'Create', onClick: () => navigate('create') },
+      { label: 'Edit Playlist' }
+    ]);
   };
 
   const handlePlaylistEdited = (playlist: Playlist) => {
-    console.log('App', 'Playlist edited, switching to player', {
-      playlistId: playlist.id,
-      trackCount: playlist.tracks.length
-    });
-    
     setCurrentPlaylist(playlist);
-    setCurrentView('player');
+    navigate('play');
+    setBreadcrumbs([
+      { label: 'Create', onClick: () => navigate('create') },
+      { label: 'Now Playing' }
+    ]);
   };
-
-  const handleBackToLanding = () => {
-    setCurrentView('landing');
-    setCurrentPlaylist(null);
-  };
-
-  // const handleSessionEnd = () => {
-  //   console.log('App', 'Session ended, showing analytics');
-  //   if (currentSession) {
-  //     setCurrentView('analytics');
-  //   }
-  // };
-
-  // const handleBackToEditor = () => {
-  //   console.log('App', 'Returning to editor');
-  //   setCurrentView('editor');
-  // };
 
   const handleLibraryAccess = () => {
-    console.log('App', 'Accessing library');
-    setCurrentView('library');
+    navigate('library');
   };
 
   const handlePlaylistSelect = (playlist: Playlist) => {
-    console.log('App', 'Playlist selected from library');
     setCurrentPlaylist(playlist);
-    setCurrentView('editor');
+    navigate('create');
+    setBreadcrumbs([
+      { label: 'Library', onClick: () => navigate('library') },
+      { label: 'Edit Playlist' }
+    ]);
   };
 
   const handleEditAgain = () => {
-    console.log('App', 'Edit again requested');
-    setCurrentView('editor');
+    navigate('create');
+    setBreadcrumbs([
+      { label: 'Analytics', onClick: () => navigate('analytics') },
+      { label: 'Edit Again' }
+    ]);
   };
-
 
   const handleSaveToLibrary = (playlist: Playlist) => {
     setSavedPlaylists(prev => [...prev, playlist]);
@@ -105,13 +111,21 @@ function App() {
     setCurrentPlaylist(playlist);
   };
 
-  const handleBackToStudio = () => {
-    setCurrentView('studio');
-  };
+  const showEditor = currentView === 'create' && currentPlaylist && breadcrumbs.some(b => b.label === 'Edit Playlist');
+  const showPlayer = currentView === 'play' && currentPlaylist;
 
   return (
-    <div className="min-h-screen bg-slate-900">
-      {currentView === 'landing' && (
+    <div className="min-h-screen bg-cyber-black">
+      <Navigation
+        currentView={currentView}
+        onNavigate={handleNavigation}
+        user={user}
+        breadcrumbs={breadcrumbs}
+        showBackButton={canGoBack}
+        onBack={goBack}
+      />
+
+      {currentView === 'home' && (
         <LandingPage 
           onStartMixing={handleStartMixing}
           onLibraryAccess={handleLibraryAccess}
@@ -119,56 +133,35 @@ function App() {
         />
       )}
       
-      {currentView === 'studio' && (
-        <StudioView 
+      {currentView === 'create' && !showEditor && (
+        <MagicStudio
+          user={user}
           onPlaylistGenerated={handlePlaylistGenerated}
-          onBack={handleBackToLanding}
+          onBack={goBack}
+          onLibraryAccess={handleLibraryAccess}
+          recentSessions={recentSessions}
         />
       )}
       
-      {currentView === 'editor' && currentPlaylist && (
-        <div className="min-h-screen bg-cyber-black">
-          <div className="px-4 lg:px-6 py-4 lg:py-6 border-b border-neon-green">
-            <div className="max-w-7xl mx-auto flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={handleBackToStudio}
-                  className="w-8 h-8 lg:w-10 lg:h-10 rounded-none bg-cyber-dark border border-neon-green hover:neon-glow-green flex items-center justify-center transition-all"
-                >
-                  <ArrowLeft className="w-4 h-4 lg:w-5 lg:h-5 neon-text-green" />
-                </button>
-                <div>
-                  <h1 className="text-xl lg:text-2xl font-bold text-cyber-white">Playlist Editor</h1>
-                  <p className="text-sm text-cyber-gray">Fine-tune your AI-generated set</p>
-                </div>
-              </div>
-              <button
-                onClick={() => handlePlaylistEdited(currentPlaylist)}
-                className="cyber-button px-4 py-2 rounded-none flex items-center space-x-2"
-              >
-                <Play className="w-4 h-4 neon-text-green" />
-                <span>Send to Player</span>
-              </button>
-            </div>
-          </div>
-          <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8">
-            <PlaylistEditor
-              playlist={currentPlaylist}
-              currentTrackIndex={0}
-              isPlaying={false}
-              onTrackSelect={() => {}}
-              onTrackRemove={handleTrackRemove}
-              onTrackReorder={handleTrackReorder}
-              onPlaylistUpdate={handlePlaylistUpdate}
-            />
-          </div>
+      {showEditor && (
+        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8">
+          <PlaylistEditor
+            playlist={currentPlaylist!}
+            currentTrackIndex={0}
+            isPlaying={false}
+            onTrackSelect={() => {}}
+            onTrackRemove={handleTrackRemove}
+            onTrackReorder={handleTrackReorder}
+            onPlaylistUpdate={handlePlaylistUpdate}
+            onSendToPlayer={() => handlePlaylistEdited(currentPlaylist!)}
+          />
         </div>
       )}
       
-      {currentView === 'player' && currentPlaylist && (
+      {showPlayer && (
         <PlayerView 
           playlist={currentPlaylist}
-          onBack={handleBackToStudio}
+          onBack={goBack}
         />
       )}
         
@@ -176,7 +169,7 @@ function App() {
         <AnalyticsExport
           playlist={currentPlaylist}
           session={currentSession}
-          onBack={handleBackToStudio}
+          onBack={goBack}
           onSaveToLibrary={handleSaveToLibrary}
           onEditAgain={handleEditAgain}
         />
@@ -186,9 +179,9 @@ function App() {
         <LibraryProfile
           user={user}
           savedPlaylists={savedPlaylists}
-          onBack={handleBackToStudio}
+          onBack={goBack}
           onPlaylistSelect={handlePlaylistSelect}
-          onCreateNew={handleBackToStudio}
+          onCreateNew={handleStartMixing}
         />
       )}
     </div>
