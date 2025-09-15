@@ -56,7 +56,7 @@ export const useAuth = () => {
     getInitialSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.supabase.auth.onAuthStateChange((event, session) => {
       logger.info('useAuth', 'Auth state changed', { event, userId: session?.user?.id });
       
       setAuthState(prev => ({
@@ -77,7 +77,7 @@ export const useAuth = () => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      const { data, error } = await supabase.supabase.supabase.supabase.supabase.supabase.auth.signUp({ email, password, options: { data: { display_name: displayName } } });
+      const { data, error } = await supabase.supabase.auth.signUp({ email, password, options: { data: { display_name: displayName } } });
       
       if (error) {
         setAuthState(prev => ({ ...prev, error: error.message, loading: false }));
@@ -117,7 +117,7 @@ export const useAuth = () => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      const { error } = await supabase.supabase.supabase.supabase.supabase.supabase.auth.signOut();
+      const { error } = await supabase.supabase.auth.signOut();
       
       if (error) {
         setAuthState(prev => ({ ...prev, error: error.message, loading: false }));
