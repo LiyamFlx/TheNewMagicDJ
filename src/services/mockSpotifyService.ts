@@ -99,7 +99,7 @@ class MockSpotifyService {
             ...baseTrack,
             id: `mock-${Date.now()}-${i}`,
             title: `${baseTrack.title} (${i + 1})`,
-            bpm: this.adjustBpmForParams(baseTrack.bpm, params),
+            bpm: this.adjustBpmForParams(baseTrack.bpm ?? 120, params),
             energy: params.target_energy || baseTrack.energy,
             danceability: params.target_danceability || baseTrack.danceability,
             valence: params.target_valence || baseTrack.valence

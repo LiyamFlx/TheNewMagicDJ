@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Users, Activity, TrendingUp, Volume2, Zap, Eye, Heart, Music } from 'lucide-react';
+import { Users, Activity, TrendingUp, Zap, Heart, Music } from 'lucide-react';
 
 interface CrowdMetrics {
   energy: number;
@@ -34,7 +34,6 @@ const MagicDancer: React.FC<MagicDancerProps> = ({
   });
   
   const [historicalData, setHistoricalData] = useState<CrowdMetrics[]>([]);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
 

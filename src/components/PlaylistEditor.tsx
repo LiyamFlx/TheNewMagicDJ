@@ -1,23 +1,21 @@
 import { useState, useRef } from 'react';
 import { 
-  List, 
-  Play, 
-  Pause, 
-  SkipForward, 
-  SkipBack, 
-  Trash2, 
-  Plus, 
-  Search, 
-  Clock, 
-  Music, 
-  Shuffle, 
+  Trash2,
+  Plus,
+  Search,
+  Clock,
+  Music,
+  Shuffle,
   RotateCcw,
   Volume2,
-  Edit3,
+  Pause,
+  Play,
+  List,
   Save,
-  X
+  X,
+  Edit3
 } from 'lucide-react';
-import { Track, Playlist } from '../types';
+import { Playlist } from '../types';
 
 interface PlaylistEditorProps {
   playlist: Playlist;
@@ -50,11 +48,13 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
   const filteredTracks = playlist.tracks.filter(track =>
     track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     track.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    track.album?.toLowerCase().includes(searchQuery.toLowerCase())
+    (track.album?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
   );
 
-  const totalDuration = playlist.tracks.reduce((sum, track) => sum + track.duration ?? 0, 0);
-  const remainingDuration = playlist.tracks.slice(currentTrackIndex + 1).reduce((sum, track) => sum + track.duration ?? 0, 0);
+  const totalDuration = playlist.tracks.reduce((sum, track) => sum + (track.duration ?? 0), 0);
+  const remainingDuration = playlist.tracks
+    .slice(currentTrackIndex + 1)
+    .reduce((sum, track) => sum + (track.duration ?? 0), 0);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -255,7 +255,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
             <p>No tracks found</p>
           </div>
         ) : (
-          filteredTracks.map((track, filteredIndex) => {
+          filteredTracks.map((track) => {
             const originalIndex = playlist.tracks.findIndex(t => t.id === track.id);
             return (
               <div

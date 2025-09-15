@@ -9,16 +9,22 @@ export interface Track {
   bpm?: number;
   danceability?: number;
   valence?: number;
+  // Optional enrichment fields used by some services/components
+  album?: string;
+  images?: { url: string; height: number; width: number }[];
+  external_urls?: { [key: string]: string };
+  spotify_id?: string;
 }
 export interface Playlist {
   id: string;
   name: string;
   tracks: Track[];
-  type?: string;
+  type?: string; // e.g., 'magic_match' | 'magic_set'
   total_duration?: number;
   description?: string;
   created_at?: string;
   metadata?: Record<string, any>;
+  user_id?: string;
 }
 export interface Session {
   id: string;
@@ -33,4 +39,22 @@ export interface User {
   email: string;
   name: string;
   created_at: string;
+}
+
+// Recognition results from third-party services
+export interface RecognitionResult {
+  title: string;
+  artist: string;
+  album?: string;
+  duration?: number;
+  confidence: number;
+  preview_url?: string;
+  spotify_id?: string;
+}
+
+// Audio fingerprint payloads used in processing
+export interface AudioFingerprint {
+  fingerprint: string;
+  confidence: number;
+  duration: number;
 }

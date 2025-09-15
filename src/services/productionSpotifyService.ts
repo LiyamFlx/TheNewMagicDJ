@@ -171,14 +171,14 @@ class ProductionSpotifyService {
           }
 
           const data: SpotifyRecommendationsResponse = await response.json();
-          
+
           const tracks: Track[] = data.tracks.map(track => ({
             id: track.id,
             title: track.name,
             artist: track.artists.map(a => a.name).join(', '),
             album: track.album.name,
-            duration: Math.round(((track.duration ?? 0) / 1000)),
-            preview_url: track.preview_url,
+            duration: Math.round((track.duration_ms ?? 0) / 1000),
+            preview_url: track.preview_url ?? undefined,
             spotify_id: track.id,
             external_urls: track.external_urls,
             images: track.album.images,

@@ -35,7 +35,7 @@ const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
   useEffect(() => {
     // Generate analytics data
     const generateAnalytics = () => {
-      const energyCurve = playlist.tracks.map((track, index) => {
+      const energyCurve = playlist.tracks.map((track) => {
         return (track.energy || 0.5) * 100 + Math.random() * 20 - 10;
       });
 
@@ -58,7 +58,7 @@ const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
         energyCurve,
         peakMoments,
         crowdFeedback,
-        totalDuration: playlist.total_duration,
+        totalDuration: playlist.total_duration ?? 0,
         tracksPlayed: playlist.tracks.length,
         averageEnergy: energyCurve.reduce((sum, val) => sum + val, 0) / energyCurve.length,
         bestMoments: [
@@ -111,7 +111,7 @@ const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
         // Generate CSV format
         const csvContent = [
           'Track,Artist,Duration,BPM,Energy',
-          ...exportData.playlist.tracks.map(track => 
+          ...exportData.playlist.tracks.map(track =>
             `"${track.title}","${track.artist}",${track.duration ?? 0},${track.bpm || 'N/A'},${track.energy || 'N/A'}`
           )
         ].join('\n');
@@ -134,14 +134,14 @@ Session ID: ${exportData.session.id}
 Date: ${new Date(exportData.session.started_at).toLocaleDateString()}
 
 Tracks:
-${exportData.playlist.tracks.map((track, i) => 
-  `${i + 1}. ${track.title} - ${track.artist} (${Math.floor(track.duration ?? 0 / 60)}:${(track.duration ?? 0 % 60).toString().padStart(2, '0')})`
+${exportData.playlist.tracks.map((track, i) =>
+  `${i + 1}. ${track.title} - ${track.artist} (${Math.floor((track.duration ?? 0) / 60)}:${(((track.duration ?? 0) % 60)).toString().padStart(2, '0')})`
 ).join('\n')}
 
 Analytics:
 - Average Energy: ${analytics?.averageEnergy.toFixed(1)}%
 - Peak Moments: ${analytics?.peakMoments.length}
-- Total Duration: ${Math.floor(exportData.playlist.tracks.reduce((sum, t) => sum + t.duration, 0) / 60)} minutes
+- Total Duration: ${Math.floor(exportData.playlist.tracks.reduce((sum, t) => sum + (t.duration ?? 0), 0) / 60)} minutes
         `;
         
         const blob = new Blob([pdfContent], { type: 'text/plain' });

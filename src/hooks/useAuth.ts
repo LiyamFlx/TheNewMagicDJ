@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from "../lib/supabase";
 import { User, Session } from '@supabase/supabase-js';
-import { db } from '../lib/supabase';
 import { logger } from '../utils/logger';
 
 interface AuthState {
@@ -56,7 +55,7 @@ export const useAuth = () => {
     getInitialSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.supabase.supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       logger.info('useAuth', 'Auth state changed', { event, userId: session?.user?.id });
       
       setAuthState(prev => ({
@@ -77,7 +76,7 @@ export const useAuth = () => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      const { data, error } = await supabase.supabase.auth.signUp({ email, password, options: { data: { display_name: displayName } } });
+      const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { display_name: displayName } } });
       
       if (error) {
         setAuthState(prev => ({ ...prev, error: error.message, loading: false }));
@@ -117,7 +116,7 @@ export const useAuth = () => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      const { error } = await supabase.supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
       
       if (error) {
         setAuthState(prev => ({ ...prev, error: error.message, loading: false }));
@@ -133,10 +132,21 @@ export const useAuth = () => {
     }
   };
 
+  // Convenience helper used by AuthModal: try sign-in, else sign-up
+  const signInOrUp = async (email: string, password: string, displayName?: string) => {
+    // Try sign-in first
+    const signInResult = await signIn(email, password);
+    if (!signInResult.error) return signInResult;
+    // If sign-in failed, attempt sign-up
+    const signUpResult = await signUp(email, password, displayName);
+    return signUpResult;
+  };
+
   return {
     ...authState,
     signUp,
     signIn,
+    signInOrUp,
     signOut,
     isAuthenticated: !!authState.user
   };
