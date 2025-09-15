@@ -8,7 +8,6 @@ export default defineConfig({
     host: true,
     port: 5173,
     hmr: {
-      port: 5174,
       overlay: true
     },
     // Add headers to help with Service Worker caching issues
