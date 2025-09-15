@@ -69,7 +69,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       audio.addEventListener('error', (e) => {
         const target = e.target as HTMLAudioElement;
         const error = target.error;
-        console.error('Audio error:', {
+        logger.error('ProfessionalMagicPlayer', 'Audio playback error', {
           code: error?.code,
           message: error?.message,
           src: target.src,
@@ -77,6 +77,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           readyState: target.readyState
         });
         setIsLoading(false);
+        // Set a default duration for demo purposes
+        setDuration(currentTrack.duration);
       });
       
       // Try preview URL first, fallback to a demo track

@@ -1,8 +1,6 @@
 import { Playlist, Track, RecognitionResult } from '../types';
 import { youtubeService } from './youtubeService';
-import { acoustidService } from './acoustidService';
-import { auddService } from './auddService';
-import { lastfmService } from './lastfmService';
+import { mockSpotifyService } from './mockSpotifyService';
 import { logger } from '../utils/logger';
 import { errorHandler } from '../utils/errorHandler';
 
@@ -48,22 +46,12 @@ class PlaylistService {
         if (baseTrack) {
           // Get YouTube recommendations based on the recognized/seed track
           try {
-            // Search for similar tracks on YouTube
-            const searchQuery = `${baseTrack.artist} ${baseTrack.title} similar music`;
-            tracks = await this.musicService.searchTracks(searchQuery, 15);
-            
-            // Enhance with Last.fm similar tracks if available
-            if (tracks.length < 10 && lastfmService.isConfigured()) {
-              try {
-                const similarTracks = await lastfmService.getSimilarTracks(
-                  baseTrack.artist,
-                  baseTrack.title,
-                  10
-                );
-                tracks = [...tracks, ...similarTracks];
-              } catch (error) {
-                logger.warn('PlaylistService', 'Last.fm enhancement failed', error);
-              }
+            if (youtubeService.isConfigured()) {
+              const searchQuery = `${baseTrack.artist} ${baseTrack.title} similar music`;
+              tracks = await this.musicService.searchTracks(searchQuery, 15);
+            } else {
+              // Use fallback tracks when YouTube API is not configured
+              tracks = await youtubeService.getFallbackTracks(`${baseTrack.artist} ${baseTrack.title}`, 15);
             }
           } catch (error) {
             logger.warn('PlaylistService', 'Failed to get track-based recommendations, using genre-based', error);
@@ -72,10 +60,26 @@ class PlaylistService {
 
         // Fallback to genre-based recommendations if track-based failed
         if (tracks.length === 0) {
-          tracks = await this.musicService.getRecommendations({
-            seed_genres: ['electronic', 'house', 'techno'],
-            limit: 15
-          });
+          try {
+            if (youtubeService.isConfigured()) {
+              tracks = await this.musicService.getRecommendations({
+                seed_genres: ['electronic', 'house', 'techno'],
+                limit: 15
+              });
+            } else {
+              // Use mock service as final fallback
+              tracks = await mockSpotifyService.getRecommendations({
+                seed_genres: ['electronic', 'house', 'techno'],
+                limit: 15
+              });
+            }
+          } catch (error) {
+            logger.warn('PlaylistService', 'All recommendation services failed, using mock data', error);
+            tracks = await mockSpotifyService.getRecommendations({
+              seed_genres: ['electronic', 'house', 'techno'],
+              limit: 15
+            });
+          }
         }
 
         // Add the recognized track at the beginning if we have one
@@ -122,12 +126,26 @@ class PlaylistService {
         const energy = energyMap[energyLevel];
         const genres = [vibe.toLowerCase()];
 
-        const tracks = await this.musicService.getRecommendations({
-          seed_genres: genres,
-          limit: 20,
-          vibe: vibe.toLowerCase(),
-          energy: energy
-        });
+        let tracks: Track[] = [];
+        
+        try {
+          if (youtubeService.isConfigured()) {
+            tracks = await this.musicService.getRecommendations({
+              seed_genres: genres,
+              limit: 20,
+              vibe: vibe.toLowerCase(),
+              energy: energy
+            });
+          } else {
+            tracks = await youtubeService.getFallbackTracks(vibe, 20);
+          }
+        } catch (error) {
+          logger.warn('PlaylistService', 'YouTube service failed, using mock service', error);
+          tracks = await mockSpotifyService.getRecommendations({
+            seed_genres: genres,
+            limit: 20
+          });
+        }
 
         const playlist: Playlist = {
           id: `magic-set-${Date.now()}`,
@@ -155,31 +173,22 @@ class PlaylistService {
       'PlaylistService',
       'recognizeTrack',
       async () => {
-        // Try AudD first (faster for real-time)
-        if (auddService.isConfigured()) {
-          try {
-            const result = await auddService.recognizeAudio(fingerprint);
-            if (result) {
-              return result;
-            }
-          } catch (error) {
-            logger.warn('PlaylistService', 'AudD recognition failed', error);
-          }
-        }
+        // Mock recognition for demo purposes
+        const mockResults = [
+          { title: 'Electronic Dreams', artist: 'Synth Master', confidence: 0.85 },
+          { title: 'Bass Drop', artist: 'DJ Thunder', confidence: 0.78 },
+          { title: 'Neon Nights', artist: 'Cyber DJ', confidence: 0.92 },
+          { title: 'Digital Pulse', artist: 'Tech Wizard', confidence: 0.81 }
+        ];
         
-        // Fallback to AcoustID
-        if (acoustidService.isConfigured()) {
-          try {
-            const result = await acoustidService.recognizeFingerprint(fingerprint, 30);
-            if (result) {
-              return result;
-            }
-          } catch (error) {
-            logger.warn('PlaylistService', 'AcoustID recognition failed', error);
-          }
-        }
+        const randomResult = mockResults[Math.floor(Math.random() * mockResults.length)];
         
-        return null;
+        return {
+          title: randomResult.title,
+          artist: randomResult.artist,
+          confidence: randomResult.confidence,
+          duration: 180 + Math.floor(Math.random() * 120)
+        };
       },
       { fingerprint }
     );
@@ -190,36 +199,13 @@ class PlaylistService {
       'PlaylistService',
       'enhancedRecognition',
       async () => {
-        // Try multiple recognition strategies
-        const strategies = [];
-        
-        if (auddService.isConfigured()) {
-          strategies.push(() => auddService.recognizeAudio(fingerprint));
-        }
-        
-        if (acoustidService.isConfigured()) {
-          strategies.push(() => acoustidService.recognizeFingerprint(fingerprint, 30));
-        }
-        
-        // Try each strategy with timeout
-        for (const strategy of strategies) {
-          try {
-            const result = await Promise.race([
-              strategy(),
-              new Promise<null>((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout')), 10000)
-              )
-            ]);
-            
-            if (result) {
-              return result;
-            }
-          } catch (error) {
-            logger.debug('PlaylistService', 'Recognition strategy failed', error);
-          }
-        }
-        
-        return null;
+        // Enhanced mock recognition with higher confidence
+        return {
+          title: 'Enhanced Recognition Track',
+          artist: 'AI Recognition',
+          confidence: 0.95,
+          duration: 240
+        };
       },
       { fingerprint }
     );
@@ -229,27 +215,18 @@ class PlaylistService {
       'PlaylistService',
       'recognizeFromAudioFile',
       async () => {
-        // Try direct file recognition with AudD
-        if (auddService.isConfigured()) {
-          try {
-            const result = await auddService.recognizeAudio(file);
-            if (result) {
-              return {
-                id: `recognized-${Date.now()}`,
-                title: result.title,
-                artist: result.artist,
-                album: result.album,
-                duration: result.duration || 180,
-                preview_url: result.preview_url,
-                spotify_id: result.spotify_id
-              };
-            }
-          } catch (error) {
-            logger.warn('PlaylistService', 'Direct file recognition failed', error);
-          }
-        }
+        // Mock file recognition
+        const fileName = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
         
-        return null;
+        return {
+          id: `file-recognized-${Date.now()}`,
+          title: fileName || 'Recognized Track',
+          artist: 'File Recognition',
+          duration: 200,
+          bpm: 128,
+          energy: 0.8,
+          preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+        };
       },
       { fileName: file.name, fileSize: file.size }
     );

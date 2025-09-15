@@ -138,18 +138,38 @@ function App() {
     
     const updatedPlaylist = { ...currentPlaylist, tracks: newTracks };
     setCurrentPlaylist(updatedPlaylist);
+    
+    logger.info('App', 'Track reordered', {
+      playlistId: updatedPlaylist.id,
+      fromIndex,
+      toIndex,
+      trackMoved: movedTrack.title
+    });
   };
 
   const handleTrackRemove = (index: number) => {
     if (!currentPlaylist) return;
+    
+    const removedTrack = currentPlaylist.tracks[index];
     const newTracks = [...currentPlaylist.tracks];
     newTracks.splice(index, 1);
+    
     const updatedPlaylist = { ...currentPlaylist, tracks: newTracks };
     setCurrentPlaylist(updatedPlaylist);
+    
+    logger.info('App', 'Track removed', {
+      playlistId: updatedPlaylist.id,
+      removedTrack: removedTrack.title,
+      remainingTracks: newTracks.length
+    });
   };
 
   const handlePlaylistUpdate = (playlist: Playlist) => {
     setCurrentPlaylist(playlist);
+    logger.info('App', 'Playlist updated', {
+      playlistId: playlist.id,
+      trackCount: playlist.tracks.length
+    });
   };
 
   return (

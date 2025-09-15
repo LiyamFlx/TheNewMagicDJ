@@ -42,9 +42,11 @@ interface YouTubeVideoResponse {
 class YouTubeService {
   private apiKey: string;
   private baseUrl = 'https://www.googleapis.com/youtube/v3';
+  private isConfigured: boolean;
 
   constructor() {
     this.apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
+    this.isConfigured = !!this.apiKey;
     if (!this.apiKey) {
       logger.warn('YouTubeService', 'API key not configured');
     }
@@ -317,11 +319,40 @@ class YouTubeService {
   }
 
   isConfigured(): boolean {
-    return !!this.apiKey;
+    return this.isConfigured;
   }
 
   getRemainingRequests(): number {
     return rateLimiter.getRemainingRequests('youtube');
+  }
+
+  // Fallback method for when API is not configured
+  async getFallbackTracks(query: string, limit: number = 20): Promise<Track[]> {
+    const fallbackTracks: Track[] = [];
+    
+    const genres = ['Electronic', 'House', 'Techno', 'Hip-Hop', 'Pop', 'Dance'];
+    const artists = ['DJ Shadow', 'Daft Punk', 'Calvin Harris', 'Deadmau5', 'Skrillex', 'Tiësto'];
+    
+    for (let i = 0; i < limit; i++) {
+      const genre = genres[i % genres.length];
+      const artist = artists[i % artists.length];
+      
+      fallbackTracks.push({
+        id: `fallback-${i}`,
+        title: `${genre} Track ${i + 1}`,
+        artist: artist,
+        album: `${genre} Collection`,
+        duration: 180 + Math.floor(Math.random() * 120),
+        bpm: Math.floor(Math.random() * 60) + 100,
+        key: ['C', 'D', 'E', 'F', 'G', 'A', 'B'][Math.floor(Math.random() * 7)],
+        energy: Math.random(),
+        danceability: Math.random(),
+        valence: Math.random(),
+        preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+      });
+    }
+    
+    return fallbackTracks;
   }
 }
 

@@ -106,12 +106,56 @@ const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
         a.download = `${playlist.name.replace(/\s+/g, '_')}_analytics.json`;
         a.click();
         URL.revokeObjectURL(url);
+      } else if (exportFormat === 'csv') {
+        // Generate CSV format
+        const csvContent = [
+          'Track,Artist,Duration,BPM,Energy',
+          ...exportData.playlist.tracks.map(track => 
+            `"${track.title}","${track.artist}",${track.duration},${track.bpm || 'N/A'},${track.energy || 'N/A'}`
+          )
+        ].join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${playlist.name.replace(/\s+/g, '_')}_analytics.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else if (exportFormat === 'pdf') {
+        // For PDF, we'll create a simple text-based export
+        const pdfContent = `
+DJ Set Analytics Report
+=======================
+
+Playlist: ${exportData.playlist.name}
+Session ID: ${exportData.session.id}
+Date: ${new Date(exportData.session.started_at).toLocaleDateString()}
+
+Tracks:
+${exportData.playlist.tracks.map((track, i) => 
+  `${i + 1}. ${track.title} - ${track.artist} (${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')})`
+).join('\n')}
+
+Analytics:
+- Average Energy: ${analytics?.averageEnergy.toFixed(1)}%
+- Peak Moments: ${analytics?.peakMoments.length}
+- Total Duration: ${Math.floor(exportData.playlist.tracks.reduce((sum, t) => sum + t.duration, 0) / 60)} minutes
+        `;
+        
+        const blob = new Blob([pdfContent], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${playlist.name.replace(/\s+/g, '_')}_analytics.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
       }
       
-      // Add CSV and PDF export logic here
+      logger.info('AnalyticsExport', 'Export completed successfully', { format: exportFormat });
       
     } catch (error) {
-      console.error('Export failed:', error);
+      logger.error('AnalyticsExport', 'Export failed', error);
     } finally {
       setIsExporting(false);
     }
