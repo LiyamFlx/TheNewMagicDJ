@@ -13,6 +13,7 @@ import { useAuth } from './hooks/useAuth';
 import { supabasePlaylistService } from './services/supabasePlaylistService';
 import { db } from './lib/supabase';
 import { logger } from './utils/logger';
+import { testSupabaseConnection, testSupabaseAuth } from './utils/supabaseTest';
 import { ArrowLeft, Play } from 'lucide-react';
 
 function App() {
@@ -28,6 +29,24 @@ function App() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
 
   useEffect(() => {
+    // Test Supabase connection on app start
+    const initializeApp = async () => {
+      const connectionTest = await testSupabaseConnection();
+      const authTest = await testSupabaseAuth();
+      
+      logger.info('App', 'Supabase initialization complete', {
+        connectionSuccess: connectionTest.success,
+        authSuccess: authTest.success,
+        authenticated: authTest.authenticated
+      });
+      
+      if (!connectionTest.success) {
+        logger.error('App', 'Supabase connection failed - some features may not work');
+      }
+    };
+    
+    initializeApp();
+    
     if (isAuthenticated && user) {
       loadUserData();
     }
