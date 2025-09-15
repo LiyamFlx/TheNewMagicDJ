@@ -11,7 +11,7 @@ import AuthModal from './components/AuthModal';
 import { User, Playlist, Session } from './types';
 import { useAuth } from './hooks/useAuth';
 import { supabasePlaylistService } from './services/supabasePlaylistService';
-import { db } from './lib/supabase';
+import { supabase } from './lib/supabase';
 import { logger } from './utils/logger';
 import { testSupabaseConnection, testSupabaseAuth } from './utils/supabaseTest';
 import { ArrowLeft, Play } from 'lucide-react';
@@ -77,13 +77,13 @@ function App() {
 
     try {
       // Load user's recent sessions
-      const { data: sessions, error: sessionsError } = await db.getSessions(user.id);
+      const { data: sessions, error: sessionsError } = await supabase.from("sessions").select("*").eq("user_id", user.id)(user.id);
       if (!sessionsError && sessions) {
         setRecentSessions(sessions.slice(0, 10)); // Get last 10 sessions
       }
 
       // Load user's playlists
-      const playlists = await supabasePlaylistService.getUserPlaylists(user.id);
+      const playlists = await supabasePlaylistService.getPlaylists(user.id);
       setUserPlaylists(playlists);
 
       logger.info('App', 'User data loaded successfully', {
@@ -127,7 +127,7 @@ function App() {
     // Create a new session in the database
     if (user) {
       try {
-        const { data: session, error } = await db.createSession({
+        const { data: session, error } = await supabase.from("sessions").insert([{ user_id: user.id }])({
           user_id: user.id,
           playlist_id: playlist.id,
           name: `${playlist.name} Session`,
@@ -155,7 +155,7 @@ function App() {
     
     if (currentSession && user) {
       try {
-        const { data: updatedSession } = await db.updateSession(currentSession.id, {
+        const { data: updatedSession } = await supabase.from("sessions").update(currentSession.id, {
           ended_at: new Date().toISOString(),
           status: 'completed'
         });
@@ -184,7 +184,7 @@ function App() {
       );
       
       // Reload user playlists
-      const updatedPlaylists = await supabasePlaylistService.getUserPlaylists(user.id);
+      const updatedPlaylists = await supabasePlaylistService.getPlaylists(user.id);
       setUserPlaylists(updatedPlaylists);
       
       logger.info('App', 'Playlist saved to library', { playlistId: playlist.id });

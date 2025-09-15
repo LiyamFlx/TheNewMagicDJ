@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { supabase } from "../lib/supabase";
 import { User, Session } from '@supabase/supabase-js';
-import { auth } from '../lib/supabase';
+import { db } from '../lib/supabase';
 import { logger } from '../utils/logger';
 
 interface AuthState {
@@ -22,7 +23,7 @@ export const useAuth = () => {
     // Get initial session
     const getInitialSession = async () => {
       try {
-        const { data: { user }, error } = await auth.getCurrentUser();
+        const { data: { user }, error } = await supabase.auth.getUser();
         if (error) {
           // Don't treat "no user" as an error - it's normal when not logged in
           if (error.message !== 'Auth session missing!') {
@@ -76,7 +77,7 @@ export const useAuth = () => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      const { data, error } = await auth.signUp(email, password, displayName);
+      const { data, error } = await supabase.supabase.supabase.supabase.supabase.supabase.auth.signUp({ email, password, options: { data: { display_name: displayName } } });
       
       if (error) {
         setAuthState(prev => ({ ...prev, error: error.message, loading: false }));
@@ -96,7 +97,7 @@ export const useAuth = () => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      const { data, error } = await auth.signIn(email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
         setAuthState(prev => ({ ...prev, error: error.message, loading: false }));
@@ -116,7 +117,7 @@ export const useAuth = () => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      const { error } = await auth.signOut();
+      const { error } = await supabase.supabase.supabase.supabase.supabase.supabase.auth.signOut();
       
       if (error) {
         setAuthState(prev => ({ ...prev, error: error.message, loading: false }));

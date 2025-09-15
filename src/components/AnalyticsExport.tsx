@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger";
 import React, { useState, useEffect } from 'react';
 import { BarChart3, Download, Share2, TrendingUp, Clock, Users, Zap, Music, Save, ArrowLeft } from 'lucide-react';
 import { Playlist, Session } from '../types';
