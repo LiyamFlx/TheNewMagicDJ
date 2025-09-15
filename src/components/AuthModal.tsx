@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, User, Mail, Lock, Eye, EyeOff, Zap } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -16,7 +16,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { signIn, signUp } = useAuth();
+  const { signInOrUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,14 +25,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
     try {
       if (isLogin) {
-        const { error } = await signIn(email, password);
+        const { error } = await signInOrUp(email, password);
         if (error) {
           setError(error.message);
         } else {
           onClose();
         }
       } else {
-        const { error } = await signUp(email, password, displayName);
+        const { error } = await signInOrUp(email, password);
         if (error) {
           setError(error.message);
         } else {
