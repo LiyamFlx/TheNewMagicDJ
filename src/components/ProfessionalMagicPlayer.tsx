@@ -32,7 +32,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const [bpmSync, setBpmSync] = useState(true);
   const [autoMix, setAutoMix] = useState(false);
   const [, setCuePoints] = useState<{ [key: string]: number[] }>({});
-  
+
   // Audio elements using refs for stability
   const audioARef = useRef<HTMLAudioElement | null>(null);
   const audioBRef = useRef<HTMLAudioElement | null>(null);
