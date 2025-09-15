@@ -11,6 +11,10 @@
         { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' https://www.soundhelix.com https://www.soundjay.com blob:; connect-src 'self' https://www.googleapis.com https://api.audd.io https://api.acoustid.org https://accounts.spotify.com https://api.spotify.com https://ws.audioscrobbler.com; frame-ancestors 'none';" }
       ]
     }
+  ],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)\.(js|css|png|jpg|jpeg|svg|webp|json|txt|ico)", "destination": "/$1.$2" },
+    { "source": "/(.*)", "destination": "/" }
   ]
 }
-
