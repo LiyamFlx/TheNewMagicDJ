@@ -83,3 +83,9 @@ coverage/
 # Temporary folders
 tmp/
 temp/
+# Ignore local backups and fix scripts
+*.bak.*
+*.bak
+fix-build.sh
+final_fix.sh
+
