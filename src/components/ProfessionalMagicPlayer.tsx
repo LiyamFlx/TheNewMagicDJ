@@ -39,7 +39,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showPlaylistEditor, setShowPlaylistEditor] = useState(false);
-  const [showMagicDancer, setShowMagicDancer] = useState(true);
+  const [showMagicDancer, setShowMagicDancer] = useState(false);
   
   const waveformCanvasA = useRef<HTMLCanvasElement>(null);
   const waveformCanvasB = useRef<HTMLCanvasElement>(null);
@@ -365,6 +365,20 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         </div>
         
         <div className="flex items-center space-x-2 lg:space-x-4">
+          <button
+            onClick={() => setShowPlaylistEditor(!showPlaylistEditor)}
+            className={`cyber-button cyber-button-purple px-3 lg:px-4 py-2 rounded-none flex items-center space-x-2 ${showPlaylistEditor ? 'neon-glow-purple' : ''}`}
+          >
+            <List className="w-3 h-3 lg:w-4 lg:h-4 neon-text-purple" />
+            <span className="hidden sm:inline text-sm lg:text-base">Playlist</span>
+          </button>
+          <button
+            onClick={() => setShowMagicDancer(!showMagicDancer)}
+            className={`cyber-button px-3 lg:px-4 py-2 rounded-none flex items-center space-x-2 ${showMagicDancer ? 'neon-glow-green' : ''}`}
+          >
+            <Activity className="w-3 h-3 lg:w-4 lg:h-4 neon-text-green" />
+            <span className="hidden sm:inline text-sm lg:text-base">Dancer</span>
+          </button>
           <div className="hidden sm:flex items-center space-x-2 px-3 lg:px-4 py-2 bg-cyber-dark border border-neon-green rounded-none">
             <div className="w-3 h-3 bg-neon-green rounded-full animate-neon-pulse neon-glow-green"></div>
             <span className="text-xs lg:text-sm">Live</span>
@@ -427,7 +441,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             </button>
             <button
               onClick={() => setShowPlaylistEditor(!showPlaylistEditor)}
-              className={`cyber-button px-3 lg:px-4 py-2 rounded-none flex items-center space-x-2 ${showPlaylistEditor ? 'neon-glow-purple' : ''}`}
+              className={`cyber-button cyber-button-purple px-3 lg:px-4 py-2 rounded-none flex items-center space-x-2 ${showPlaylistEditor ? 'neon-glow-purple' : ''}`}
             >
               <List className="w-3 h-3 lg:w-4 lg:h-4 neon-text-purple" />
               <span className="hidden sm:inline text-sm lg:text-base">Playlist</span>
@@ -722,7 +736,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           </div>
 
           {/* Right Sidebar - Magic Dancer & Playlist Editor */}
-          <div className="space-y-4 lg:space-y-6">
+          <div className="space-y-4 lg:space-y-6 min-h-0">
             {/* Magic Dancer */}
             {showMagicDancer && (
               <MagicDancer
@@ -750,7 +764,33 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 onTrackRemove={handleTrackRemove}
                 onTrackReorder={handleTrackReorder}
                 onPlaylistUpdate={handlePlaylistUpdate}
+                className="max-h-96 overflow-hidden"
               />
+            )}
+            
+            {/* Default state when nothing is shown */}
+            {!showMagicDancer && !showPlaylistEditor && (
+              <div className="cyber-card rounded-none p-6 text-center">
+                <div className="w-16 h-16 bg-cyber-dark border-2 border-neon-green rounded-none flex items-center justify-center mx-auto mb-4 neon-glow-green">
+                  <Music className="w-8 h-8 neon-text-green" />
+                </div>
+                <h3 className="text-lg font-semibold text-cyber-white mb-2">DJ Tools</h3>
+                <p className="text-cyber-gray mb-4">Select tools from the header to get started</p>
+                <div className="flex flex-col space-y-2">
+                  <button
+                    onClick={() => setShowMagicDancer(true)}
+                    className="cyber-button py-2 px-4 rounded-none text-sm"
+                  >
+                    Magic Dancer
+                  </button>
+                  <button
+                    onClick={() => setShowPlaylistEditor(true)}
+                    className="cyber-button cyber-button-purple py-2 px-4 rounded-none text-sm"
+                  >
+                    Playlist Editor
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>
