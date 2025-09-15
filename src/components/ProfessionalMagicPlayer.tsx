@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, SkipForward, SkipBack, Volume2, Headphones, Settings, ArrowLeft, Square, Menu, X, List, Activity, Music, Zap, Radio, Crosshair, RotateCcw } from 'lucide-react';
 import { Playlist, Session, Track } from '../types';
@@ -16,6 +17,7 @@ interface ProfessionalMagicPlayerProps {
 
 const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   playlist,
+const [isPlaying, setIsPlaying] = useState(false);
   session,
   isPlaying,
   onPlayPause,
@@ -330,8 +332,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     if (autoMixIntervalRef.current) {
       clearInterval(autoMixIntervalRef.current);
     }
+const audioBRef = useRef<HTMLAudioElement | null>(null);
+const audioB = audioBRef.current;
 
-    if (isPlaying && autoMix && nextTrack) {
+return ( <div     if (isPlaying && autoMix && nextTrack) {
+>
+</div> );
       autoMixIntervalRef.current = window.setInterval(() => {
         const audioA = audioARef.current;
         if (audioA && audioA.duration > 0) {
