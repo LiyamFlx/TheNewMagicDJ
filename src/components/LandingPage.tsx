@@ -25,7 +25,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStartMixing }) => {
     {
       icon: Users,
       title: 'Magic Dancer',
-      description: 'Real-time crowd energy analysis and visualization',
+      description: 'AI-powered real-time crowd energy analysis and visualization',
       color: 'neon-green'
     },
     {

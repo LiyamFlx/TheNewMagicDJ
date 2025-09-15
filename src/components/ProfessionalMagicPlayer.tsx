@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Volume2, Headphones, Settings, ArrowLeft, Square, Repeat, Shuffle, Menu, X } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Volume2, Headphones, Settings, ArrowLeft, Square, Repeat, Shuffle, Menu, X, List } from 'lucide-react';
 import { Playlist, Session, Track } from '../types';
+import MagicDancer from './MagicDancer';
+import PlaylistEditor from './PlaylistEditor';
 
 interface ProfessionalMagicPlayerProps {
   playlist: Playlist | null;
@@ -36,6 +38,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showPlaylistEditor, setShowPlaylistEditor] = useState(false);
+  const [showMagicDancer, setShowMagicDancer] = useState(true);
   
   const waveformCanvasA = useRef<HTMLCanvasElement>(null);
   const waveformCanvasB = useRef<HTMLCanvasElement>(null);
@@ -282,6 +286,56 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleTrackSelect = (index: number) => {
+    setCurrentTrackIndex(index);
+    setAudioA(null); // Reset audio to trigger reload
+    setDeckAProgress(0);
+  };
+
+  const handleTrackRemove = (index: number) => {
+    if (!playlist) return;
+    
+    const newTracks = playlist.tracks.filter((_, i) => i !== index);
+    const updatedPlaylist = { ...playlist, tracks: newTracks };
+    
+    // Adjust current track index if necessary
+    if (index < currentTrackIndex) {
+      setCurrentTrackIndex(prev => prev - 1);
+    } else if (index === currentTrackIndex && index >= newTracks.length) {
+      setCurrentTrackIndex(newTracks.length - 1);
+    }
+    
+    // You would typically call a prop function here to update the playlist
+    // onPlaylistUpdate(updatedPlaylist);
+  };
+
+  const handleTrackReorder = (fromIndex: number, toIndex: number) => {
+    if (!playlist) return;
+    
+    const newTracks = [...playlist.tracks];
+    const [movedTrack] = newTracks.splice(fromIndex, 1);
+    newTracks.splice(toIndex, 0, movedTrack);
+    
+    const updatedPlaylist = { ...playlist, tracks: newTracks };
+    
+    // Adjust current track index
+    if (fromIndex === currentTrackIndex) {
+      setCurrentTrackIndex(toIndex);
+    } else if (fromIndex < currentTrackIndex && toIndex >= currentTrackIndex) {
+      setCurrentTrackIndex(prev => prev - 1);
+    } else if (fromIndex > currentTrackIndex && toIndex <= currentTrackIndex) {
+      setCurrentTrackIndex(prev => prev + 1);
+    }
+    
+    // You would typically call a prop function here to update the playlist
+    // onPlaylistUpdate(updatedPlaylist);
+  };
+
+  const handlePlaylistUpdate = (updatedPlaylist: Playlist) => {
+    // You would typically call a prop function here to update the playlist
+    // onPlaylistUpdate(updatedPlaylist);
+  };
+
   if (!playlist || !currentTrack) return null;
 
   return (
@@ -372,6 +426,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <SkipBack className="w-5 h-5 neon-text-green" />
             </button>
             <button
+              onClick={() => setShowPlaylistEditor(!showPlaylistEditor)}
+              className={`cyber-button px-3 lg:px-4 py-2 rounded-none flex items-center space-x-2 ${showPlaylistEditor ? 'neon-glow-purple' : ''}`}
+            >
+              <List className="w-3 h-3 lg:w-4 lg:h-4 neon-text-purple" />
+              <span className="hidden sm:inline text-sm lg:text-base">Playlist</span>
+            </button>
+            <button
               onClick={() => onPlayPause(!isPlaying)}
               disabled={isLoading}
               className="w-14 h-14 bg-cyber-dark border-4 border-neon-green hover:neon-glow-green rounded-none flex items-center justify-center transition-all transform hover:scale-105 disabled:opacity-50"
@@ -396,7 +457,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
       {/* Main Player Interface */}
       <div className={`flex-1 p-4 lg:p-6 ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6 h-full">
           
           {/* Deck A */}
           <div className="cyber-card rounded-none p-4 lg:p-6">
@@ -658,6 +719,39 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 </button>
               </div>
             </div>
+          </div>
+
+          {/* Right Sidebar - Magic Dancer & Playlist Editor */}
+          <div className="space-y-4 lg:space-y-6">
+            {/* Magic Dancer */}
+            {showMagicDancer && (
+              <MagicDancer
+                isActive={isPlaying}
+                currentTrack={currentTrack ? {
+                  title: currentTrack.title,
+                  artist: currentTrack.artist,
+                  bpm: currentTrack.bpm || 128,
+                  energy: currentTrack.energy || 0.7
+                } : undefined}
+                onEnergyChange={(energy) => {
+                  // Handle energy changes for auto-mixing
+                  console.log('Crowd energy:', energy);
+                }}
+              />
+            )}
+
+            {/* Playlist Editor */}
+            {showPlaylistEditor && (
+              <PlaylistEditor
+                playlist={playlist}
+                currentTrackIndex={currentTrackIndex}
+                isPlaying={isPlaying}
+                onTrackSelect={handleTrackSelect}
+                onTrackRemove={handleTrackRemove}
+                onTrackReorder={handleTrackReorder}
+                onPlaylistUpdate={handlePlaylistUpdate}
+              />
+            )}
           </div>
         </div>
       </div>

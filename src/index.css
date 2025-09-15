@@ -368,6 +368,27 @@ body {
   box-shadow: 0 0 10px var(--neon-purple);
 }
 
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--dark-gray);
+  border-radius: 0;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--neon-green);
+  border-radius: 0;
+  box-shadow: 0 0 5px var(--neon-green);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--neon-purple);
+  box-shadow: 0 0 5px var(--neon-purple);
+}
+
 /* Utility Classes */
 .bg-cyber-black { background-color: var(--pure-black); }
 .bg-cyber-dark { background-color: var(--dark-gray); }
