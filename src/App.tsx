@@ -28,43 +28,43 @@ function App() {
 
   const { user, loading: authLoading, isAuthenticated } = useAuth();
 
+  // Initialize Supabase + check auth state
   useEffect(() => {
-    // Test Supabase connection on app start
     const initializeApp = async () => {
       const connectionTest = await testSupabaseConnection();
       const authTest = await testSupabaseAuth();
-      
+
       logger.info('App', 'Supabase initialization complete', {
         connectionSuccess: connectionTest.success,
         authSuccess: authTest.success,
-        authenticated: authTest.authenticated
+        authenticated: authTest.authenticated,
       });
-      
+
       if (!connectionTest.success) {
         logger.warn('App', 'Supabase connection issues detected', {
           error: connectionTest.error,
-          message: 'Database tables may need to be created. Some features may not work until migration is applied.'
+          message: 'Database tables may need migration.',
         });
       } else if (connectionTest.warning) {
         logger.warn('App', 'Supabase connected with warnings', {
           warning: connectionTest.warning,
-          message: 'Run database migration to enable all features'
+          message: 'Run migration to enable all features.',
         });
       }
     };
-    
+
     initializeApp();
-    
+
     if (isAuthenticated && user) {
       loadUserData();
     }
   }, []);
 
+  // Refresh user data when auth changes
   useEffect(() => {
     if (isAuthenticated && user) {
       loadUserData();
     } else {
-      // Clear user data when not authenticated
       setRecentSessions([]);
       setUserPlaylists([]);
       setCurrentPlaylist(null);
@@ -76,20 +76,22 @@ function App() {
     if (!user) return;
 
     try {
-      // Load user's recent sessions
-      const { data: sessions, error: sessionsError } = await supabase.from("sessions").select("*").eq("user_id", user.id)(user.id);
+      const { data: sessions, error: sessionsError } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('user_id', user.id);
+
       if (!sessionsError && sessions) {
-        setRecentSessions(sessions.slice(0, 10)); // Get last 10 sessions
+        setRecentSessions(sessions.slice(0, 10));
       }
 
-      // Load user's playlists
       const playlists = await supabasePlaylistService.getPlaylists(user.id);
       setUserPlaylists(playlists);
 
       logger.info('App', 'User data loaded successfully', {
         userId: user.id,
         sessionCount: sessions?.length || 0,
-        playlistCount: playlists.length
+        playlistCount: playlists.length,
       });
     } catch (error) {
       logger.error('App', 'Failed to load user data', error);
@@ -101,45 +103,50 @@ function App() {
       setShowAuthModal(true);
       return;
     }
-
     logger.info('App', 'User started mixing session');
     setCurrentView('studio');
   };
 
   const handlePlaylistGenerated = (playlist: Playlist) => {
-    logger.info('App', 'Playlist generated, switching to player', {
+    logger.info('App', 'Playlist generated', {
       playlistId: playlist.id,
-      trackCount: playlist.tracks.length
+      trackCount: playlist.tracks.length,
     });
-    
     setCurrentPlaylist(playlist);
     setCurrentView('editor');
   };
 
   const handlePlaylistEdited = async (playlist: Playlist) => {
-    logger.info('App', 'Playlist edited, switching to player', {
+    logger.info('App', 'Playlist edited', {
       playlistId: playlist.id,
-      trackCount: playlist.tracks.length
+      trackCount: playlist.tracks.length,
     });
-    
+
     setCurrentPlaylist(playlist);
-    
-    // Create a new session in the database
+
     if (user) {
       try {
-        const { data: session, error } = await supabase.from("sessions").insert([{ user_id: user.id }]), {
-  useEffect(() => {
-    const fetchSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) console.error("Error fetching session:", error);
-      setSession(session);
-    };
-    fetchSession();
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-    return () => listener.subscription.unsubscribe();
-  }, []);    setCurrentView('analytics');
+        const { data: session, error } = await supabase
+          .from('sessions')
+          .insert([
+            {
+              user_id: user.id,
+              playlist_id: playlist.id,
+              name: `${playlist.name} Session`,
+              status: 'active',
+            },
+          ])
+          .select()
+          .single();
+
+        if (error) throw error;
+        setCurrentSession(session);
+      } catch (error) {
+        logger.error('App', 'Failed to create session', error);
+      }
+    }
+
+    setCurrentView('analytics');
   };
 
   const handleSaveToLibrary = async (playlist: Playlist) => {
@@ -153,14 +160,13 @@ function App() {
         playlist.tracks,
         playlist.metadata
       );
-      
-      // Reload user playlists
+
       const updatedPlaylists = await supabasePlaylistService.getPlaylists(user.id);
       setUserPlaylists(updatedPlaylists);
-      
+
       logger.info('App', 'Playlist saved to library', { playlistId: playlist.id });
     } catch (error) {
-      logger.error('App', 'Failed to save playlist to library', error);
+      logger.error('App', 'Failed to save playlist', error);
     }
   };
 
@@ -170,11 +176,10 @@ function App() {
     setCurrentSession(null);
     setCurrentPlaylist(null);
     setIsPlaying(false);
-    setCurrentView('studio');
   };
 
   const handleBackToLanding = () => {
-    logger.info('App', 'Returning to landing page');
+    logger.info('App', 'Returning to landing');
     setCurrentView('landing');
     setCurrentPlaylist(null);
     setCurrentSession(null);
@@ -190,7 +195,6 @@ function App() {
       setShowAuthModal(true);
       return;
     }
-
     logger.info('App', 'Accessing library');
     setCurrentView('library');
   };
@@ -208,36 +212,36 @@ function App() {
 
   const handleTrackReorder = (fromIndex: number, toIndex: number) => {
     if (!currentPlaylist) return;
-    
+
     const newTracks = [...currentPlaylist.tracks];
     const [movedTrack] = newTracks.splice(fromIndex, 1);
     newTracks.splice(toIndex, 0, movedTrack);
-    
+
     const updatedPlaylist = { ...currentPlaylist, tracks: newTracks };
     setCurrentPlaylist(updatedPlaylist);
-    
+
     logger.info('App', 'Track reordered', {
       playlistId: updatedPlaylist.id,
       fromIndex,
       toIndex,
-      trackMoved: movedTrack.title
+      trackMoved: movedTrack.title,
     });
   };
 
   const handleTrackRemove = (index: number) => {
     if (!currentPlaylist) return;
-    
+
     const removedTrack = currentPlaylist.tracks[index];
     const newTracks = [...currentPlaylist.tracks];
     newTracks.splice(index, 1);
-    
+
     const updatedPlaylist = { ...currentPlaylist, tracks: newTracks };
     setCurrentPlaylist(updatedPlaylist);
-    
+
     logger.info('App', 'Track removed', {
       playlistId: updatedPlaylist.id,
       removedTrack: removedTrack.title,
-      remainingTracks: newTracks.length
+      remainingTracks: newTracks.length,
     });
   };
 
@@ -245,16 +249,25 @@ function App() {
     setCurrentPlaylist(playlist);
     logger.info('App', 'Playlist updated', {
       playlistId: playlist.id,
-      trackCount: playlist.tracks.length
+      trackCount: playlist.tracks.length,
     });
   };
 
-  // Show loading screen while checking authentication
+  const handlePlayPause = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  const handleSessionEnd = () => {
+    logger.info('App', 'Session ended');
+    setCurrentSession(null);
+    setCurrentView('studio');
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-cyber-black flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-neon-green border-t-transparent rounded-none animate-spin mx-auto mb-4 neon-glow-green"></div>
+          <div className="w-16 h-16 border-4 border-neon-green border-t-transparent animate-spin mx-auto mb-4"></div>
           <p className="text-cyber-gray font-mono">Initializing MagicDJ...</p>
         </div>
       </div>
@@ -265,17 +278,11 @@ function App() {
     <ErrorBoundary>
       <div className="min-h-screen bg-cyber-black">
         <NotificationSystem />
-        
-        {/* Authentication Modal */}
-        <AuthModal 
-          isOpen={showAuthModal} 
-          onClose={() => setShowAuthModal(false)} 
-        />
-        
-        {currentView === 'landing' && (
-          <LandingPage onStartMixing={handleStartMixing} />
-        )}
-        
+
+        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+
+        {currentView === 'landing' && <LandingPage onStartMixing={handleStartMixing} />}
+
         {currentView === 'studio' && (
           <MagicStudio
             user={user}
@@ -285,33 +292,33 @@ function App() {
             recentSessions={recentSessions}
           />
         )}
-        
+
         {currentView === 'editor' && currentPlaylist && (
           <div className="min-h-screen bg-cyber-black">
-            <div className="px-4 lg:px-6 py-4 lg:py-6 border-b border-neon-green">
+            <div className="px-4 py-4 border-b border-neon-green">
               <div className="max-w-7xl mx-auto flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <button
                     onClick={handleBackToStudio}
-                    className="w-8 h-8 lg:w-10 lg:h-10 rounded-none bg-cyber-dark border border-neon-green hover:neon-glow-green flex items-center justify-center transition-all"
+                    className="w-8 h-8 rounded bg-cyber-dark border border-neon-green flex items-center justify-center"
                   >
-                    <ArrowLeft className="w-4 h-4 lg:w-5 lg:h-5 neon-text-green" />
+                    <ArrowLeft className="w-4 h-4 neon-text-green" />
                   </button>
                   <div>
-                    <h1 className="text-xl lg:text-2xl font-bold text-cyber-white">Playlist Editor</h1>
+                    <h1 className="text-xl font-bold text-cyber-white">Playlist Editor</h1>
                     <p className="text-sm text-cyber-gray">Fine-tune your AI-generated set</p>
                   </div>
                 </div>
                 <button
                   onClick={() => handlePlaylistEdited(currentPlaylist)}
-                  className="cyber-button px-4 py-2 rounded-none flex items-center space-x-2"
+                  className="cyber-button px-4 py-2 flex items-center space-x-2"
                 >
                   <Play className="w-4 h-4 neon-text-green" />
                   <span>Send to Player</span>
                 </button>
               </div>
             </div>
-            <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8">
+            <div className="max-w-7xl mx-auto px-4 py-8">
               <PlaylistEditor
                 playlist={currentPlaylist}
                 currentTrackIndex={0}
@@ -324,8 +331,8 @@ function App() {
             </div>
           </div>
         )}
-        
-        {currentView === 'player' && (
+
+        {currentView === 'player' && currentPlaylist && (
           <ProfessionalMagicPlayer
             playlist={currentPlaylist}
             session={currentSession}
@@ -335,7 +342,7 @@ function App() {
             onBack={handleBackToStudio}
           />
         )}
-        
+
         {currentView === 'analytics' && currentPlaylist && currentSession && (
           <AnalyticsExport
             playlist={currentPlaylist}
@@ -345,13 +352,15 @@ function App() {
             onEditAgain={handleEditAgain}
           />
         )}
-        
+
         {currentView === 'library' && (
           <LibraryProfile
             onBack={handleBackToStudio}
             onPlaylistSelect={handlePlaylistSelect}
             onCreateNew={handleBackToStudio}
             savedPlaylists={userPlaylists}
+          />
+        )}
       </div>
     </ErrorBoundary>
   );
