@@ -5,31 +5,21 @@ export const testSupabaseConnection = async () => {
   try {
     logger.info('SupabaseTest', 'Testing Supabase connection...');
     
-    // Test basic connection with a simple query that doesn't depend on custom tables
+    // Test basic connection with profiles table
     const { data, error } = await supabase
-      .from('auth.users')
-      .select('id')
+      .from('profiles')
+      .select('count')
       .limit(1);
     
     if (error) {
-      // If auth.users fails, try a more basic connection test
-      logger.warn('SupabaseTest', 'Auth table access failed, testing basic connection');
+      // If profiles table doesn't exist, provide helpful message
+      logger.warn('SupabaseTest', 'Database tables not found - migration needed');
       
-      try {
-        const { data: healthData, error: healthError } = await supabase
-          .rpc('version');
-        
-        if (healthError) {
-          logger.error('SupabaseTest', 'Supabase connection failed', healthError);
-          return { success: false, error: healthError.message };
-        }
-        
-        logger.info('SupabaseTest', 'Basic Supabase connection successful');
-        return { success: true, data: healthData, warning: 'Custom tables may not be available' };
-      } catch (basicError) {
-        logger.error('SupabaseTest', 'Basic connection test failed', basicError);
-        return { success: false, error: 'Unable to connect to Supabase' };
-      }
+      return { 
+        success: false, 
+        error: 'Database tables not found. Please run the migration to create the required tables.',
+        needsMigration: true
+      };
     }
     
     logger.info('SupabaseTest', 'Supabase connection successful');
