@@ -10,9 +10,9 @@
   </head>
   <body>
     <div id="root"></div>
-    <script>
-      // Only load manifest in production to avoid Service Worker conflicts with Vite HMR
-      if (!location.hostname.includes('localhost') && !location.hostname.includes('127.0.0.1') && location.port !== '5173') {
+    <script type="module">
+      // Only load manifest in production to avoid SW/HMR conflicts in dev
+      if (import.meta.env && import.meta.env.PROD) {
         const manifestLink = document.createElement('link');
         manifestLink.rel = 'manifest';
         manifestLink.href = '/manifest.json';

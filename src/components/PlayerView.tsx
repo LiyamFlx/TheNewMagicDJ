@@ -22,20 +22,48 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
     if (!audio || !currentTrack) return;
 
     // Update audio source when track changes
-    audio.src = currentTrack.preview_url || '';
+    // Ensure we always have a playable source
+    audio.crossOrigin = 'anonymous';
+    audio.preload = 'metadata';
+    if (currentTrack.preview_url && currentTrack.preview_url.trim() !== '') {
+      audio.src = currentTrack.preview_url;
+    } else {
+      const demoAudioSources = [
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
+      ];
+      const audioIndex = Math.abs(currentTrack.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % demoAudioSources.length;
+      audio.src = demoAudioSources[audioIndex];
+    }
     audio.load();
     setCurrentTime(0);
 
     const updateTime = () => setCurrentTime(audio.currentTime);
     const updateDuration = () => setDuration(audio.duration);
 
+    const onError = (e: Event) => {
+      const target = e.target as HTMLAudioElement;
+      console.error('Audio element error', {
+        src: target.src,
+        networkState: target.networkState,
+        readyState: target.readyState,
+        error: target.error?.message
+      });
+      // Fallback duration if metadata fails
+      setDuration(currentTrack.duration ?? 180);
+    };
+
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', updateDuration);
+    audio.addEventListener('error', onError);
     audio.addEventListener('ended', handleNext);
 
     return () => {
       audio.removeEventListener('timeupdate', updateTime);
       audio.removeEventListener('loadedmetadata', updateDuration);
+      audio.removeEventListener('error', onError);
       audio.removeEventListener('ended', handleNext);
     };
   }, [currentTrackIndex, currentTrack]);
@@ -51,6 +79,10 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
     if (!audio) return;
 
     try {
+      if (!audio.src) {
+        console.warn('No audio source set; skipping play.');
+        return;
+      }
       if (isPlaying) {
         audio.pause();
         setIsPlaying(false);

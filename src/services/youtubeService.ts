@@ -65,16 +65,31 @@ export class YouTubeService {
   }
 
   async getFallbackTracks(seed: string, count: number): Promise<Track[]> {
-    // Lightweight fallback using search without API key
-    try {
-      return this.searchTracks(seed || 'electronic music mix', count);
-    } catch {
-      // If search fails, return simple placeholders
+    // If no API key, avoid calling YouTube API entirely
+    if (!this.apiKey) {
       const tracks: Track[] = [];
       for (let i = 0; i < count; i++) {
         tracks.push({
           id: `yt-fallback-${Date.now()}-${i}`,
-          title: `YouTube Fallback ${i + 1}`,
+          title: `${(seed || 'Electronic mix').trim()} – Fallback ${i + 1}`,
+          artist: 'YouTube',
+          album: 'YouTube',
+          duration: 0,
+          preview_url: undefined,
+        });
+      }
+      return tracks;
+    }
+
+    // With API key present, try a real search but still degrade gracefully
+    try {
+      return this.searchTracks(seed || 'electronic music mix', count);
+    } catch {
+      const tracks: Track[] = [];
+      for (let i = 0; i < count; i++) {
+        tracks.push({
+          id: `yt-fallback-${Date.now()}-${i}`,
+          title: `${(seed || 'Electronic mix').trim()} – Fallback ${i + 1}`,
           artist: 'YouTube',
           album: 'YouTube',
           duration: 0,

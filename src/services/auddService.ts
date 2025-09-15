@@ -34,8 +34,9 @@ class AudDService {
 
   constructor() {
     this.apiToken = import.meta.env.VITE_AUDD_API_TOKEN;
+    // Be quiet in constructor; only warn when used and missing
     if (!this.apiToken) {
-      logger.warn('AudDService', 'API token not configured');
+      logger.debug('AudDService', 'API token not configured');
     }
   }
 

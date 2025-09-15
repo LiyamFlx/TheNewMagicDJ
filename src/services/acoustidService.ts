@@ -31,8 +31,9 @@ class AcoustIDService {
 
   constructor() {
     this.apiKey = import.meta.env.VITE_ACOUSTID_API_KEY;
+    // Be quiet in constructor; only warn when used and missing
     if (!this.apiKey) {
-      logger.warn('AcoustIDService', 'API key not configured');
+      logger.debug('AcoustIDService', 'API key not configured');
     }
   }
 
