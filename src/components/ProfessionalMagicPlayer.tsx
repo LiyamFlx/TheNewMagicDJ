@@ -72,7 +72,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         audio.src = currentTrack.preview_url;
       } else {
         // Use a demo audio file for tracks without preview
-        audio.src = 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav';
+        audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
       }
       
       setAudioA(audio);
@@ -88,7 +88,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       if (nextTrack.preview_url) {
         audio.src = nextTrack.preview_url;
       } else {
-        audio.src = 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav';
+        audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
       }
       
       setAudioB(audio);

@@ -133,7 +133,7 @@ class PlaylistService {
         };
 
         const genreMap: { [key: string]: string[] } = {
-          electronic: ['electronic', 'house', 'techno', 'edm'],
+          electronic: ['electronic', 'house', 'techno'],
           'hip-hop': ['hip-hop', 'rap', 'trap'],
           house: ['house', 'deep-house', 'tech-house'],
           techno: ['techno', 'minimal-techno', 'detroit-techno']
