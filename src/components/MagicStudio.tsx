@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Zap, Music, Mic, Upload, ArrowLeft, Sparkles, Wand2, Radio, Headphones } from 'lucide-react';
+import { Zap, Music, Mic, Upload, ArrowLeft, Sparkles, Wand2, Radio, Headphones, BarChart3, Save, History } from 'lucide-react';
 import { User, Playlist } from '../types';
 import { playlistService } from '../services/playlistService';
 import { audioProcessingService } from '../services/audioProcessingService';
@@ -9,13 +9,22 @@ interface MagicStudioProps {
   user: User | null;
   onPlaylistGenerated: (playlist: Playlist) => void;
   onBack: () => void;
+  onLibraryAccess?: () => void;
+  recentSessions?: any[];
 }
 
-const MagicStudio: React.FC<MagicStudioProps> = ({ user, onPlaylistGenerated, onBack }) => {
+const MagicStudio: React.FC<MagicStudioProps> = ({ 
+  user, 
+  onPlaylistGenerated, 
+  onBack, 
+  onLibraryAccess,
+  recentSessions = []
+}) => {
   const [activeMode, setActiveMode] = useState<'match' | 'set' | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [statusMessage, setStatusMessage] = useState('');
+  const [showRecentSessions, setShowRecentSessions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleMagicMatch = async (source: 'mic' | 'file' | 'stream') => {
@@ -281,6 +290,22 @@ const MagicStudio: React.FC<MagicStudioProps> = ({ user, onPlaylistGenerated, on
             </div>
           </div>
           <div className="flex items-center space-x-2 lg:space-x-4">
+            <button
+              onClick={() => setShowRecentSessions(!showRecentSessions)}
+              className="cyber-button px-3 py-2 rounded-none flex items-center space-x-2 text-sm"
+            >
+              <History className="w-4 h-4 neon-text-green" />
+              <span className="hidden sm:inline">Recent</span>
+            </button>
+            {onLibraryAccess && (
+              <button
+                onClick={onLibraryAccess}
+                className="cyber-button cyber-button-purple px-3 py-2 rounded-none flex items-center space-x-2 text-sm"
+              >
+                <Save className="w-4 h-4 neon-text-purple" />
+                <span className="hidden sm:inline">Library</span>
+              </button>
+            )}
             <div className="hidden sm:block text-right">
               <p className="text-sm text-cyber-dim">Welcome back,</p>
               <p className="font-medium truncate max-w-32 lg:max-w-none text-cyber-white">{user?.email}</p>
@@ -292,6 +317,28 @@ const MagicStudio: React.FC<MagicStudioProps> = ({ user, onPlaylistGenerated, on
         </div>
       </div>
 
+      {/* Recent Sessions Panel */}
+      {showRecentSessions && (
+        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-4">
+          <div className="cyber-card rounded-none p-4">
+            <h3 className="text-lg font-bold neon-text-green mb-4">Recent Sessions</h3>
+            {recentSessions.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {recentSessions.slice(0, 6).map((session, index) => (
+                  <div key={index} className="cyber-card rounded-none p-3 hover:neon-glow-green cursor-pointer">
+                    <h4 className="font-medium text-cyber-white truncate">{session.name || `Session ${index + 1}`}</h4>
+                    <p className="text-sm text-cyber-gray">{session.tracks?.length || 0} tracks</p>
+                    <p className="text-xs text-cyber-dim">{new Date(session.created_at || Date.now()).toLocaleDateString()}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-cyber-gray">No recent sessions found</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8 lg:py-12">
         <div className="text-center mb-8 lg:mb-16">
@@ -299,7 +346,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({ user, onPlaylistGenerated, on
             Choose Your Magic
           </h1>
           <p className="text-lg lg:text-xl text-cyber-gray max-w-2xl mx-auto px-4">
-            Select how you want to create your next incredible DJ set
+            AI-assisted creation, playback, and analysis of DJ sets with real-time crowd sensing
           </p>
         </div>
 
