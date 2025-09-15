@@ -133,22 +133,22 @@ class PlaylistService {
         };
 
         const genreMap: { [key: string]: string[] } = {
-          electronic: ['electronic', 'house', 'techno'],
-          'hip-hop': ['hip-hop', 'rap', 'trap'],
-          house: ['house', 'deep-house', 'tech-house'],
-          techno: ['techno', 'minimal-techno', 'detroit-techno']
+          electronic: ['house', 'dance', 'pop'],
+          'hip-hop': ['hip-hop', 'rap', 'pop'],
+          house: ['house', 'dance', 'pop'],
+          techno: ['house', 'dance', 'electronic']
         };
 
         const energy = energyMap[energyLevel];
-        const genres = genreMap[vibe.toLowerCase()] || genreMap.electronic;
+        const genres = genreMap[vibe.toLowerCase()] || ['pop', 'dance', 'electronic'];
 
         const tracks = await this.spotifyService.getRecommendations({
           seed_genres: genres,
           limit: 20,
-          target_energy: energy.energy,
-          target_danceability: 0.6,
-          min_tempo: energy.tempo_min,
-          max_tempo: energy.tempo_max
+          target_energy: undefined,
+          target_danceability: undefined,
+          min_tempo: undefined,
+          max_tempo: undefined
         });
 
         const playlist: Playlist = {

@@ -63,12 +63,20 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       
       audio.addEventListener('ended', handleTrackEnd);
       audio.addEventListener('error', (e) => {
-        console.error('Audio error:', e);
+        const target = e.target as HTMLAudioElement;
+        const error = target.error;
+        console.error('Audio error:', {
+          code: error?.code,
+          message: error?.message,
+          src: target.src,
+          networkState: target.networkState,
+          readyState: target.readyState
+        });
         setIsLoading(false);
       });
       
       // Try preview URL first, fallback to a demo track
-      if (currentTrack.preview_url) {
+      if (currentTrack.preview_url && currentTrack.preview_url.trim() !== '') {
         audio.src = currentTrack.preview_url;
       } else {
         // Use a demo audio file for tracks without preview
@@ -85,7 +93,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       audio.crossOrigin = 'anonymous';
       audio.preload = 'metadata';
       
-      if (nextTrack.preview_url) {
+      if (nextTrack.preview_url && nextTrack.preview_url.trim() !== '') {
         audio.src = nextTrack.preview_url;
       } else {
         audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
