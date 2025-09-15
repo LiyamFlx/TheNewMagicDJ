@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Menu, 
-  X, 
-  Home, 
-  Wand2, 
-  Music, 
-  BarChart3, 
-  Save, 
+import {
+  Menu,
+  X,
+  Home,
+  Wand2,
+  Music,
+  BarChart3,
+  Save,
   Play,
   ChevronRight,
-  Settings,
   User
 } from 'lucide-react';
 
@@ -33,11 +32,9 @@ const Navigation: React.FC<NavigationProps> = ({
   onBack
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
       if (window.innerWidth >= 768) {
         setIsMobileMenuOpen(false);
       }
