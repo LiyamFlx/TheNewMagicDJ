@@ -11,12 +11,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { signInOrUp } = useAuth();
+  const { signIn, signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,14 +24,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
     try {
       if (isLogin) {
-        const { error } = await signInOrUp(email, password);
+        const { error } = await signIn(email, password);
         if (error) {
           setError(error.message);
         } else {
           onClose();
         }
       } else {
-        const { error } = await signInOrUp(email, password);
+        const { error } = await signUp(email, password);
         if (error) {
           setError(error.message);
         } else {
@@ -49,7 +48,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const resetForm = () => {
     setEmail('');
     setPassword('');
-    setDisplayName('');
     setError('');
     setShowPassword(false);
   };
@@ -107,24 +105,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* Display Name Field (Sign Up Only) */}
-            {!isLogin && (
-              <div>
-                <label className="block text-sm font-bold text-cyber-gray mb-2 tracking-wide">
-                  DJ NAME
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neon-purple" />
-                  <input
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-cyber-dark border border-neon-purple rounded-sm focus:outline-none focus:border-neon-green text-cyber-white placeholder-cyber-dim"
-                    placeholder="DJ Cyber"
-                  />
-                </div>
-              </div>
-            )}
 
             {/* Password Field */}
             <div>

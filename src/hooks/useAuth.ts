@@ -78,22 +78,17 @@ export const useAuth = () => {
     };
   }, []);
 
-  const signUp = async (email: string, password: string, displayName?: string) => {
+  const signUp = async (email: string, password: string) => {
     setAuthState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { display_name: displayName } },
-      });
+      const { data, error } = await supabase.auth.signUp({ email, password });
 
       if (error) {
         setAuthState((prev) => ({ ...prev, error: error.message, loading: false }));
         return { data: null, error };
       }
 
-      logger.info('useAuth', 'User signed up successfully', { userId: data.user?.id });
       return { data, error: null };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Sign up failed';
@@ -113,7 +108,6 @@ export const useAuth = () => {
         return { data: null, error };
       }
 
-      logger.info('useAuth', 'User signed in successfully', { userId: data.user?.id });
       return { data, error: null };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Sign in failed';
@@ -133,7 +127,6 @@ export const useAuth = () => {
         return { error };
       }
 
-      logger.info('useAuth', 'User signed out successfully');
       setAuthState({ user: null, session: null, loading: false, error: null });
       return { error: null };
     } catch (error) {
