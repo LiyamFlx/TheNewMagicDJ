@@ -77,10 +77,6 @@ function App() {
     setCurrentView('editor');
   };
 
-  const handleBackToLandingFromAnalytics = () => {
-    console.log('App', 'Returning to landing page');
-    setCurrentView('landing');
-  };
 
   const handleSaveToLibrary = (playlist: Playlist) => {
     setSavedPlaylists(prev => [...prev, playlist]);

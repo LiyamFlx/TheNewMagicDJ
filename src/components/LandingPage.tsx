@@ -3,6 +3,8 @@ import { Play, Music, Sparkles, Zap, BarChart3, Users } from 'lucide-react';
 
 interface LandingPageProps {
   onStartMixing: () => void;
+  onLibraryAccess?: () => void;
+  recentSessions?: any[];
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onStartMixing }) => {
