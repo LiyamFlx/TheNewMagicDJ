@@ -44,12 +44,10 @@ interface LastFmSimilarTracks {
 
 class LastFmService {
   private apiKey: string;
-  private secret: string;
   private baseUrl = 'https://ws.audioscrobbler.com/2.0/';
 
   constructor() {
     this.apiKey = import.meta.env.VITE_LASTFM_API_KEY;
-    this.secret = import.meta.env.VITE_LASTFM_SECRET;
     
     if (!this.apiKey) {
       logger.warn('LastFmService', 'API key not configured');
@@ -105,7 +103,7 @@ class LastFmService {
             title: data.track.name,
             artist: data.track.artist.name,
             album: data.track.album?.title,
-            duration: data.track.duration ?? 0 ? parseInt(data.track.duration ?? 0) : 180,
+            duration: data.track.duration ? parseInt(data.track.duration, 10) : 180,
             images: data.track.album?.image?.map(img => ({
               url: img['#text'],
               height: img.size === 'large' ? 300 : img.size === 'medium' ? 174 : 64,

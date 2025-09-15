@@ -2,10 +2,8 @@ import { AudioFingerprint } from '../types';
 import { logger } from '../utils/logger';
 import { acoustidService } from './acoustidService';
 import { auddService } from './auddService';
-import { errorHandler } from '../utils/errorHandler';
 
 class AudioProcessingService {
-  private mediaRecorder: MediaRecorder | null = null;
   private audioStream: MediaStream | null = null;
   private audioContext: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;

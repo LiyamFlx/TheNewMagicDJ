@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Music, Clock, TrendingUp, Search, Filter, Grid, List, ArrowLeft, Trash2, Edit3, Play } from 'lucide-react';
+import { Search, Grid, List, ArrowLeft, Trash2, Edit3, Play, Save, Music } from 'lucide-react';
 import { User, Playlist } from '../types';
 
 interface LibraryItem {
@@ -40,11 +40,11 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
     const libraryItems: LibraryItem[] = savedPlaylists.map(playlist => ({
       id: playlist.id,
       name: playlist.name,
-      type: playlist.type,
+      type: playlist.type === 'magic_match' ? 'magic_match' : 'magic_set',
       tracks: playlist.tracks.length,
-      duration: playlist.total_duration,
-      created_at: playlist.created_at,
-      energy: Math.round((playlist.tracks.reduce((sum, track) => sum + (track.energy || 0.5), 0) / playlist.tracks.length) * 100) || 75
+      duration: playlist.total_duration ?? 0,
+      created_at: playlist.created_at ?? new Date().toISOString(),
+      energy: Math.round((playlist.tracks.reduce((sum, track) => sum + (track.energy || 0.5), 0) / Math.max(1, playlist.tracks.length)) * 100) || 75
     }));
     
     setLibrary(libraryItems);

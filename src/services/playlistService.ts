@@ -1,9 +1,7 @@
 import { Playlist, Track, RecognitionResult } from '../types';
 import { youtubeService } from './youtubeService';
 import { mockSpotifyService } from './mockSpotifyService';
-import { supabasePlaylistService } from './supabasePlaylistService';
 import { logger } from '../utils/logger';
-import { errorHandler } from '../utils/errorHandler';
 
 class PlaylistService {
   private musicService = youtubeService;
@@ -97,7 +95,7 @@ class PlaylistService {
             ? `AI-curated playlist based on "${recognizedTrack.title}" by ${recognizedTrack.artist}`
             : 'AI-curated playlist based on audio recognition',
           tracks,
-          total_duration: tracks.reduce((sum, track) => sum + track.duration ?? 0, 0),
+          total_duration: tracks.reduce((sum, track) => sum + (track.duration ?? 0), 0),
           created_at: new Date().toISOString(),
           user_id: userId || 'demo-user',
           type: 'magic_match',
@@ -153,7 +151,7 @@ class PlaylistService {
           name: `Magic Set: ${vibe.charAt(0).toUpperCase() + vibe.slice(1)} (${energyLevel.toUpperCase()})`,
           description: `AI-generated ${vibe} playlist with ${energyLevel} energy`,
           tracks,
-          total_duration: tracks.reduce((sum, track) => sum + track.duration ?? 0, 0),
+          total_duration: tracks.reduce((sum, track) => sum + (track.duration ?? 0), 0),
           created_at: new Date().toISOString(),
           user_id: userId || 'demo-user',
           type: 'magic_set',
