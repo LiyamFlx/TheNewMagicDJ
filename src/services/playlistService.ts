@@ -1,16 +1,13 @@
 import { Playlist, Track, RecognitionResult } from '../types';
-import { productionSpotifyService } from './productionSpotifyService';
-import { mockSpotifyService } from './mockSpotifyService';
+import { youtubeService } from './youtubeService';
 import { acoustidService } from './acoustidService';
 import { auddService } from './auddService';
 import { lastfmService } from './lastfmService';
 import { logger } from '../utils/logger';
 import { errorHandler } from '../utils/errorHandler';
 
-const USE_MOCK_SERVICES = import.meta.env.VITE_USE_MOCK_SERVICES === 'true';
-
 class PlaylistService {
-  private spotifyService = USE_MOCK_SERVICES ? mockSpotifyService : productionSpotifyService;
+  private musicService = youtubeService;
 
   async generateMagicMatchPlaylist(fingerprint?: string, seedTrack?: Track): Promise<Playlist> {
     return logger.trackOperation(
@@ -49,17 +46,11 @@ class PlaylistService {
         let tracks: Track[] = [];
 
         if (baseTrack) {
-          // Get recommendations based on the recognized/seed track
+          // Get YouTube recommendations based on the recognized/seed track
           try {
-            // Try Spotify first
-            if (baseTrack.spotify_id) {
-              tracks = await this.spotifyService.getRecommendations({
-                seed_tracks: [baseTrack.spotify_id],
-                limit: 15,
-                target_energy: 0.7,
-                target_danceability: 0.8
-              });
-            }
+            // Search for similar tracks on YouTube
+            const searchQuery = `${baseTrack.artist} ${baseTrack.title} similar music`;
+            tracks = await this.musicService.searchTracks(searchQuery, 15);
             
             // Enhance with Last.fm similar tracks if available
             if (tracks.length < 10 && lastfmService.isConfigured()) {
@@ -81,13 +72,9 @@ class PlaylistService {
 
         // Fallback to genre-based recommendations if track-based failed
         if (tracks.length === 0) {
-          tracks = await this.spotifyService.getRecommendations({
+          tracks = await this.musicService.getRecommendations({
             seed_genres: ['electronic', 'house', 'techno'],
-            limit: 15,
-            target_energy: 0.7,
-            target_danceability: 0.8,
-            min_tempo: 120,
-            max_tempo: 140
+            limit: 15
           });
         }
 
@@ -127,28 +114,19 @@ class PlaylistService {
       'generateMagicSetPlaylist',
       async () => {
         const energyMap = {
-          low: { energy: 0.3, tempo_min: 80, tempo_max: 110 },
-          medium: { energy: 0.6, tempo_min: 110, tempo_max: 130 },
-          high: { energy: 0.8, tempo_min: 130, tempo_max: 150 }
-        };
-
-        const genreMap: { [key: string]: string[] } = {
-          electronic: ['house', 'dance', 'pop'],
-          'hip-hop': ['hip-hop', 'rap', 'pop'],
-          house: ['house', 'dance', 'pop'],
-          techno: ['house', 'dance', 'electronic']
+          low: 'low',
+          medium: 'medium', 
+          high: 'high'
         };
 
         const energy = energyMap[energyLevel];
-        const genres = genreMap[vibe.toLowerCase()] || ['pop', 'dance', 'electronic'];
+        const genres = [vibe.toLowerCase()];
 
-        const tracks = await this.spotifyService.getRecommendations({
+        const tracks = await this.musicService.getRecommendations({
           seed_genres: genres,
           limit: 20,
-          target_energy: undefined,
-          target_danceability: undefined,
-          min_tempo: undefined,
-          max_tempo: undefined
+          vibe: vibe.toLowerCase(),
+          energy: energy
         });
 
         const playlist: Playlist = {

@@ -77,7 +77,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       
       // Try preview URL first, fallback to a demo track
       if (currentTrack.preview_url && currentTrack.preview_url.trim() !== '') {
-        audio.src = currentTrack.preview_url;
+        // For YouTube URLs, we'll use a demo audio file since we can't directly play YouTube videos
+        if (currentTrack.preview_url.includes('youtube.com')) {
+          audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+        } else {
+          audio.src = currentTrack.preview_url;
+        }
       } else {
         // Use a demo audio file for tracks without preview
         audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
@@ -94,7 +99,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       audio.preload = 'metadata';
       
       if (nextTrack.preview_url && nextTrack.preview_url.trim() !== '') {
-        audio.src = nextTrack.preview_url;
+        // For YouTube URLs, we'll use a demo audio file
+        if (nextTrack.preview_url.includes('youtube.com')) {
+          audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+        } else {
+          audio.src = nextTrack.preview_url;
+        }
       } else {
         audio.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
       }
