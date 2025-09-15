@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X, AlertTriangle, CheckCircle, Info, AlertCircle } from 'lucide-react';
 import { AppError } from '../utils/errorHandler';
 

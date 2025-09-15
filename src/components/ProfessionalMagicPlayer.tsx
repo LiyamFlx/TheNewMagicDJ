@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, SkipForward, SkipBack, Volume2, Headphones, Settings, ArrowLeft, Square, Repeat, Shuffle, Menu, X, List, Activity, Music, Zap, Radio, Crosshair, RotateCcw } from 'lucide-react';
 import { Playlist, Session, Track } from '../types';
 import MagicDancer from './MagicDancer';
@@ -259,7 +259,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
     // Draw BPM markers
     if (track.bpm) {
-      const beatInterval = (60 / track.bpm) * (width / (track.duration || 180));
+      const beatInterval = (60 / track.bpm) * (width / (track.duration ?? 0 || 180));
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
       ctx.lineWidth = 1;
       for (let beat = 0; beat < width; beat += beatInterval) {

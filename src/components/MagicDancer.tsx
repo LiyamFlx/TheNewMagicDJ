@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Users, Activity, TrendingUp, Volume2, Zap, Eye, Heart, Music } from 'lucide-react';
 
 interface CrowdMetrics {

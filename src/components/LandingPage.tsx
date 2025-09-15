@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Zap, Music, Users, BarChart3, Play, Headphones, Sparkles, ArrowRight, Radio, Disc, Waves as Waveform } from 'lucide-react';
 
 interface LandingPageProps {

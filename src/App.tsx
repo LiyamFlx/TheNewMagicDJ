@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
 import NotificationSystem from './components/NotificationSystem';
 import LandingPage from './components/LandingPage';
@@ -127,37 +127,17 @@ function App() {
     // Create a new session in the database
     if (user) {
       try {
-        const { data: session, error } = await supabase.from("sessions").insert([{ user_id: user.id }])({
-          user_id: user.id,
-          playlist_id: playlist.id,
-          name: `${playlist.name} Session`,
-          status: 'active'
-        });
-
-        if (!error && session) {
-          setCurrentSession(session);
-        }
-      } catch (error) {
-        logger.error('App', 'Failed to create session', error);
-      }
-    }
-
-    setCurrentView('player');
+        const { data: session, error } = await supabase.from("sessions").insert([{ user_id: user.id }]), {
+      const { data: session, error } = await supabase
+        .from("sessions")
+        .insert([{ user_id: user.id, playlist_id: playlist.id, name: `${playlist.name} Session`, status: "active" }])
+        .select()
+        .single();
+      if (error) throw error;
+      setCurrentSession(session);    setCurrentView('player');
   };
 
   const handlePlayPause = (playing: boolean) => {
-    setIsPlaying(playing);
-    logger.info('App', `Playback ${playing ? 'started' : 'paused'}`);
-  };
-
-  const handleSessionEnd = async () => {
-    logger.info('App', 'Session ended, showing analytics');
-    
-    if (currentSession && user) {
-      try {
-        const { data: updatedSession } = await supabase.from("sessions").update(currentSession.id, {
-          ended_at: new Date().toISOString(),
-          status: 'completed'
         });
         
         if (updatedSession) {
@@ -377,13 +357,10 @@ function App() {
         
         {currentView === 'library' && (
           <LibraryProfile
-            user={user}
             onBack={handleBackToStudio}
             onPlaylistSelect={handlePlaylistSelect}
             onCreateNew={handleBackToStudio}
             savedPlaylists={userPlaylists}
-          />
-        )}
       </div>
     </ErrorBoundary>
   );

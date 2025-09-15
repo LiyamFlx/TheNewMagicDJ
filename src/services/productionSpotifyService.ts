@@ -177,7 +177,7 @@ class ProductionSpotifyService {
             title: track.name,
             artist: track.artists.map(a => a.name).join(', '),
             album: track.album.name,
-            duration: Math.round(track.duration_ms / 1000),
+            duration: Math.round(((track.duration ?? 0) / 1000)),
             preview_url: track.preview_url,
             spotify_id: track.id,
             external_urls: track.external_urls,

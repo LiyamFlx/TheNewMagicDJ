@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { 
   List, 
   Play, 
@@ -53,8 +53,8 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
     track.album?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const totalDuration = playlist.tracks.reduce((sum, track) => sum + track.duration, 0);
-  const remainingDuration = playlist.tracks.slice(currentTrackIndex + 1).reduce((sum, track) => sum + track.duration, 0);
+  const totalDuration = playlist.tracks.reduce((sum, track) => sum + track.duration ?? 0, 0);
+  const remainingDuration = playlist.tracks.slice(currentTrackIndex + 1).reduce((sum, track) => sum + track.duration ?? 0, 0);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -293,7 +293,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
                       {track.key && <span>{track.key}</span>}
                       <span className="flex items-center space-x-1">
                         <Clock className="w-3 h-3" />
-                        <span>{formatTime(track.duration)}</span>
+                        <span>{formatTime(track.duration ?? 0)}</span>
                       </span>
                     </div>
                   </div>

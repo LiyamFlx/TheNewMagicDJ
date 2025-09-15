@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Zap, Music, Mic, Upload, ArrowLeft, Sparkles, Wand2, Radio, Headphones, BarChart3, Save, History, Disc, Crosshair, Volume2 } from 'lucide-react';
 import { User, Playlist } from '../types';
 import { playlistService } from '../services/playlistService';

@@ -105,7 +105,7 @@ class LastFmService {
             title: data.track.name,
             artist: data.track.artist.name,
             album: data.track.album?.title,
-            duration: data.track.duration ? parseInt(data.track.duration) : 180,
+            duration: data.track.duration ?? 0 ? parseInt(data.track.duration ?? 0) : 180,
             images: data.track.album?.image?.map(img => ({
               url: img['#text'],
               height: img.size === 'large' ? 300 : img.size === 'medium' ? 174 : 64,

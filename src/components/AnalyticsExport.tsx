@@ -1,5 +1,5 @@
 import { logger } from "../utils/logger";
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { BarChart3, Download, Share2, TrendingUp, Clock, Users, Zap, Music, Save, ArrowLeft } from 'lucide-react';
 import { Playlist, Session } from '../types';
 
@@ -85,7 +85,7 @@ const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
           tracks: playlist.tracks.map(track => ({
             title: track.title,
             artist: track.artist,
-            duration: track.duration,
+            duration: track.duration ?? 0,
             bpm: track.bpm,
             energy: track.energy
           }))
@@ -112,7 +112,7 @@ const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
         const csvContent = [
           'Track,Artist,Duration,BPM,Energy',
           ...exportData.playlist.tracks.map(track => 
-            `"${track.title}","${track.artist}",${track.duration},${track.bpm || 'N/A'},${track.energy || 'N/A'}`
+            `"${track.title}","${track.artist}",${track.duration ?? 0},${track.bpm || 'N/A'},${track.energy || 'N/A'}`
           )
         ].join('\n');
         
@@ -135,7 +135,7 @@ Date: ${new Date(exportData.session.started_at).toLocaleDateString()}
 
 Tracks:
 ${exportData.playlist.tracks.map((track, i) => 
-  `${i + 1}. ${track.title} - ${track.artist} (${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')})`
+  `${i + 1}. ${track.title} - ${track.artist} (${Math.floor(track.duration ?? 0 / 60)}:${(track.duration ?? 0 % 60).toString().padStart(2, '0')})`
 ).join('\n')}
 
 Analytics:

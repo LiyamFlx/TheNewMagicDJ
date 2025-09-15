@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Save, Music, Clock, TrendingUp, Search, Filter, Grid, List, ArrowLeft, Trash2, Edit3, Play } from 'lucide-react';
 import { User, Playlist } from '../types';
 
