@@ -222,7 +222,6 @@ class ProductionSpotifyService {
         energy: Math.random(),
         danceability: Math.random(),
         valence: Math.random(),
-        preview_url: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav' // Demo audio
         preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' // Demo audio
       });
     }
