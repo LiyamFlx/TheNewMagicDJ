@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Zap, Music, Mic, Upload, ArrowLeft, Sparkles, Wand2, Radio, BarChart3, Save, History, Disc } from 'lucide-react';
+import { Zap, Music, Mic, Upload, ArrowLeft, Sparkles, Wand2, Radio, Headphones, BarChart3, Save, History, Disc } from 'lucide-react';
 import { User, Playlist } from '../types';
 import { playlistService } from '../services/playlistService';
 import { audioProcessingService } from '../services/audioProcessingService';
@@ -340,6 +340,28 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Recent Sessions Panel */}
+      {showRecentSessions && (
+        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-4">
+          <div className="cyber-card rounded-none p-4">
+            <h3 className="text-lg font-bold neon-text-green mb-4">Recent Sessions</h3>
+            {recentSessions.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {recentSessions.slice(0, 6).map((session, index) => (
+                  <div key={index} className="cyber-card rounded-none p-3 hover:neon-glow-green cursor-pointer">
+                    <h4 className="font-medium text-cyber-white truncate">{session.name || `Session ${index + 1}`}</h4>
+                    <p className="text-sm text-cyber-gray">{session.tracks?.length || 0} tracks</p>
+                    <p className="text-xs text-cyber-dim">{new Date(session.created_at || Date.now()).toLocaleDateString()}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-cyber-gray">No recent sessions found</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Enhanced Recent Sessions Panel */}
       {showRecentSessions && (
