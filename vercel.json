@@ -9,6 +9,7 @@
       "destination": "/index.html"
     }
   ],
+  "public": true,
   "headers": [
     {
       "source": "/manifest.json",
