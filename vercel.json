@@ -3,9 +3,11 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/" }
+  "rewrites": [
+    {
+      "source": "/((?!api/.*).*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
@@ -14,6 +16,18 @@
         {
           "key": "Content-Security-Policy",
           "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://www.googleapis.com https://api.audd.io https://api.acoustid.org https://accounts.spotify.com https://api.spotify.com https://ws.audioscrobbler.com https://fonts.googleapis.com https://fonts.gstatic.com https://www.soundhelix.com https://www.soundjay.com; img-src 'self' data: https:; media-src 'self' data: blob: https://www.soundhelix.com https://www.soundjay.com; frame-ancestors 'none'; worker-src 'self';"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
         }
       ]
     }
