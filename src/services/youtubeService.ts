@@ -68,6 +68,18 @@ export class YouTubeService {
   }
 
   async getFallbackTracks(seed: string, count: number): Promise<Track[]> {
+    // Demo audio sources for fallback tracks
+    const demoAudioSources = [
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
+    ];
+
     // If no API key, avoid calling YouTube API entirely
     if (!this.apiKey) {
       const tracks: Track[] = [];
@@ -75,10 +87,15 @@ export class YouTubeService {
         tracks.push({
           id: `yt-fallback-${Date.now()}-${i}`,
           title: `${(seed || 'Electronic mix').trim()} – Fallback ${i + 1}`,
-          artist: 'YouTube',
-          album: 'YouTube',
-          duration: 0,
-          preview_url: undefined,
+          artist: 'Demo Artist',
+          album: 'Demo Collection',
+          duration: 180 + Math.floor(Math.random() * 120), // 3-5 minutes
+          preview_url: demoAudioSources[i % demoAudioSources.length],
+          bpm: Math.floor(Math.random() * 60) + 100, // 100-160 BPM
+          key: ['C', 'D', 'E', 'F', 'G', 'A', 'B'][Math.floor(Math.random() * 7)],
+          energy: Math.random(),
+          danceability: Math.random(),
+          valence: Math.random()
         });
       }
       return tracks;
@@ -93,10 +110,15 @@ export class YouTubeService {
         tracks.push({
           id: `yt-fallback-${Date.now()}-${i}`,
           title: `${(seed || 'Electronic mix').trim()} – Fallback ${i + 1}`,
-          artist: 'YouTube',
-          album: 'YouTube',
-          duration: 0,
-          preview_url: undefined,
+          artist: 'Demo Artist',
+          album: 'Demo Collection',
+          duration: 180 + Math.floor(Math.random() * 120), // 3-5 minutes
+          preview_url: demoAudioSources[i % demoAudioSources.length],
+          bpm: Math.floor(Math.random() * 60) + 100, // 100-160 BPM
+          key: ['C', 'D', 'E', 'F', 'G', 'A', 'B'][Math.floor(Math.random() * 7)],
+          energy: Math.random(),
+          danceability: Math.random(),
+          valence: Math.random()
         });
       }
       return tracks;
