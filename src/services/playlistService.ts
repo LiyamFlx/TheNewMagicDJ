@@ -968,7 +968,7 @@ class PlaylistService {
           tracks,
           total_duration: tracks.reduce((sum, track) => sum + (track.duration ?? 0), 0),
           created_at: new Date().toISOString(),
-          user_id: params.userId || 'demo-user',
+          user_id: params.userId,
           type: 'magic_match',
           metadata: {
             seed_track: recognizedTrack || undefined,
@@ -1041,7 +1041,7 @@ class PlaylistService {
           tracks,
           total_duration: tracks.reduce((sum, track) => sum + (track.duration ?? 0), 0),
           created_at: new Date().toISOString(),
-          user_id: params.userId || 'demo-user',
+          user_id: params.userId,
           type: 'magic_set',
           metadata: {
             vibe: params.vibe,
