@@ -94,7 +94,7 @@ const Navigation: React.FC<NavigationProps> = ({
   return (
     <>
       {/* Main Navigation Bar */}
-      <nav className="bg-cyber-dark border-b-2 border-neon-green backdrop-blur-md sticky top-0 z-40">
+      <nav className="nav-sticky sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo & Brand */}
@@ -109,12 +109,12 @@ const Navigation: React.FC<NavigationProps> = ({
                 </button>
               )}
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-neon-green to-neon-purple rounded-sm flex items-center justify-center">
-                  <Music className="w-6 h-6 text-cyber-black" />
+                <div className="w-10 h-10 glass-card flex items-center justify-center animate-pulse-glow">
+                  <Music className="w-6 h-6 text-gradient-primary" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold neon-text-green font-mono tracking-wider">MagicDJ</h1>
-                  <p className="text-xs text-cyber-gray font-mono hidden sm:block">AI-Powered DJ Platform</p>
+                  <h1 className="text-2xl font-bold font-orbitron text-gradient-primary tracking-wider">MagicDJ</h1>
+                  <p className="text-xs text-gray-400 font-mono hidden sm:block">AI-Powered DJ Platform</p>
                 </div>
               </div>
             </div>
@@ -133,13 +133,9 @@ const Navigation: React.FC<NavigationProps> = ({
                       onClick={() => handleNavigation(item.id)}
                       disabled={isDisabled}
                       className={`
-                        px-4 py-2 rounded-sm flex items-center space-x-2 transition-all font-mono tracking-wide
-                        ${isActive 
-                          ? 'bg-neon-green text-cyber-black border border-neon-green' 
-                          : isDisabled
-                            ? 'text-cyber-dim cursor-not-allowed opacity-50'
-                            : 'text-cyber-white hover:bg-cyber-medium hover:text-neon-green'
-                        }
+                        nav-item font-inter tracking-wide
+                        ${isActive ? 'active' : ''}
+                        ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
                       `}
                       title={item.description}
                     >
@@ -180,22 +176,22 @@ const Navigation: React.FC<NavigationProps> = ({
 
         {/* Breadcrumbs */}
         {breadcrumbs.length > 0 && (
-          <div className="border-t border-cyber-light bg-cyber-darker">
+          <div className="border-t border-glass bg-glass">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center space-x-2 py-3 text-sm font-mono">
-                <Home className="w-4 h-4 text-cyber-dim" />
+                <Home className="w-4 h-4 text-gray-400" />
                 {breadcrumbs.map((crumb, index) => (
                   <React.Fragment key={index}>
-                    <ChevronRight className="w-4 h-4 text-cyber-dim" />
+                    <ChevronRight className="w-4 h-4 text-gray-400" />
                     {crumb.onClick ? (
                       <button
                         onClick={crumb.onClick}
-                        className="text-neon-green hover:text-neon-green-bright transition-colors"
+                        className="text-gradient-accent hover:text-neon-glow transition-colors"
                       >
                         {crumb.label}
                       </button>
                     ) : (
-                      <span className="text-cyber-gray">{crumb.label}</span>
+                      <span className="text-white">{crumb.label}</span>
                     )}
                   </React.Fragment>
                 ))}
@@ -210,14 +206,14 @@ const Navigation: React.FC<NavigationProps> = ({
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
           
-          <div className="fixed top-0 right-0 h-full w-80 max-w-sm bg-cyber-dark border-l-2 border-neon-green">
-            <div className="flex items-center justify-between p-4 border-b border-cyber-light">
-              <h2 className="text-lg font-bold neon-text-green font-mono">Navigation</h2>
+          <div className="fixed top-0 right-0 h-full w-80 max-w-sm glass-card border-l border-glass">
+            <div className="flex items-center justify-between p-4 border-b border-glass">
+              <h2 className="text-lg font-bold text-gradient-primary font-orbitron">Navigation</h2>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="w-8 h-8 bg-cyber-medium border border-red-500 rounded-sm flex items-center justify-center"
+                className="glass-button w-8 h-8 flex items-center justify-center"
               >
-                <X className="w-4 h-4 text-red-400" />
+                <X className="w-4 h-4 text-white" />
               </button>
             </div>
 

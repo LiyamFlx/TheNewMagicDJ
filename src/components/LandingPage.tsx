@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Music, Sparkles, Zap, BarChart3, Users } from 'lucide-react';
+import { Play, Music, Zap, BarChart3, Users } from 'lucide-react';
 
 interface LandingPageProps {
   onStartMixing: () => void;
@@ -32,47 +32,46 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStartMixing }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900">
-      {/* Navigation */}
-      <nav className="px-6 py-4 bg-white/5 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-white">MagicDJ</span>
-          </div>
-          <button 
-            onClick={onStartMixing}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-purple-500/25"
-          >
-            Start Mixing
-          </button>
-        </div>
-      </nav>
+    <div className="min-h-screen gradient-bg-primary relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full blur-3xl animate-float" style={{animationDelay: '1s'}}></div>
+        <div className="absolute top-3/4 left-1/2 w-48 h-48 bg-gradient-to-r from-green-500/20 to-cyan-500/20 rounded-full blur-3xl animate-float" style={{animationDelay: '2s'}}></div>
+      </div>
 
       {/* Hero Section */}
-      <div className="max-w-7xl mx-auto px-6 py-16 text-center">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 text-center">
         <div className="mb-12">
-          <h1 className="text-6xl md:text-8xl font-bold mb-8 text-white leading-tight">
-            The Future of
-            <span className="block bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
+          <h1 className="text-6xl md:text-8xl font-bold mb-8 leading-tight font-orbitron">
+            <span className="text-white">The Future of</span>
+            <span className="block text-gradient-primary text-neon-glow animate-pulse-glow">
               AI DJing
             </span>
           </h1>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed mb-12">
-            Create, perform, and analyze your DJ sets with cutting-edge AI technology. 
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed mb-12 font-inter">
+            Create, perform, and analyze your DJ sets with cutting-edge AI technology.
             Experience the perfect blend of artificial intelligence and musical creativity.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button 
+
+          {/* Animated Waveform */}
+          <div className="flex justify-center mb-12">
+            <div className="flex items-end space-x-1 h-16">
+              {Array.from({ length: 20 }).map((_, i) => (
+                <div key={i} className="waveform-bar"></div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+            <button
               onClick={onStartMixing}
-              className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-lg font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-purple-500/25 flex items-center space-x-3"
+              className="btn-primary flex items-center space-x-3 text-lg hover-lift"
             >
               <Play className="w-6 h-6" />
               <span>Start Creating Now</span>
             </button>
-            <button className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white text-lg font-semibold rounded-xl transition-all duration-300 border border-white/20">
+            <button className="glass-button text-lg font-semibold">
               Watch Demo
             </button>
           </div>
@@ -83,33 +82,35 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStartMixing }) => {
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
-              <div 
+              <div
                 key={index}
-                className="p-8 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 hover:bg-white/10 transition-all duration-300 transform hover:scale-105 group"
+                className="glass-card p-8 hover-lift group"
               >
-                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <div className="w-16 h-16 gradient-bg-secondary rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-neon-pink">
                   <Icon className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-4">{feature.title}</h3>
-                <p className="text-gray-400 leading-relaxed">{feature.description}</p>
+                <h3 className="text-xl font-bold text-white mb-4 font-orbitron">{feature.title}</h3>
+                <p className="text-gray-400 leading-relaxed font-inter">{feature.description}</p>
               </div>
             );
           })}
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-8 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10">
-          <div className="text-center">
-            <div className="text-4xl font-bold text-purple-400 mb-2">10M+</div>
-            <div className="text-gray-400">Tracks Analyzed</div>
-          </div>
-          <div className="text-center">
-            <div className="text-4xl font-bold text-pink-400 mb-2">50K+</div>
-            <div className="text-gray-400">AI Sets Created</div>
-          </div>
-          <div className="text-center">
-            <div className="text-4xl font-bold text-purple-400 mb-2">99.8%</div>
-            <div className="text-gray-400">Recognition Accuracy</div>
+        <div className="glass-card hover-lift">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-8">
+            <div className="text-center">
+              <div className="text-4xl font-bold text-gradient-primary mb-2 font-orbitron">10M+</div>
+              <div className="text-gray-400 font-inter">Tracks Analyzed</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-gradient-accent mb-2 font-orbitron">50K+</div>
+              <div className="text-gray-400 font-inter">AI Sets Created</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-gradient-primary mb-2 font-orbitron">99.8%</div>
+              <div className="text-gray-400 font-inter">Recognition Accuracy</div>
+            </div>
           </div>
         </div>
       </div>

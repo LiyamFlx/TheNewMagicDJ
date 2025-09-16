@@ -115,7 +115,7 @@ function App() {
   const showPlayer = currentView === 'play' && currentPlaylist;
 
   return (
-    <div className="min-h-screen bg-cyber-black">
+    <div className="min-h-screen gradient-bg-primary">
       <Navigation
         currentView={currentView}
         onNavigate={handleNavigation}
