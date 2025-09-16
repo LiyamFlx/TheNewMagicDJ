@@ -103,6 +103,11 @@ class ProductionSpotifyService {
       'getRecommendations',
       async () => {
         try {
+          // In dev, avoid calling serverless API/Spotify and use local fallback
+          if ((import.meta as any)?.env?.DEV) {
+            logger.info('ProductionSpotifyService', 'Dev mode: returning fallback tracks');
+            return this.getFallbackTracks(params.limit || 15);
+          }
           const token = await this.authenticate();
 
           // Client-side rate limit to avoid hammering upstream
@@ -211,18 +216,6 @@ class ProductionSpotifyService {
 
   private getFallbackTracks(count: number): Track[] {
     const fallbackTracks: Track[] = [];
-    const demoTracks = [
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3'
-    ];
 
     for (let i = 0; i < count; i++) {
       fallbackTracks.push({
@@ -236,7 +229,8 @@ class ProductionSpotifyService {
         energy: Math.random(),
         danceability: Math.random(),
         valence: Math.random(),
-        preview_url: demoTracks[i % demoTracks.length] // Use different demo tracks
+        // No external preview to avoid CORS; players will generate local fallback audio
+        preview_url: undefined
       });
     }
 
