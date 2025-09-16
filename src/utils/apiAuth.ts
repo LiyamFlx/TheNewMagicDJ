@@ -3,10 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 // Support both browser (Vite) and serverless (Node) environments
 const isBrowser = typeof window !== 'undefined';
 // @ts-ignore Node process may be undefined in browser builds
-const SUPABASE_URL = (typeof process !== 'undefined' && process?.env?.SUPABASE_URL) ||
+const SUPABASE_URL = (typeof process !== 'undefined' && (process?.env?.SUPABASE_URL || process?.env?.VITE_SUPABASE_URL)) ||
   (isBrowser ? (import.meta as any)?.env?.VITE_SUPABASE_URL : undefined);
 // @ts-ignore Node process may be undefined in browser builds
-const SUPABASE_ANON_KEY = (typeof process !== 'undefined' && process?.env?.SUPABASE_ANON_KEY) ||
+const SUPABASE_ANON_KEY = (typeof process !== 'undefined' && (process?.env?.SUPABASE_ANON_KEY || process?.env?.VITE_SUPABASE_ANON_KEY)) ||
   (isBrowser ? (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY : undefined);
 
 const supabase = createClient(
