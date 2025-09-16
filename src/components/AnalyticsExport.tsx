@@ -1,6 +1,8 @@
 import { logger } from "../utils/logger";
 import { useState, useEffect } from 'react';
 import { BarChart3, Download, Share2, TrendingUp, Clock, Users, Zap, Music, Save, ArrowLeft } from 'lucide-react';
+import { formatTimeClock } from '../utils/format';
+import { getEnergyColor as energyColorUtil } from '../utils/energy';
 import { Playlist, Session } from '../types';
 
 interface AnalyticsData {
@@ -267,23 +269,9 @@ Analytics:
     }
   };
 
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    
-    if (hours > 0) {
-      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  const formatTime = (seconds: number) => formatTimeClock(seconds);
 
-  const getEnergyColor = (energy: number) => {
-    if (energy >= 80) return 'neon-text-green';
-    if (energy >= 60) return 'text-yellow-400';
-    if (energy >= 40) return 'text-orange-400';
-    return 'text-red-400';
-  };
+  const getEnergyColor = (energy: number) => energyColorUtil(energy, 'neon');
 
   if (!analytics) {
     return (

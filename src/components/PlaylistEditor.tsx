@@ -16,6 +16,7 @@ import {
   Edit3
 } from 'lucide-react';
 import { Playlist } from '../types';
+import { formatTimeClock } from '../utils/format';
 
 interface PlaylistEditorProps {
   playlist: Playlist;
@@ -58,16 +59,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
     .slice(currentTrackIndex + 1)
     .reduce((sum, track) => sum + (track.duration ?? 0), 0);
 
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    
-    if (hours > 0) {
-      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  const formatTime = (seconds: number) => formatTimeClock(seconds);
 
   const handleSavePlaylistName = () => {
     const updatedPlaylist = { ...playlist, name: playlistName };

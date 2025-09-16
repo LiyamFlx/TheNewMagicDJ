@@ -5,6 +5,7 @@ import { Playlist } from './types';
 import LandingPage from './components/LandingPage';
 import MagicStudio from './components/MagicStudio';
 import ProfessionalMagicPlayer from './components/ProfessionalMagicPlayer';
+import AuthSaveBanner from './components/AuthSaveBanner';
 import PlaylistEditor from './components/PlaylistEditor';
 import AnalyticsExport from './components/AnalyticsExport';
 import LibraryProfile from './components/LibraryProfile';
@@ -117,6 +118,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen gradient-bg-primary">
+      <AuthSaveBanner />
       <Navigation
         user={user}
         hasPlaylist={!!currentPlaylist}

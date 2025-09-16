@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Play, Pause, SkipBack, SkipForward, Volume2, Shuffle, Repeat, Heart } from 'lucide-react';
 import { Playlist } from '../types';
+import { formatTimeClock } from '../utils/format';
+import { generateWavDataUrl } from '../utils/audioFallback';
 
 interface PlayerViewProps {
   playlist: Playlist;
@@ -27,8 +29,9 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
     if (currentTrack.preview_url && currentTrack.preview_url.trim() !== '') {
       audio.src = currentTrack.preview_url;
     } else {
-      // Use a simple silent audio data URL as fallback
-      audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeBDKJ0fPOgzEHIHjJ+tycRw0UW7zv85xrGw5UqObsu2AcBjSO2OzNeSsFJHPN7tmSPwhGn+J+t2ApDS+5vG0t';
+      // Generate local fallback audio to avoid CORS
+      const baseFreq = 440 + (currentTrackIndex * 20);
+      audio.src = generateWavDataUrl(baseFreq, 12);
     }
     audio.load();
     setCurrentTime(0);
@@ -102,11 +105,7 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
     setCurrentTime(0);
   };
 
-  const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
+  const formatTime = (time: number) => formatTimeClock(time);
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const audio = audioRef.current;

@@ -5,6 +5,8 @@ import MagicDancer from './MagicDancer';
 import PlaylistEditor from './PlaylistEditor';
 import { logger } from '../utils/logger';
 import { throttle } from '../utils/debounce';
+import { formatTimeClock } from '../utils/format';
+import { generateWavDataUrl } from '../utils/audioFallback';
 
 
 interface ProfessionalMagicPlayerProps {
@@ -216,62 +218,9 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         audioSrc: currentTrack.preview_url
       });
     } else {
-      // Generate proper audio data URL as fallback
-      const generateFallbackAudio = (frequency: number = 440): string => {
-        const sampleRate = 22050;
-        const durationSeconds = 15;
-        const samples = sampleRate * durationSeconds;
-        const buffer = new ArrayBuffer(44 + samples * 2);
-        const view = new DataView(buffer);
-
-        // WAV header
-        const writeString = (offset: number, string: string) => {
-          for (let i = 0; i < string.length; i++) {
-            view.setUint8(offset + i, string.charCodeAt(i));
-          }
-        };
-
-        writeString(0, 'RIFF');
-        view.setUint32(4, 36 + samples * 2, true);
-        writeString(8, 'WAVE');
-        writeString(12, 'fmt ');
-        view.setUint32(16, 16, true);
-        view.setUint16(20, 1, true);
-        view.setUint16(22, 1, true);
-        view.setUint32(24, sampleRate, true);
-        view.setUint32(28, sampleRate * 2, true);
-        view.setUint16(32, 2, true);
-        view.setUint16(34, 16, true);
-        writeString(36, 'data');
-        view.setUint32(40, samples * 2, true);
-
-        // Generate audio with musical content
-        for (let i = 0; i < samples; i++) {
-          const time = i / sampleRate;
-          const fadeIn = Math.min(1, time / 0.1);
-          const fadeOut = Math.min(1, (durationSeconds - time) / 0.1);
-          const envelope = Math.min(fadeIn, fadeOut);
-
-          const fundamental = Math.sin(2 * Math.PI * frequency * time);
-          const harmonic = Math.sin(2 * Math.PI * frequency * 2 * time) * 0.3;
-          const rhythm = (Math.floor(time * 2) % 2) * 0.1 + 0.9;
-
-          const sample = (fundamental + harmonic) * envelope * rhythm * 0.6;
-          const intSample = Math.max(-32767, Math.min(32767, sample * 32767));
-          view.setInt16(44 + i * 2, intSample, true);
-        }
-
-        const bytes = new Uint8Array(buffer);
-        let binary = '';
-        for (let i = 0; i < bytes.length; i++) {
-          binary += String.fromCharCode(bytes[i]);
-        }
-        return `data:audio/wav;base64,${btoa(binary)}`;
-      };
-
-      // Use track index to vary frequency
+      // Use track index to vary frequency for local fallback
       const baseFreq = 440 + (currentTrackIndex * 20); // Vary frequency per track
-      audio.src = generateFallbackAudio(baseFreq);
+      audio.src = generateWavDataUrl(baseFreq, 15);
 
       logger.info('ProfessionalMagicPlayer', 'Audio A source set to generated fallback', {
         trackTitle: currentTrack.title,
@@ -709,12 +658,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     }
   };
 
-  const formatTime = (seconds: number): string => {
-    if (!seconds || isNaN(seconds) || seconds < 0) return '0:00';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  // formatTime now provided by utils/format as formatTimeClock
 
   const handleTrackSelect = (index: number) => {
     setCurrentTrackIndex(index);
@@ -900,8 +844,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               ></div>
             </div>
             <div className="flex justify-between text-xs text-slate-400 mt-2 font-orbitron">
-              <span>{formatTime(currentTime)}</span>
-              <span>{formatTime(duration)}</span>
+              <span>{formatTimeClock(currentTime)}</span>
+              <span>{formatTimeClock(duration)}</span>
             </div>
           </div>
 
@@ -981,7 +925,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   <div className="text-slate-400 text-xs">KEY</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-fuchsia-400 font-bold text-lg">{formatTime(currentTrack.duration ?? 180)}</div>
+                  <div className="text-fuchsia-400 font-bold text-lg">{formatTimeClock(currentTrack.duration ?? 180)}</div>
                   <div className="text-slate-400 text-xs">TIME</div>
                 </div>
               </div>
@@ -1006,9 +950,9 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 aria-valuemax={100}
               />
               <div className="flex justify-between text-xs text-slate-400 mt-2 font-orbitron">
-                <span>{formatTime(currentTime)}</span>
+                <span>{formatTimeClock(currentTime)}</span>
                 <span className="text-fuchsia-400">{Math.round(deckAProgress)}%</span>
-                <span>{formatTime(duration || (currentTrack.duration ?? 180))}</span>
+                <span>{formatTimeClock(duration || (currentTrack.duration ?? 180))}</span>
               </div>
             </div>
 
@@ -1172,7 +1116,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 </div>
                 <div className="flex justify-between items-center p-2 bg-glass rounded-lg">
                   <span className="text-slate-400 font-orbitron">Remaining:</span>
-                  <span className="text-white font-bold">{formatTime((playlist.tracks.length - currentTrackIndex - 1) * 180)}</span>
+                  <span className="text-white font-bold">{formatTimeClock((playlist.tracks.length - currentTrackIndex - 1) * 180)}</span>
                 </div>
                 <div className="flex justify-between items-center p-2 bg-glass rounded-lg">
                   <span className="text-slate-400 font-orbitron">BPM:</span>
@@ -1231,7 +1175,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                       <div className="text-slate-400 text-xs">KEY</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-cyan-400 font-bold text-lg">{formatTime(nextTrack.duration ?? 180)}</div>
+                      <div className="text-cyan-400 font-bold text-lg">{formatTimeClock(nextTrack.duration ?? 180)}</div>
                       <div className="text-slate-400 text-xs">TIME</div>
                     </div>
                   </div>
@@ -1256,7 +1200,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <div className="flex justify-between text-xs text-slate-400 mt-2 font-orbitron">
                 <span>0:00</span>
                 <span className="text-cyan-400">{Math.round(deckBProgress)}%</span>
-                <span>{nextTrack ? formatTime(nextTrack.duration ?? 180) : '--:--'}</span>
+                <span>{nextTrack ? formatTimeClock(nextTrack.duration ?? 180) : '--:--'}</span>
               </div>
             </div>
 

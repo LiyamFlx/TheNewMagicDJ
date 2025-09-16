@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Users, Activity, TrendingUp, Zap, Heart, Music } from 'lucide-react';
+import { getEnergyColor as energyColorUtil } from '../utils/energy';
 
 interface CrowdMetrics {
   energy: number;
@@ -117,12 +118,7 @@ const MagicDancer: React.FC<MagicDancerProps> = ({
     };
   }, [isActive, crowdMetrics.energy]);
 
-  const getEnergyColor = (value: number) => {
-    if (value >= 80) return 'neon-text-green';
-    if (value >= 60) return 'text-yellow-400';
-    if (value >= 40) return 'text-orange-400';
-    return 'text-red-400';
-  };
+  const getEnergyColor = (value: number) => energyColorUtil(value, 'neon');
 
   const getEnergyLevel = (value: number) => {
     if (value >= 80) return 'PEAK';

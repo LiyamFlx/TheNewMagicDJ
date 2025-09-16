@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Search, Grid, List, ArrowLeft, Trash2, Edit3, Play, Save, Music } from 'lucide-react';
 import { User, Playlist } from '../types';
+import { formatDurationHuman } from '../utils/format';
+import { getEnergyColor } from '../utils/energy';
 
 interface LibraryItem {
   id: string;
@@ -69,22 +71,7 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
       }
     });
 
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    
-    if (hours > 0) {
-      return `${hours}h ${mins}m`;
-    }
-    return `${mins}m`;
-  };
-
-  const getEnergyColor = (energy: number) => {
-    if (energy >= 80) return 'text-gradient-accent';
-    if (energy >= 60) return 'text-yellow-400';
-    if (energy >= 40) return 'text-orange-400';
-    return 'text-red-400';
-  };
+  const formatTime = (seconds: number) => formatDurationHuman(seconds);
 
   const getTypeIcon = (type: string) => {
     return type === 'magic_match' ? '🎯' : '🎵';

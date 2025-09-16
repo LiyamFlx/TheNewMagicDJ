@@ -1,6 +1,7 @@
 import { Track } from '../types';
 import { logger } from '../utils/logger';
 import { fetchWithRetry } from '../utils/http';
+import { generateWavDataUrl } from '../utils/audioFallback';
 
 // =============================================================================
 // TYPE DEFINITIONS & INTERFACES
@@ -107,18 +108,10 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 100; // Conservative limit per minute
 
-const DEMO_AUDIO_URLS = [
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3'
-] as const;
+const DEMO_AUDIO_URLS = (() => {
+  const freqs = [220, 246.94, 261.63, 293.66, 329.63, 349.23, 392.0, 440, 493.88, 523.25];
+  return freqs.map(f => generateWavDataUrl(f, 12));
+})();
 
 const GENRE_TRACK_TITLES = {
   house: ['House Anthem', 'Deep Groove', 'Progressive Beat', 'Club Banger', 'Underground Mix'],
