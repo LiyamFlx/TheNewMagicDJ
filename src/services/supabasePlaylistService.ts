@@ -23,11 +23,11 @@ export const supabasePlaylistService = {
       const { id: playlistId, name, tracks } = playlist;
 
       if (!userId) {
-        throw new AppError('VALIDATION_ERROR', 'User ID is required');
+        throw new AppError('BAD_REQUEST', 'User ID is required');
       }
 
       if (!name || !name.trim()) {
-        throw new AppError('VALIDATION_ERROR', 'Playlist name is required');
+        throw new AppError('BAD_REQUEST', 'Playlist name is required');
       }
 
       // 1. Insert/Update the playlist (use insert with conflict resolution)
@@ -53,7 +53,7 @@ export const supabasePlaylistService = {
 
       // 2. Insert tracks if provided
       if (tracks && tracks.length > 0) {
-        const trackData = tracks.map((track: any, index: number) => ({
+        const trackData = tracks.map((track: any) => ({
           playlist_id: playlistData.id,
           title: track.title || 'Untitled',
           artist: track.artist || 'Unknown Artist',
@@ -61,7 +61,7 @@ export const supabasePlaylistService = {
           energy: track.energy ? Number(track.energy) : null,
           duration: track.duration ? Number(track.duration) : 180,
           source_url: track.url || track.source_url || null
-        })).filter(track => track.title && track.artist); // Filter out invalid tracks
+        })).filter((track: any) => track.title && track.artist); // Filter out invalid tracks
 
         if (trackData.length > 0) {
           const { error: tracksError } = await supabase

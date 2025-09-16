@@ -456,20 +456,19 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
       attemptPlay().catch(error => {
         logger.error('ProfessionalMagicPlayer', 'All play attempts failed', error);
-            onPlayPause(false);
+        onPlayPause(false);
 
-            // Check if this is an autoplay restriction
-            if (error.name === 'NotAllowedError') {
-              setShowUnmuteOverlay(true);
-              logger.info('ProfessionalMagicPlayer', 'Autoplay blocked - showing unmute overlay');
-            } else {
-              // Try to reload the audio for other errors
-              setTimeout(() => {
-                audio.load();
-              }, 1000);
-            }
-          });
-      }
+        // Check if this is an autoplay restriction
+        if (error.name === 'NotAllowedError') {
+          setShowUnmuteOverlay(true);
+          logger.info('ProfessionalMagicPlayer', 'Autoplay blocked - showing unmute overlay');
+        } else {
+          // Try to reload the audio for other errors
+          setTimeout(() => {
+            audio.load();
+          }, 1000);
+        }
+      });
     } else {
       logger.info('ProfessionalMagicPlayer', 'Pausing audio');
       audio.pause();
