@@ -109,18 +109,9 @@ const MAX_TRACKS_PER_PLAYLIST = 1000;
 // Note: Lazy loading chunk size for future pagination implementation
 // const LAZY_LOAD_CHUNK_SIZE = 50;
 
-const FALLBACK_AUDIO_URLS = [
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3',
-  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3'
-] as const;
+// Note: External audio URLs removed to avoid CORS issues
+// Audio players will generate safe local fallback audio automatically
+const FALLBACK_AUDIO_URLS: readonly string[] = [];
 
 // =============================================================================
 // UTILITY FUNCTIONS
@@ -1083,7 +1074,7 @@ class PlaylistService {
           artist: randomResult.artist,
           confidence: randomResult.confidence,
           duration: 180 + Math.floor(Math.random() * 120),
-          preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'
+          preview_url: undefined // Use local audio fallback
         };
       },
       { fingerprint }
@@ -1105,7 +1096,7 @@ class PlaylistService {
           artist: 'AI Recognition',
           confidence: 0.95,
           duration: 240,
-          preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
+          preview_url: undefined // Use local audio fallback
         };
       },
       { fingerprint }
@@ -1131,7 +1122,7 @@ class PlaylistService {
           duration: 200,
           bpm: 128,
           energy: 0.8,
-          preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3'
+          preview_url: undefined // Use local audio fallback
         };
       },
       { fileName: file.name, fileSize: file.size }

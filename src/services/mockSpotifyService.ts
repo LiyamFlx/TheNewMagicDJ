@@ -13,18 +13,9 @@ interface SpotifyRecommendationParams {
 }
 
 class MockSpotifyService {
-  private demoTracks = [
-    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
-    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
-    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
-    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
-    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
-    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3',
-    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3'
-  ];
+  // Note: External audio URLs removed to avoid CORS issues
+  // Audio players will generate safe local fallback audio automatically
+  private demoTracks: string[] = [];
 
   private mockTracks: Track[] = [
     {
@@ -38,7 +29,7 @@ class MockSpotifyService {
       energy: 0.8,
       danceability: 0.7,
       valence: 0.6,
-      preview_url: this.demoTracks[0]
+      preview_url: undefined // Use local audio fallback
     },
     {
       id: 'mock-2',
@@ -51,7 +42,7 @@ class MockSpotifyService {
       energy: 0.9,
       danceability: 0.8,
       valence: 0.7,
-      preview_url: this.demoTracks[1]
+      preview_url: undefined // Use local audio fallback1]
     },
     {
       id: 'mock-3',
@@ -64,7 +55,7 @@ class MockSpotifyService {
       energy: 0.6,
       danceability: 0.9,
       valence: 0.8,
-      preview_url: this.demoTracks[2]
+      preview_url: undefined // Use local audio fallback2]
     },
     {
       id: 'mock-4',
@@ -77,7 +68,7 @@ class MockSpotifyService {
       energy: 0.85,
       danceability: 0.75,
       valence: 0.9,
-      preview_url: this.demoTracks[3]
+      preview_url: undefined // Use local audio fallback3]
     },
     {
       id: 'mock-5',
@@ -90,7 +81,7 @@ class MockSpotifyService {
       energy: 0.3,
       danceability: 0.4,
       valence: 0.5,
-      preview_url: this.demoTracks[4]
+      preview_url: undefined // Use local audio fallback4]
     }
   ];
 
@@ -112,7 +103,7 @@ class MockSpotifyService {
             ...baseTrack,
             id: `mock-${Date.now()}-${i}`,
             title: `${baseTrack.title} (${i + 1})`,
-            preview_url: this.demoTracks[i % this.demoTracks.length], // Use different demo tracks
+            preview_url: undefined // Use local audio fallbacki % this.demoTracks.length], // Use different demo tracks
             bpm: this.adjustBpmForParams(baseTrack.bpm ?? 120, params),
             energy: params.target_energy || baseTrack.energy,
             danceability: params.target_danceability || baseTrack.danceability,
