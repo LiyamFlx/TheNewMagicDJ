@@ -43,6 +43,15 @@ class AcoustIDService {
       'AcoustIDService',
       'recognizeFingerprint',
       async () => {
+        // Validate fingerprint format - AcoustID fingerprints should be much longer
+        if (!fingerprint || fingerprint.length < 20) {
+          logger.warn('AcoustIDService', 'Invalid fingerprint format, skipping AcoustID lookup', {
+            fingerprintLength: fingerprint?.length || 0,
+            duration
+          });
+          return null;
+        }
+
         const useProxy = !this.apiKey;
 
         // Check rate limit
