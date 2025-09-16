@@ -52,8 +52,8 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const clientId = process.env.SPOTIFY_CLIENT_ID;
-  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+  const clientId = process.env.VITE_SPOTIFY_CLIENT_ID || process.env.SPOTIFY_CLIENT_ID;
+  const clientSecret = process.env.VITE_SPOTIFY_CLIENT_SECRET || process.env.SPOTIFY_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
     res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Server missing Spotify credentials' } });
