@@ -23,13 +23,31 @@ export const supabasePlaylistService = {
     const key = `playlists:${userId}`;
     const fromCache = getCached(key);
     if (fromCache) return fromCache;
+
+    // Select playlists and include normalized tracks via FK relation, alias to avoid name clash
     const { data, error } = await supabase
       .from("playlists")
-      .select("*")
+      .select("id, user_id, name, created_at, updated_at, items:tracks(id, title, artist, bpm, energy, duration, created_at, updated_at)")
       .eq("user_id", userId);
+
     if (error) throw new AppError('UPSTREAM_ERROR', 'Failed to fetch playlists', { details: { error } });
-    setCached(key, data);
-    return data;
+
+    // Hydrate to expected shape: playlist.tracks array
+    const hydrated = (data || []).map((p: any) => ({
+      ...p,
+      tracks: (p.items || []).map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        artist: t.artist,
+        bpm: t.bpm ?? undefined,
+        energy: typeof t.energy === 'number' ? Number(t.energy) : undefined,
+        duration: t.duration ?? 180,
+      })),
+      items: undefined,
+    }));
+
+    setCached(key, hydrated);
+    return hydrated;
   },
 
   async createPlaylist(userId: string, name: string) {
