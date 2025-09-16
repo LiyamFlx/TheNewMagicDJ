@@ -7,23 +7,16 @@
     <title>MagicDJ - AI-Powered DJ Platform</title>
     <meta name="description" content="Create, perform, and analyze your DJ sets with AI-powered tools. Experience the future of DJing." />
     <meta name="theme-color" content="#8b5cf6" />
+    <link rel="manifest" href="/manifest.json" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module">
-      // Only load manifest in production to avoid SW/HMR conflicts in dev
-      if (import.meta.env && import.meta.env.PROD) {
-        const manifestLink = document.createElement('link');
-        manifestLink.rel = 'manifest';
-        manifestLink.href = '/manifest.json';
-        document.head.appendChild(manifestLink);
-
-        // Register a very simple service worker for installability
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.register('/sw.js').catch(() => {
-            // ignore
-          });
-        }
+      // Register service worker in production
+      if (import.meta.env && import.meta.env.PROD && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(() => {
+          // ignore SW registration failures
+        });
       }
     </script>
     <script type="module" src="/src/main.tsx"></script>

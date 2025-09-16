@@ -27,15 +27,8 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
     if (currentTrack.preview_url && currentTrack.preview_url.trim() !== '') {
       audio.src = currentTrack.preview_url;
     } else {
-      // Use local demo audio files to avoid CORS issues
-      const demoAudioSources = [
-        '/audio/demo-1.mp3',
-        '/audio/demo-2.mp3',
-        '/audio/demo-3.mp3',
-        '/audio/demo-4.mp3'
-      ];
-      const audioIndex = Math.abs(currentTrack.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % demoAudioSources.length;
-      audio.src = demoAudioSources[audioIndex];
+      // Use a simple silent audio data URL as fallback
+      audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeBDKJ0fPOgzEHIHjJ+tycRw0UW7zv85xrGw5UqObsu2AcBjSO2OzNeSsFJHPN7tmSPwhGn+J+t2ApDS+5vG0t';
     }
     audio.load();
     setCurrentTime(0);
