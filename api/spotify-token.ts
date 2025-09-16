@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { withIdempotency } from "../utils/idempotency";
-import { requireAuth } from '../src/utils/apiAuth';
 import { AppError, errorFromResponse, normalizeError } from '../src/utils/errors';
 
 type TokenCache = {
@@ -19,12 +18,11 @@ const BUCKET_MAX = 30;
 const BUCKET_WINDOW_MS = 60_000;
 
 function getClientKey(req: VercelRequest): string {
-  const userId = (req as any).user?.id || 'anon';
   const ip =
     (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
     req.socket.remoteAddress ||
     'unknown';
-  return `${userId}:${ip}`;
+  return `token:${ip}`;
 }
 
 function checkBucket(req: VercelRequest) {
@@ -61,15 +59,20 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: { code: 'BAD_REQUEST', message: 'Method not allowed' } });
   }
 
-  const clientId = process.env.SPOTIFY_CLIENT_ID;
-  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+  const clientId = process.env.SPOTIFY_CLIENT_ID || process.env.VITA_SPOTIFY_CLIENT_ID;
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET || process.env.VITA_SPOTIFY_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    return res.status(401).json({
+    console.error('Spotify credentials missing:', {
+      hasClientId: !!clientId,
+      hasClientSecret: !!clientSecret,
+      envKeys: Object.keys(process.env).filter(k => k.includes('SPOTIFY'))
+    });
+    return res.status(503).json({
       error: {
         code: 'MISSING_CREDENTIALS',
-        message: 'Spotify Client ID/Secret not configured',
-        details: 'Add SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET to Vercel environment variables'
+        message: 'Spotify credentials not configured',
+        httpStatus: 503
       }
     });
   }
@@ -136,12 +139,20 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
       expires_in: Math.max(0, Math.floor((token.expires_at - Date.now()) / 1000)),
     });
   } catch (e: any) {
+    console.error('Spotify token error:', e);
     const normalized = normalizeError(e, {
-      code: 'INTERNAL_ERROR',
-      message: 'Spotify token request failed',
+      code: 'SPOTIFY_API_ERROR',
+      message: 'Spotify service unavailable',
     });
-    res.status(normalized.httpStatus || 502).json({ error: normalized });
+    // Return 503 for service unavailable to trigger proper fallback
+    res.status(503).json({
+      error: {
+        ...normalized,
+        httpStatus: 503,
+        retryable: true
+      }
+    });
   }
 }
 
-export default withIdempotency(requireAuth(spotifyTokenHandler));
+export default withIdempotency(spotifyTokenHandler);
