@@ -15,7 +15,6 @@ interface SpotifyRecommendationParams {
 class MockSpotifyService {
   // Note: External audio URLs removed to avoid CORS issues
   // Audio players will generate safe local fallback audio automatically
-  private demoTracks: string[] = [];
 
   private mockTracks: Track[] = [
     {
@@ -103,7 +102,7 @@ class MockSpotifyService {
             ...baseTrack,
             id: `mock-${Date.now()}-${i}`,
             title: `${baseTrack.title} (${i + 1})`,
-            preview_url: undefined // Use local audio fallbacki % this.demoTracks.length], // Use different demo tracks
+            preview_url: undefined, // Use local audio fallback
             bpm: this.adjustBpmForParams(baseTrack.bpm ?? 120, params),
             energy: params.target_energy || baseTrack.energy,
             danceability: params.target_danceability || baseTrack.danceability,
