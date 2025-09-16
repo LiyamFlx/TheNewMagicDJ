@@ -1,4 +1,4 @@
-export function generateWavDataUrl(frequency: number = 440, durationSeconds: number = 15): string {
+export function generateWavDataUrl(frequency: number = 440, durationSeconds: number = 12): string {
   const sampleRate = 22050;
   const samples = sampleRate * durationSeconds;
   const buffer = new ArrayBuffer(44 + samples * 2);

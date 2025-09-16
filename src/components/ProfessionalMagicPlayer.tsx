@@ -50,6 +50,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const [showPlaylistEditor, setShowPlaylistEditor] = useState(false);
   const [showMagicDancer, setShowMagicDancer] = useState(true);
   const [showUnmuteOverlay, setShowUnmuteOverlay] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isDegraded, setIsDegraded] = useState(false);
   
   const waveformCanvasA = useRef<HTMLCanvasElement>(null);
   const waveformCanvasB = useRef<HTMLCanvasElement>(null);
@@ -180,6 +182,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       setIsLoading(false);
       setDuration(currentTrack.duration ?? 180);
 
+      // Show user-friendly error message
+      if (target.src && !target.src.startsWith('data:audio/wav')) {
+        setErrorMessage('Audio failed, using demo audio');
+        setTimeout(() => setErrorMessage(null), 3000);
+      }
+
       // Auto-skip to next track if current track fails to load
       if (error && error.code !== 1) { // Skip unless MEDIA_ERR_ABORTED (user initiated)
         logger.info('ProfessionalMagicPlayer', 'Auto-skipping failed track', {
@@ -213,6 +221,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     // Set audio source - prioritize track's preview_url
     if (currentTrack.preview_url && currentTrack.preview_url.trim() !== '') {
       audio.src = currentTrack.preview_url;
+      setIsDegraded(false);
       logger.info('ProfessionalMagicPlayer', 'Audio A source set to track preview', {
         trackTitle: currentTrack.title,
         audioSrc: currentTrack.preview_url
@@ -220,7 +229,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     } else {
       // Use track index to vary frequency for local fallback
       const baseFreq = 440 + (currentTrackIndex * 20); // Vary frequency per track
-      audio.src = generateWavDataUrl(baseFreq, 15);
+      audio.src = generateWavDataUrl(baseFreq, 12);
+      setIsDegraded(true);
 
       logger.info('ProfessionalMagicPlayer', 'Audio A source set to generated fallback', {
         trackTitle: currentTrack.title,
@@ -244,7 +254,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       if (listeners.error) audio.removeEventListener('error', listeners.error);
       audio.pause();
     };
-  }, [currentTrack, handleTrackEnd]);
+  }, [currentTrack, currentTrackIndex, playlist?.tracks.length, onSessionEnd]);
 
   // Initialize Audio B
   useEffect(() => {
@@ -412,10 +422,11 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           setShowUnmuteOverlay(true);
           logger.info('ProfessionalMagicPlayer', 'Autoplay blocked - showing unmute overlay');
         } else {
-          // Try to reload the audio for other errors
+          setErrorMessage('Playback failed. Retrying...');
           setTimeout(() => {
+            setErrorMessage(null);
             audio.load();
-          }, 1000);
+          }, 2000);
         }
       });
     } else {
@@ -630,10 +641,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
   const handleSeek = (percentage: number) => {
     const audio = audioARef.current;
-    if (audio && duration > 0) {
-      const newTime = (percentage / 100) * duration;
-      audio.currentTime = newTime;
-      setCurrentTime(newTime);
+    const maxDuration = duration || (currentTrack?.duration ?? 180);
+    if (audio && maxDuration > 0 && audio.readyState >= 2) {
+      const newTime = (percentage / 100) * maxDuration;
+      const clampedTime = Math.min(newTime, maxDuration);
+      audio.currentTime = clampedTime;
+      setCurrentTime(clampedTime);
     }
   };
 
@@ -766,7 +779,14 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <Radio className="w-7 h-7 text-fuchsia-400" />
             </div>
             <div>
-              <h1 className="text-xl lg:text-2xl font-bold text-white tracking-wide font-orbitron">PROFESSIONAL PLAYER</h1>
+              <div className="flex items-center space-x-2">
+                <h1 className="text-xl lg:text-2xl font-bold text-white tracking-wide font-orbitron">PROFESSIONAL PLAYER</h1>
+                {isDegraded && (
+                  <span className="text-xs px-2 py-1 bg-yellow-900/50 border border-yellow-400 text-yellow-400 rounded font-orbitron">
+                    DEMO
+                  </span>
+                )}
+              </div>
               <p className="text-sm lg:text-base text-fuchsia-400 font-orbitron truncate max-w-48 lg:max-w-none">{playlist.name}</p>
             </div>
           </div>
@@ -789,10 +809,17 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             <Activity className="w-4 h-4 lg:w-5 lg:h-5" />
             <span className="hidden sm:inline">DANCER</span>
           </button>
-          <div className="hidden sm:flex items-center space-x-2 px-3 lg:px-4 py-2 glass-card shadow-neon-cyan">
-            <div className="w-3 h-3 bg-cyan-400 rounded-full animate-pulse-glow"></div>
-            <span className="text-xs lg:text-sm font-bold tracking-wider">LIVE</span>
-          </div>
+          {errorMessage ? (
+            <div className="flex items-center space-x-2 px-3 lg:px-4 py-2 glass-card border-yellow-400 shadow-yellow-400/20">
+              <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
+              <span className="text-xs lg:text-sm font-bold tracking-wider text-yellow-400">{errorMessage}</span>
+            </div>
+          ) : (
+            <div className="hidden sm:flex items-center space-x-2 px-3 lg:px-4 py-2 glass-card shadow-neon-cyan">
+              <div className="w-3 h-3 bg-cyan-400 rounded-full animate-pulse-glow"></div>
+              <span className="text-xs lg:text-sm font-bold tracking-wider">LIVE</span>
+            </div>
+          )}
           <button
             onClick={onSessionEnd}
             aria-label="End DJ session"
@@ -829,7 +856,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               className="w-full h-3 bg-glass border border-glass rounded-lg cursor-pointer overflow-hidden"
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
-                const percentage = ((e.clientX - rect.left) / rect.width) * 100;
+                const percentage = Math.min(100, Math.max(0, ((e.clientX - rect.left) / rect.width) * 100));
                 handleSeek(percentage);
               }}
               role="slider"
@@ -952,7 +979,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <div className="flex justify-between text-xs text-slate-400 mt-2 font-orbitron">
                 <span>{formatTimeClock(currentTime)}</span>
                 <span className="text-fuchsia-400">{Math.round(deckAProgress)}%</span>
-                <span>{formatTimeClock(duration || (currentTrack.duration ?? 180))}</span>
+                <span>{formatTimeClock(duration || (currentTrack?.duration ?? 180))}</span>
               </div>
             </div>
 

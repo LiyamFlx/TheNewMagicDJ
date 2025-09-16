@@ -13,6 +13,7 @@ const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) 
   const [progress, setProgress] = useState(0);
   const [selectedGenre, setSelectedGenre] = useState<string>('Electronic');
   const [selectedEnergy, setSelectedEnergy] = useState<string>('Groove');
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const generateMockPlaylist = (type: 'match' | 'generate'): Playlist => {
     // Generate tracks based on selected preferences for Magic Generate
@@ -87,6 +88,38 @@ const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) 
     };
   };
 
+  const validateAudioFile = (file: File): string | null => {
+    const validTypes = ['audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/aac'];
+    const maxSize = 50 * 1024 * 1024; // 50MB
+
+    if (!validTypes.includes(file.type)) {
+      return 'Please upload a valid audio file (MP3, WAV, OGG, M4A, AAC)';
+    }
+
+    if (file.size > maxSize) {
+      return 'File too large. Please upload a file smaller than 50MB';
+    }
+
+    return null;
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadError(null);
+    const error = validateAudioFile(file);
+
+    if (error) {
+      setUploadError(error);
+      setTimeout(() => setUploadError(null), 5000);
+      return;
+    }
+
+    // Process valid file
+    handleMagicMatch();
+  };
+
   const handleMagicMatch = async () => {
     setIsProcessing(true);
     setProcessingMode('match');
@@ -94,7 +127,7 @@ const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) 
 
     // Simulate processing steps
     const steps = ['Listening...', 'Analyzing audio...', 'Matching tracks...', 'Building playlist...'];
-    
+
     for (let i = 0; i < steps.length; i++) {
       setProgress((i / steps.length) * 100);
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -102,7 +135,7 @@ const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) 
 
     const playlist = generateMockPlaylist('match');
     onPlaylistGenerated(playlist);
-    
+
     setIsProcessing(false);
     setProcessingMode(null);
   };
@@ -210,13 +243,22 @@ const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) 
                   <span>Listen via Microphone</span>
                 </button>
 
-                <button
-                  onClick={handleMagicMatch}
-                  className="w-full py-4 px-6 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-all duration-300 flex items-center justify-center space-x-3 border border-white/20"
-                >
+                <label className="w-full py-4 px-6 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-all duration-300 flex items-center justify-center space-x-3 border border-white/20 cursor-pointer">
                   <Upload className="w-5 h-5" />
                   <span>Upload Audio File</span>
-                </button>
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </label>
+
+                {uploadError && (
+                  <div className="p-3 bg-red-900/50 border border-red-400 text-red-400 rounded-lg text-sm">
+                    {uploadError}
+                  </div>
+                )}
 
                 <button
                   onClick={handleMagicMatch}
