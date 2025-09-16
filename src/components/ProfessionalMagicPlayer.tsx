@@ -137,6 +137,11 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     const onLoadedMetadata = () => {
       setDuration(audio.duration || 180);
       setIsLoading(false);
+      logger.info('ProfessionalMagicPlayer', 'Audio A metadata loaded', {
+        duration: audio.duration,
+        readyState: audio.readyState,
+        src: audio.src.substring(0, 50) + '...'
+      });
     };
     
     const onTimeUpdate = () => {
@@ -194,10 +199,66 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         audioSrc: currentTrack.preview_url
       });
     } else {
-      // Use a simple silent audio data URL as fallback
-      audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeBDKJ0fPOgzEHIHjJ+tycRw0UW7zv85xrGw5UqObsu2AcBjSO2OzNeSsFJHPN7tmSPwhGn+J+t2ApDS+5vG0t';
-      logger.info('ProfessionalMagicPlayer', 'Audio A source set to fallback data URL', {
+      // Generate proper audio data URL as fallback
+      const generateFallbackAudio = (frequency: number = 440): string => {
+        const sampleRate = 22050;
+        const durationSeconds = 15;
+        const samples = sampleRate * durationSeconds;
+        const buffer = new ArrayBuffer(44 + samples * 2);
+        const view = new DataView(buffer);
+
+        // WAV header
+        const writeString = (offset: number, string: string) => {
+          for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+          }
+        };
+
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + samples * 2, true);
+        writeString(8, 'WAVE');
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * 2, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        writeString(36, 'data');
+        view.setUint32(40, samples * 2, true);
+
+        // Generate audio with musical content
+        for (let i = 0; i < samples; i++) {
+          const time = i / sampleRate;
+          const fadeIn = Math.min(1, time / 0.1);
+          const fadeOut = Math.min(1, (durationSeconds - time) / 0.1);
+          const envelope = Math.min(fadeIn, fadeOut);
+
+          const fundamental = Math.sin(2 * Math.PI * frequency * time);
+          const harmonic = Math.sin(2 * Math.PI * frequency * 2 * time) * 0.3;
+          const rhythm = (Math.floor(time * 2) % 2) * 0.1 + 0.9;
+
+          const sample = (fundamental + harmonic) * envelope * rhythm * 0.6;
+          const intSample = Math.max(-32767, Math.min(32767, sample * 32767));
+          view.setInt16(44 + i * 2, intSample, true);
+        }
+
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        return `data:audio/wav;base64,${btoa(binary)}`;
+      };
+
+      // Use track index to vary frequency
+      const baseFreq = 440 + (currentTrackIndex * 20); // Vary frequency per track
+      audio.src = generateFallbackAudio(baseFreq);
+
+      logger.info('ProfessionalMagicPlayer', 'Audio A source set to generated fallback', {
         trackTitle: currentTrack.title,
+        frequency: baseFreq,
         reason: 'No preview_url available'
       });
     }

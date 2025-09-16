@@ -68,23 +68,69 @@ export class YouTubeService {
   }
 
   async getFallbackTracks(seed: string, count: number): Promise<Track[]> {
-    // CORS-safe demo audio sources - use simple data URLs that work universally
-    // These are minimal WAV files that will play in all browsers without CORS issues
-    const demoAudioSources = [
-      // Simple 440Hz tone for 5 seconds - this is a base64 encoded minimal WAV
-      'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeBDKJ0fPOgzEHIHjJ+tycRw0UW7zv85xrGw5UqObsu2AcBjSO2OzNeSsFJHPN7tmSPwhGn+J+t2ApDS+5vG0t',
-      // Different frequency variations
-      'data:audio/wav;base64,UklGRjoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YRoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeBDKJ0fPOgzEHIHjJ+tycRw0UW7zv85xrGw5UqObsu2AcBjSO2OzNeSsFJHPN7tmSPwhGn+J+t2ApDS+5vG0t',
-      // More variations with different patterns
-      'data:audio/wav;base64,UklGRkoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeBDKJ0fPOgzEHIHjJ+tycRw0UW7zv85xrGw5UqObsu2AcBjSO2OzNeSsFJHPN7tmSPwhGn+J+t2ApDS+5vG0t',
-      'data:audio/wav;base64,UklGRloGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YToGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeBDKJ0fPOgzEHIHjJ+tycRw0UW7zv85xrGw5UqObsu2AcBjSO2OzNeSsFJHPN7tmSPwhGn+J+t2ApDS+5vG0t',
-      'data:audio/wav;base64,UklGRmoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YUoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeBDKJ0fPOgzEHIHjJ+tycRw0UW7zv85xrGw5UqObsu2AcBjSO2OzNeSsFJHPN7tmSPwhGn+J+t2ApDS+5vG0t',
-      'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeBDKJ0fPOgzEHIHjJ+tycRw0UW7zv85xrGw5UqObsu2AcBjSO2OzNeSsFJHPN7tmSPwhGn+J+t2ApDS+5vG0t',
-      'data:audio/wav;base64,UklGRpoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YWoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeBDKJ0fPOgzEHIHjJ+tycRw0UW7zv85xrGw5UqObsu2AcBjSO2OzNeSsFJHPN7tmSPwhGn+J+t2ApDS+5vG0t',
-      'data:audio/wav;base64,UklGRroGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YXoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeBDKJ0fPOgzEHIHjJ+tycRw0UW7zv85xrGw5UqObsu2AcBjSO2OzNeSsFJHPN7tmSPwhGn+J+t2ApDS+5vG0t',
-      'data:audio/wav;base64,UklGRsoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YYoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeBDKJ0fPOgzEHIHjJ+tycRw0UW7zv85xrGw5UqObsu2AcBjSO2OzNeSsFJHPN7tmSPwhGn+J+t2ApDS+5vG0t',
-      'data:audio/wav;base64,UklGRtoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeBDKJ0fPOgzEHIHjJ+tycRw0UW7zv85xrGw5UqObsu2AcBjSO2OzNeSsFJHPN7tmSPwhGn+J+t2ApDS+5vG0t'
-    ];
+    // Function to generate proper WAV data URL with audible content
+    const generateAudioDataUrl = (frequency: number, durationSeconds: number = 10): string => {
+      const sampleRate = 22050; // Lower sample rate for smaller file size
+      const samples = sampleRate * durationSeconds;
+      const buffer = new ArrayBuffer(44 + samples * 2);
+      const view = new DataView(buffer);
+
+      // WAV header
+      const writeString = (offset: number, string: string) => {
+        for (let i = 0; i < string.length; i++) {
+          view.setUint8(offset + i, string.charCodeAt(i));
+        }
+      };
+
+      writeString(0, 'RIFF');
+      view.setUint32(4, 36 + samples * 2, true);
+      writeString(8, 'WAVE');
+      writeString(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true); // PCM
+      view.setUint16(22, 1, true); // Mono
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeString(36, 'data');
+      view.setUint32(40, samples * 2, true);
+
+      // Generate audio data - musical tone with envelope
+      for (let i = 0; i < samples; i++) {
+        const time = i / sampleRate;
+
+        // Create envelope for fade in/out
+        const fadeTime = 0.1;
+        const fadeIn = Math.min(1, time / fadeTime);
+        const fadeOut = Math.min(1, (durationSeconds - time) / fadeTime);
+        const envelope = Math.min(fadeIn, fadeOut);
+
+        // Generate musical tone with harmonics
+        const fundamental = Math.sin(2 * Math.PI * frequency * time);
+        const harmonic2 = Math.sin(2 * Math.PI * frequency * 2 * time) * 0.3;
+        const harmonic3 = Math.sin(2 * Math.PI * frequency * 3 * time) * 0.1;
+
+        // Add some rhythm variation
+        const rhythm = (Math.floor(time * 2) % 2) * 0.1 + 0.9;
+
+        const sample = (fundamental + harmonic2 + harmonic3) * envelope * rhythm * 0.5;
+        const intSample = Math.max(-32767, Math.min(32767, sample * 32767));
+        view.setInt16(44 + i * 2, intSample, true);
+      }
+
+      // Convert to base64
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return `data:audio/wav;base64,${btoa(binary)}`;
+    };
+
+    // Generate proper audio sources with different musical notes
+    const musicalFrequencies = [220, 246.94, 261.63, 293.66, 329.63, 349.23, 392.00, 440, 493.88, 523.25]; // A3 to C5
+    const demoAudioSources = musicalFrequencies.map(freq => generateAudioDataUrl(freq, 15));
 
     // Genre-specific track titles for better UX
     const genreTitles = {
