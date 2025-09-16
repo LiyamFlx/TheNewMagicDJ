@@ -100,10 +100,11 @@ class PlaylistService {
             // Try YouTube service as secondary fallback
             try {
               if (youtubeService.isConfigured()) {
-                tracks = await youtubeService.getRecommendations({
+                const ytTracks = await youtubeService.getRecommendations({
                   seed_genres: ['electronic', 'house', 'techno'],
                   limit: 15
                 });
+                tracks = ytTracks || [];
               } else {
                 throw new Error('YouTube service not configured');
               }
@@ -178,11 +179,12 @@ class PlaylistService {
           // Try YouTube service as fallback
           try {
             if (youtubeService.isConfigured()) {
-              tracks = await youtubeService.getRecommendations({
+              const ytTracks = await youtubeService.getRecommendations({
                 seed_genres: genres,
                 limit: 20,
                 energy: energy as any
               });
+              tracks = ytTracks || [];
             } else {
               throw new Error('YouTube service not configured');
             }
