@@ -16,6 +16,49 @@ function setCached(key: string, data: any) {
 }
 
 export const supabasePlaylistService = {
+  async savePlaylist(playlist: any, userId: string) {
+    const { id: playlistId, name, tracks } = playlist;
+
+    // 1. Upsert the playlist
+    const { data: playlistData, error: playlistError } = await supabase
+      .from('playlists')
+      .upsert({ id: playlistId, name, user_id: userId }, { onConflict: 'id' })
+      .select()
+      .single();
+
+    if (playlistError) {
+      throw new AppError('UPSTREAM_ERROR', 'Failed to save playlist', { details: { playlistError } });
+    }
+
+    // 2. Delete existing tracks for this playlist
+    const { error: deleteError } = await supabase.from('tracks').delete().eq('playlist_id', playlistData.id);
+    if (deleteError) {
+      throw new AppError('UPSTREAM_ERROR', 'Failed to update playlist tracks', { details: { deleteError } });
+    }
+
+    // 3. Insert new tracks
+    const trackData = tracks.map((track: any) => ({
+      id: track.id,
+      playlist_id: playlistData.id,
+      title: track.title,
+      artist: track.artist,
+      bpm: track.bpm,
+      energy: track.energy,
+      duration: track.duration,
+    }));
+
+    const { error: tracksError } = await supabase.from('tracks').insert(trackData);
+
+    if (tracksError) {
+      throw new AppError('UPSTREAM_ERROR', 'Failed to save tracks', { details: { tracksError } });
+    }
+    
+    // Bust cache
+    cache.delete(`playlists:${userId}`);
+
+    return { ...playlistData, tracks };
+  },
+
   async getUserPlaylists(userId: string) {
     return supabasePlaylistService.getPlaylists(userId);
   },

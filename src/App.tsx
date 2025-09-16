@@ -9,6 +9,8 @@ import PlaylistEditor from './components/PlaylistEditor';
 import AnalyticsExport from './components/AnalyticsExport';
 import LibraryProfile from './components/LibraryProfile';
 import NotFound from './components/NotFound';
+import LoginPage from './components/LoginPage';
+import { supabasePlaylistService } from './services/supabasePlaylistService';
 
 // Main App content that needs access to navigation
 function AppContent() {
@@ -16,12 +18,12 @@ function AppContent() {
   const [savedPlaylists, setSavedPlaylists] = useState<Playlist[]>([]);
   const [recentSessions, setRecentSessions] = useState<any[]>([]);
   const [currentPlaylist, setCurrentPlaylist] = useState<Playlist | null>(null);
-  const [currentSession] = useState<any>(null);
-  const [user] = useState<any>(null);
+  const [currentSession, setCurrentSession] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
   const [isEditingPlaylist, setIsEditingPlaylist] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Load recent sessions and persist playlist across navigation
+  // Load recent sessions and restore playlist from Supabase
   useEffect(() => {
     // Load mock recent sessions
     setRecentSessions([
@@ -29,42 +31,47 @@ function AppContent() {
       { id: '2', name: 'House Party Mix', tracks: 20, created_at: new Date(Date.now() - 172800000).toISOString() }
     ]);
 
-    // Restore current playlist from localStorage on app load
-    try {
-      const savedCurrentPlaylist = localStorage.getItem('magicdj_current_playlist');
-      if (savedCurrentPlaylist) {
-        const playlist = JSON.parse(savedCurrentPlaylist);
-        setCurrentPlaylist(playlist);
-        console.log('Restored playlist from localStorage:', playlist.name);
+    const loadLastPlaylist = async () => {
+      if (!user) return;
+      const playlists = await supabasePlaylistService.getUserPlaylists(user.id);
+      if (playlists && playlists.length > 0) {
+        const lastPlaylist = playlists.sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0];
+        setCurrentPlaylist(lastPlaylist);
+        console.log('Restored playlist from Supabase:', lastPlaylist.name);
       }
-    } catch (error) {
-      console.error('Failed to restore playlist from localStorage:', error);
-      localStorage.removeItem('magicdj_current_playlist'); // Clean up corrupted data
-    }
-  }, []);
+    };
 
-  // Persist current playlist to localStorage whenever it changes
-  useEffect(() => {
-    if (currentPlaylist) {
-      try {
-        localStorage.setItem('magicdj_current_playlist', JSON.stringify(currentPlaylist));
-      } catch (error) {
-        console.error('Failed to save playlist to localStorage:', error);
-      }
-    } else {
-      localStorage.removeItem('magicdj_current_playlist');
+    loadLastPlaylist();
+  }, [user]);
+
+  const saveCurrentPlaylist = async (playlist: Playlist) => {
+    if (!user) {
+      console.warn('Cannot save playlist, user not logged in.');
+      return;
     }
-  }, [currentPlaylist]);
+    try {
+      await supabasePlaylistService.savePlaylist(playlist, user.id);
+    } catch (error) {
+      console.error('Failed to save playlist to Supabase:', error);
+    }
+  };
+
+  const handleLogin = (user: any) => {
+    setUser(user);
+    navigate('/');
+  };
 
   const handlePlaylistGenerated = (playlist: Playlist) => {
     setCurrentPlaylist(playlist);
     setIsEditingPlaylist(true);
+    saveCurrentPlaylist(playlist);
   };
 
   const handlePlaylistEdited = (playlist: Playlist) => {
     setCurrentPlaylist(playlist);
     setIsEditingPlaylist(false);
     navigate('/play');
+    saveCurrentPlaylist(playlist);
   };
 
   const handlePlaylistSelect = (playlist: Playlist) => {
@@ -75,6 +82,7 @@ function AppContent() {
 
   const handleSaveToLibrary = (playlist: Playlist) => {
     setSavedPlaylists(prev => [...prev, playlist]);
+    saveCurrentPlaylist(playlist);
   };
 
   const handleTrackReorder = (fromIndex: number, toIndex: number) => {
@@ -86,6 +94,7 @@ function AppContent() {
     
     const updatedPlaylist = { ...currentPlaylist, tracks: newTracks };
     setCurrentPlaylist(updatedPlaylist);
+    saveCurrentPlaylist(updatedPlaylist);
   };
 
   const handleTrackRemove = (index: number) => {
@@ -94,11 +103,17 @@ function AppContent() {
     const newTracks = currentPlaylist.tracks.filter((_, i) => i !== index);
     const updatedPlaylist = { ...currentPlaylist, tracks: newTracks };
     setCurrentPlaylist(updatedPlaylist);
+    saveCurrentPlaylist(updatedPlaylist);
   };
 
   const handlePlaylistUpdate = (playlist: Playlist) => {
     setCurrentPlaylist(playlist);
+    saveCurrentPlaylist(playlist);
   };
+
+  if (!user) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
 
   return (
     <div className="min-h-screen gradient-bg-primary">

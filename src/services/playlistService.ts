@@ -1,10 +1,10 @@
 import { Playlist, Track, RecognitionResult } from '../types';
-import { youtubeService } from './youtubeService';
+import { productionSpotifyService } from './productionSpotifyService';
 import { mockSpotifyService } from './mockSpotifyService';
 import { logger } from '../utils/logger';
 
 class PlaylistService {
-  private musicService = youtubeService;
+  private musicService = productionSpotifyService;
 
   async generateMagicMatchPlaylist(fingerprint?: string, seedTrack?: Track, userId?: string): Promise<Playlist> {
     return logger.trackOperation(
@@ -43,15 +43,14 @@ class PlaylistService {
         let tracks: Track[] = [];
 
         if (baseTrack) {
-          // Get YouTube recommendations based on the recognized/seed track
+          // Get recommendations based on the recognized/seed track
           try {
-            if (youtubeService.isConfigured()) {
-              const searchQuery = `${baseTrack.artist} ${baseTrack.title} similar music`;
-              tracks = await this.musicService.searchTracks(searchQuery, 15);
-            } else {
-              // Use fallback tracks when YouTube API is not configured
-              tracks = await youtubeService.getFallbackTracks(`${baseTrack.artist} ${baseTrack.title}`, 15);
-            }
+            const seed_tracks = baseTrack.spotify_id ? [baseTrack.spotify_id] : [];
+            tracks = await this.musicService.getRecommendations({
+              seed_tracks,
+              seed_genres: ['electronic', 'house', 'techno'],
+              limit: 15
+            });
           } catch (error) {
             logger.warn('PlaylistService', 'Failed to get track-based recommendations, using genre-based', error);
           }
@@ -60,18 +59,10 @@ class PlaylistService {
         // Fallback to genre-based recommendations if track-based failed
         if (tracks.length === 0) {
           try {
-            if (youtubeService.isConfigured()) {
-              tracks = await this.musicService.getRecommendations({
-                seed_genres: ['electronic', 'house', 'techno'],
-                limit: 15
-              });
-            } else {
-              // Use mock service as final fallback
-              tracks = await mockSpotifyService.getRecommendations({
-                seed_genres: ['electronic', 'house', 'techno'],
-                limit: 15
-              });
-            }
+            tracks = await this.musicService.getRecommendations({
+              seed_genres: ['electronic', 'house', 'techno'],
+              limit: 15
+            });
           } catch (error) {
             logger.warn('PlaylistService', 'All recommendation services failed, using mock data', error);
             tracks = await mockSpotifyService.getRecommendations({
@@ -128,18 +119,13 @@ class PlaylistService {
         let tracks: Track[] = [];
         
         try {
-          if (youtubeService.isConfigured()) {
-            tracks = await this.musicService.getRecommendations({
-              seed_genres: genres,
-              limit: 20,
-              vibe: vibe.toLowerCase(),
-              energy: energy
-            });
-          } else {
-            tracks = await youtubeService.getFallbackTracks(vibe, 20);
-          }
+          tracks = await this.musicService.getRecommendations({
+            seed_genres: genres,
+            limit: 20,
+            target_energy: energy
+          });
         } catch (error) {
-          logger.warn('PlaylistService', 'YouTube service failed, using mock service', error);
+          logger.warn('PlaylistService', 'Spotify service failed, using mock service', error);
           tracks = await mockSpotifyService.getRecommendations({
             seed_genres: genres,
             limit: 20

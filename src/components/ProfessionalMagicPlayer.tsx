@@ -4,6 +4,8 @@ import { Playlist, Session, Track } from '../types';
 import MagicDancer from './MagicDancer';
 import PlaylistEditor from './PlaylistEditor';
 import { logger } from '../utils/logger';
+import { debounce } from '../utils/debounce';
+
 
 interface ProfessionalMagicPlayerProps {
   playlist: Playlist | null;
@@ -124,24 +126,29 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       const listeners = audioAListenersRef.current;
       
       audio.pause();
-      if (listeners.loadedmetadata) audio.removeEventListener('loadedmetadata', listeners.loadedmetadata);
+      if (listeners.canplaythrough) audio.removeEventListener('canplaythrough', listeners.canplaythrough);
+      if (listeners.playing) audio.removeEventListener('playing', listeners.playing);
       if (listeners.timeupdate) audio.removeEventListener('timeupdate', listeners.timeupdate);
       if (listeners.ended) audio.removeEventListener('ended', listeners.ended);
       if (listeners.error) audio.removeEventListener('error', listeners.error);
     }
 
     const audio = new Audio();
-    audio.preload = 'metadata';
+    audio.preload = 'auto';
     
     // Create listener functions
-    const onLoadedMetadata = () => {
+    const onCanPlayThrough = () => {
       setDuration(audio.duration || 180);
       setIsLoading(false);
-      logger.info('ProfessionalMagicPlayer', 'Audio A metadata loaded', {
+      logger.info('ProfessionalMagicPlayer', 'Audio A can play through', {
         duration: audio.duration,
         readyState: audio.readyState,
         src: audio.src.substring(0, 50) + '...'
       });
+    };
+
+    const onPlaying = () => {
+      setIsLoading(false);
     };
     
     const onTimeUpdate = () => {
@@ -179,14 +186,16 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     
     // Store listeners for cleanup
     audioAListenersRef.current = {
-      loadedmetadata: onLoadedMetadata,
+      canplaythrough: onCanPlayThrough,
+      playing: onPlaying,
       timeupdate: onTimeUpdate,
       ended: handleTrackEnd,
       error: onError
     };
     
     // Add listeners
-    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+    audio.addEventListener('canplaythrough', onCanPlayThrough);
+    audio.addEventListener('playing', onPlaying);
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('ended', handleTrackEnd);
     audio.addEventListener('error', onError);
@@ -271,7 +280,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
     return () => {
       const listeners = audioAListenersRef.current;
-      if (listeners.loadedmetadata) audio.removeEventListener('loadedmetadata', listeners.loadedmetadata);
+      if (listeners.canplaythrough) audio.removeEventListener('canplaythrough', listeners.canplaythrough);
+      if (listeners.playing) audio.removeEventListener('playing', listeners.playing);
       if (listeners.timeupdate) audio.removeEventListener('timeupdate', listeners.timeupdate);
       if (listeners.ended) audio.removeEventListener('ended', listeners.ended);
       if (listeners.error) audio.removeEventListener('error', listeners.error);
@@ -720,6 +730,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     );
   }
 
+  const debouncedOnPlayPause = useCallback(
+    debounce((playing: boolean) => {
+      onPlayPause(playing);
+    }, 300),
+    [onPlayPause]
+  );
+
   const handleUnmute = () => {
     setShowUnmuteOverlay(false);
     onPlayPause(true);
@@ -843,7 +860,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <SkipBack className="w-6 h-6 text-fuchsia-400" />
             </button>
             <button
-              onClick={() => onPlayPause(!isPlaying)}
+              onClick={() => debouncedOnPlayPause(!isPlaying)}
               disabled={isLoading}
               aria-label={isPlaying ? "Pause playback" : "Start playback"}
               className="w-16 h-16 glass-button hover-lift flex items-center justify-center transition-all duration-300 disabled:opacity-50"
@@ -952,7 +969,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   <SkipBack className="w-6 h-6 lg:w-7 lg:h-7 text-fuchsia-400" />
                 </button>
                 <button
-                  onClick={() => onPlayPause(!isPlaying)}
+                  onClick={() => debouncedOnPlayPause(!isPlaying)}
                   disabled={isLoading}
                   aria-label={isPlaying ? "Pause" : "Play"}
                   className="w-16 h-16 lg:w-20 lg:h-20 glass-button hover-lift flex items-center justify-center transition-all duration-300 disabled:opacity-50 shadow-neon-pink active:scale-95"
