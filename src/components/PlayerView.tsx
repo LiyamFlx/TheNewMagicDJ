@@ -151,21 +151,21 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-cyber-black">
+    <div className="min-h-screen gradient-bg-primary">
       {/* Enhanced Header */}
-      <div className="px-6 py-4 bg-cyber-dark border-b-2 border-neon-green backdrop-blur-md">
+      <div className="px-6 py-4 bg-glass border-b border-glass backdrop-blur-md nav-sticky">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <button
               onClick={onBack}
-              className="w-12 h-12 bg-cyber-medium border-2 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all"
+              className="glass-button hover-lift w-12 h-12 flex items-center justify-center transition-all"
               aria-label="Back"
             >
-              <ArrowLeft className="w-6 h-6 neon-text-green" />
+              <ArrowLeft className="w-6 h-6 text-fuchsia-400" />
             </button>
             <div>
-              <h1 className="text-2xl font-bold neon-text-green font-mono tracking-wider">{playlist.name}</h1>
-              <p className="text-cyber-gray font-mono">{playlist.tracks.length} TRACKS</p>
+              <h1 className="text-2xl font-bold text-fuchsia-400 font-orbitron tracking-wider">{playlist.name}</h1>
+              <p className="text-slate-400 font-orbitron">{playlist.tracks.length} TRACKS</p>
             </div>
           </div>
         </div>
@@ -173,29 +173,29 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
 
       <div className="max-w-4xl mx-auto px-6 py-8">
         {/* Enhanced Navigation Breadcrumb */}
-        <div className="flex items-center justify-between mb-8 p-4 bg-cyber-dark border-2 border-neon-green rounded-sm neon-glow-green">
+        <div className="flex items-center justify-between mb-8 p-4 glass-card shadow-neon-pink">
           <div className="flex items-center space-x-6">
             <button
               onClick={onBack}
-              className="cyber-button px-4 py-2 rounded-sm flex items-center space-x-2 font-bold tracking-wider"
+              className="btn-secondary px-4 py-2 flex items-center space-x-2 font-bold tracking-wider"
             >
               <ArrowLeft className="w-5 h-5" />
               <span>BACK TO STUDIO</span>
             </button>
-            <div className="text-cyber-gray font-mono">
-              <span className="text-neon-purple">STUDIO</span> → <span className="neon-text-green">NOW PLAYING</span>
+            <div className="text-slate-400 font-orbitron">
+              <span className="text-cyan-400">STUDIO</span> → <span className="text-fuchsia-400">NOW PLAYING</span>
             </div>
           </div>
           <div className="flex items-center space-x-3">
             <button
               onClick={handleSavePlaylist}
-              className="cyber-button cyber-button-purple px-4 py-2 rounded-sm font-bold tracking-wider"
+              className="btn-primary px-4 py-2 font-bold tracking-wider"
             >
               SAVE PLAYLIST
             </button>
             <button
               onClick={handleSharePlaylist}
-              className="cyber-button px-4 py-2 rounded-sm font-bold tracking-wider"
+              className="btn-secondary px-4 py-2 font-bold tracking-wider"
             >
               SHARE
             </button>
@@ -204,27 +204,27 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
 
         {/* Enhanced Current Track Display */}
         <div className="text-center mb-12">
-          <div className="w-80 h-80 bg-cyber-dark border-4 border-neon-green rounded-sm mx-auto mb-8 flex items-center justify-center neon-glow-green animate-pulse-light">
-            <div className="w-64 h-64 bg-cyber-darker border-2 border-neon-purple rounded-sm flex items-center justify-center neon-glow-purple">
+          <div className="w-80 h-80 glass-card mx-auto mb-8 flex items-center justify-center shadow-neon-pink animate-pulse-glow">
+            <div className="w-64 h-64 bg-glass border border-glass rounded-lg flex items-center justify-center shadow-neon-cyan">
               <div className="text-8xl">🎵</div>
             </div>
           </div>
 
-          <h2 className="text-4xl font-bold neon-text-green mb-3 font-mono tracking-wider">{currentTrack.title}</h2>
-          <p className="text-2xl neon-text-purple mb-6 font-mono">{currentTrack.artist}</p>
-          <div className="flex items-center justify-center space-x-8 text-lg font-mono font-bold">
-            <span className="text-neon-green">{currentTrack.bpm} BPM</span>
-            <span className="text-cyber-gray">•</span>
-            <span className="text-neon-purple">ENERGY: {Math.round((currentTrack.energy || 0.5) * 100)}%</span>
+          <h2 className="text-4xl font-bold text-fuchsia-400 mb-3 font-orbitron tracking-wider">{currentTrack.title}</h2>
+          <p className="text-2xl text-cyan-400 mb-6 font-orbitron">{currentTrack.artist}</p>
+          <div className="flex items-center justify-center space-x-8 text-lg font-orbitron font-bold">
+            <span className="text-fuchsia-400">{currentTrack.bpm} BPM</span>
+            <span className="text-slate-400">•</span>
+            <span className="text-cyan-400">ENERGY: {Math.round((currentTrack.energy || 0.5) * 100)}%</span>
           </div>
         </div>
 
         {/* Enhanced Progress Bar */}
-        <div className="mb-12 p-4 bg-cyber-dark border-2 border-neon-green rounded-sm neon-glow-green">
-          <div className="flex items-center justify-between mb-4 text-lg font-mono font-bold">
-            <span className="neon-text-green">{formatTime(currentTime)}</span>
-            <span className="text-cyber-gray">PLAYING</span>
-            <span className="neon-text-green">{formatTime(duration || currentTrack.duration || 0)}</span>
+        <div className="mb-12 p-4 glass-card shadow-neon-pink">
+          <div className="flex items-center justify-between mb-4 text-lg font-orbitron font-bold">
+            <span className="text-fuchsia-400">{formatTime(currentTime)}</span>
+            <span className="text-slate-400">PLAYING</span>
+            <span className="text-fuchsia-400">{formatTime(duration || currentTrack.duration || 0)}</span>
           </div>
           <input
             type="range"
@@ -232,49 +232,49 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
             max={duration || currentTrack.duration || 300}
             value={currentTime}
             onChange={handleSeek}
-            className="cyber-slider w-full"
+            className="slider-futuristic w-full"
           />
         </div>
 
         {/* Enhanced Player Controls */}
         <div className="flex items-center justify-center space-x-8 mb-12">
-          <button className="w-16 h-16 bg-cyber-dark border-2 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all hover:scale-110" aria-label="Shuffle">
-            <Shuffle className="w-8 h-8 neon-text-green" />
+          <button className="w-16 h-16 glass-button hover-lift flex items-center justify-center transition-all hover:scale-110" aria-label="Shuffle">
+            <Shuffle className="w-8 h-8 text-fuchsia-400" />
           </button>
 
           <button
             onClick={handlePrevious}
-            className="w-20 h-20 bg-cyber-dark border-2 border-neon-purple hover:neon-glow-purple rounded-sm flex items-center justify-center transition-all hover:scale-110"
+            className="w-20 h-20 glass-button hover-lift flex items-center justify-center transition-all hover:scale-110 shadow-neon-cyan"
           >
-            <SkipBack className="w-10 h-10 neon-text-purple" />
+            <SkipBack className="w-10 h-10 text-cyan-400" />
           </button>
 
           <button
             onClick={handlePlayPause}
-            className="w-28 h-28 bg-cyber-dark border-4 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all duration-300 transform hover:scale-110 animate-deck-glow"
+            className="w-28 h-28 glass-button hover-lift flex items-center justify-center transition-all duration-300 transform hover:scale-110 shadow-neon-pink animate-pulse-glow"
           >
             {isPlaying ?
-              <Pause className="w-14 h-14 neon-text-green" /> :
-              <Play className="w-14 h-14 neon-text-green ml-1" />
+              <Pause className="w-14 h-14 text-fuchsia-400" /> :
+              <Play className="w-14 h-14 text-fuchsia-400 ml-1" />
             }
           </button>
 
           <button
             onClick={handleNext}
-            className="w-20 h-20 bg-cyber-dark border-2 border-neon-purple hover:neon-glow-purple rounded-sm flex items-center justify-center transition-all hover:scale-110"
+            className="w-20 h-20 glass-button hover-lift flex items-center justify-center transition-all hover:scale-110 shadow-neon-cyan"
           >
-            <SkipForward className="w-10 h-10 neon-text-purple" />
+            <SkipForward className="w-10 h-10 text-cyan-400" />
           </button>
 
-          <button className="w-16 h-16 bg-cyber-dark border-2 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all hover:scale-110" aria-label="Repeat">
-            <Repeat className="w-8 h-8 neon-text-green" />
+          <button className="w-16 h-16 glass-button hover-lift flex items-center justify-center transition-all hover:scale-110" aria-label="Repeat">
+            <Repeat className="w-8 h-8 text-fuchsia-400" />
           </button>
         </div>
 
         {/* Enhanced Volume Control */}
-        <div className="flex items-center justify-center space-x-6 mb-12 p-4 bg-cyber-dark border-2 border-neon-purple rounded-sm neon-glow-purple">
-          <Volume2 className="w-6 h-6 neon-text-purple" />
-          <span className="text-lg font-mono font-bold neon-text-purple">VOLUME</span>
+        <div className="flex items-center justify-center space-x-6 mb-12 p-4 glass-card shadow-neon-cyan">
+          <Volume2 className="w-6 h-6 text-cyan-400" />
+          <span className="text-lg font-orbitron font-bold text-cyan-400">VOLUME</span>
           <input
             type="range"
             min="0"
@@ -282,16 +282,16 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
             step="0.01"
             value={volume}
             onChange={(e) => setVolume(parseFloat(e.target.value))}
-            className="cyber-slider cyber-slider-purple w-48"
+            className="slider-futuristic w-48"
           />
-          <span className="text-lg font-mono font-bold neon-text-purple w-12">{Math.round(volume * 100)}%</span>
+          <span className="text-lg font-orbitron font-bold text-cyan-400 w-12">{Math.round(volume * 100)}%</span>
         </div>
 
         {/* Enhanced Playlist */}
-        <div className="bg-cyber-dark border-2 border-neon-green rounded-sm p-6 neon-glow-green">
-          <h3 className="text-2xl font-bold neon-text-green mb-6 flex items-center space-x-3 font-mono tracking-wider">
+        <div className="glass-card p-6 shadow-neon-pink">
+          <h3 className="text-2xl font-bold text-fuchsia-400 mb-6 flex items-center space-x-3 font-orbitron tracking-wider">
             <span>PLAYLIST</span>
-            <Heart className="w-6 h-6 text-neon-purple" />
+            <Heart className="w-6 h-6 text-cyan-400" />
           </h3>
 
           <div className="space-y-2 max-h-80 overflow-y-auto custom-scrollbar">
@@ -299,28 +299,28 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
               <div
                 key={track.id}
                 onClick={() => setCurrentTrackIndex(index)}
-                className={`group flex items-center space-x-4 p-4 rounded-sm border-2 transition-all cursor-pointer ${
+                className={`group flex items-center space-x-4 p-4 rounded-lg border transition-all cursor-pointer ${
                   index === currentTrackIndex
-                    ? 'bg-cyber-medium border-neon-green neon-glow-green animate-pulse-light'
-                    : 'bg-cyber-darker border-cyber-light hover:bg-cyber-medium hover:border-neon-purple hover:neon-glow-purple'
+                    ? 'bg-glass border-fuchsia-400 shadow-neon-pink animate-pulse-glow'
+                    : 'bg-glass border-glass hover:border-cyan-400 hover:shadow-neon-cyan'
                 }`}
               >
-                <div className={`w-10 h-10 rounded-sm border-2 flex items-center justify-center ${
-                  index === currentTrackIndex ? 'border-neon-green bg-cyber-dark' : 'border-cyber-light bg-cyber-darker'
+                <div className={`w-10 h-10 rounded-lg border flex items-center justify-center ${
+                  index === currentTrackIndex ? 'border-fuchsia-400 bg-glass' : 'border-glass bg-glass'
                 }`}>
                   {index === currentTrackIndex && isPlaying ? (
-                    <Pause className="w-5 h-5 neon-text-green" />
+                    <Pause className="w-5 h-5 text-fuchsia-400" />
                   ) : (
-                    <Play className="w-5 h-5 neon-text-green" />
+                    <Play className="w-5 h-5 text-fuchsia-400" />
                   )}
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-bold neon-text-green truncate font-mono text-lg group-hover:neon-text-purple transition-colors">{track.title}</h4>
-                  <p className="text-base text-neon-purple truncate font-mono">{track.artist}</p>
+                  <h4 className="font-bold text-fuchsia-400 truncate font-orbitron text-lg group-hover:text-cyan-400 transition-colors">{track.title}</h4>
+                  <p className="text-base text-cyan-400 truncate font-orbitron">{track.artist}</p>
                 </div>
 
-                <div className="text-base neon-text-green font-mono font-bold">
+                <div className="text-base text-fuchsia-400 font-orbitron font-bold">
                   {formatTime(track.duration || 300)}
                 </div>
               </div>

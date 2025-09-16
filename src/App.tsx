@@ -4,7 +4,7 @@ import Navigation from './components/Navigation';
 import { Playlist } from './types';
 import LandingPage from './components/LandingPage';
 import MagicStudio from './components/MagicStudio';
-import PlayerView from './components/PlayerView';
+import ProfessionalMagicPlayer from './components/ProfessionalMagicPlayer';
 import PlaylistEditor from './components/PlaylistEditor';
 import AnalyticsExport from './components/AnalyticsExport';
 import LibraryProfile from './components/LibraryProfile';
@@ -127,8 +127,12 @@ function AppContent() {
             path="/play"
             element={
               currentPlaylist ? (
-                <PlayerView
+                <ProfessionalMagicPlayer
                   playlist={currentPlaylist}
+                  session={currentSession}
+                  isPlaying={false}
+                  onPlayPause={(playing) => console.log('Play/Pause:', playing)}
+                  onSessionEnd={() => navigate('/')}
                   onBack={() => window.history.back()}
                 />
               ) : (
