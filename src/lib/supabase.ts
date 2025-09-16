@@ -10,9 +10,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
     url: supabaseUrl || 'MISSING',
     keyLength: supabaseAnonKey?.length || 0
   });
+
+  // Provide fallback to prevent app from crashing
+  console.warn('Using placeholder Supabase client. Update .env file with real credentials.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Use placeholder values if environment variables are missing to prevent crash
+const fallbackUrl = supabaseUrl || 'https://placeholder.supabase.co';
+const fallbackKey = supabaseAnonKey || 'placeholder-anon-key';
+
+export const supabase = createClient(fallbackUrl, fallbackKey);
 
 // expose the same names your app imports
 export const db: any = supabase;
