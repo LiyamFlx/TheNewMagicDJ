@@ -132,7 +132,6 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
     const audio = new Audio();
     audio.preload = 'metadata';
-    audio.crossOrigin = 'anonymous';
     
     // Create listener functions
     const onLoadedMetadata = () => {
@@ -230,7 +229,6 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
     const audio = new Audio();
     audio.preload = 'metadata';
-    audio.crossOrigin = 'anonymous';
     
     // Create listener functions for deck B
     const onLoadedMetadata = () => {
