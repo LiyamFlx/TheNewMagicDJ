@@ -401,19 +401,19 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       let fillColor, shadowColor;
       if (x < progressWidth) {
         if (color === 'green') {
-          fillColor = '#00FF41';
-          shadowColor = 'rgba(0, 255, 65, 0.8)';
+          fillColor = '#e879f9'; // fuchsia-400
+          shadowColor = 'rgba(232, 121, 249, 0.8)';
         } else {
-          fillColor = '#9D00FF';
-          shadowColor = 'rgba(157, 0, 255, 0.8)';
+          fillColor = '#22d3ee'; // cyan-400
+          shadowColor = 'rgba(34, 211, 238, 0.8)';
         }
       } else {
         if (color === 'green') {
-          fillColor = 'rgba(0, 255, 65, 0.3)';
-          shadowColor = 'rgba(0, 255, 65, 0.2)';
+          fillColor = 'rgba(232, 121, 249, 0.3)';
+          shadowColor = 'rgba(232, 121, 249, 0.2)';
         } else {
-          fillColor = 'rgba(157, 0, 255, 0.3)';
-          shadowColor = 'rgba(157, 0, 255, 0.2)';
+          fillColor = 'rgba(34, 211, 238, 0.3)';
+          shadowColor = 'rgba(34, 211, 238, 0.2)';
         }
       }
       
@@ -429,9 +429,9 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
     // Draw playhead
     const playheadX = progressWidth;
-    ctx.strokeStyle = color === 'green' ? '#00FF41' : '#9D00FF';
+    ctx.strokeStyle = color === 'green' ? '#e879f9' : '#22d3ee';
     ctx.lineWidth = 3;
-    ctx.shadowColor = color === 'green' ? 'rgba(0, 255, 65, 1)' : 'rgba(157, 0, 255, 1)';
+    ctx.shadowColor = color === 'green' ? 'rgba(232, 121, 249, 1)' : 'rgba(34, 211, 238, 1)';
     ctx.shadowBlur = 15;
     ctx.beginPath();
     ctx.moveTo(Math.round(playheadX), 0);
@@ -597,43 +597,43 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   // Guard clause - return early if no playlist or current track
   if (!playlist || !currentTrack) {
     return (
-      <div className="min-h-screen bg-cyber-black flex items-center justify-center">
+      <div className="min-h-screen gradient-bg-primary flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-neon-green border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-cyber-white font-mono">Loading playlist...</p>
+          <div className="w-16 h-16 border-4 border-fuchsia-400 border-t-transparent rounded-full animate-spin mx-auto mb-4 shadow-neon-pink"></div>
+          <p className="text-white font-orbitron">Loading playlist...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-cyber-black overflow-hidden font-dj">
+    <div className="min-h-screen gradient-bg-primary overflow-hidden font-orbitron">
       {/* Enhanced Header */}
-      <div className="flex items-center justify-between p-4 lg:p-6 border-b-2 border-neon-green bg-gradient-to-r from-cyber-darker to-cyber-dark backdrop-blur-sm">
+      <div className="flex items-center justify-between p-4 lg:p-6 border-b border-glass nav-sticky">
         <div className="flex items-center space-x-4">
           <button
             onClick={onBack}
             aria-label="Go back to playlist selection"
-            className="w-10 h-10 lg:w-12 lg:h-12 rounded-sm bg-cyber-medium border-2 border-neon-green hover:neon-glow-green flex items-center justify-center transition-all duration-300 hover:scale-105"
+            className="glass-button hover-lift flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12"
           >
-            <ArrowLeft className="w-5 h-5 lg:w-6 lg:h-6 neon-text-green" />
+            <ArrowLeft className="w-5 h-5 lg:w-6 lg:h-6 text-fuchsia-400" />
           </button>
           
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? "Close mobile menu" : "Open mobile menu"}
-            className="lg:hidden w-10 h-10 rounded-sm bg-cyber-medium border-2 border-neon-green hover:neon-glow-green flex items-center justify-center transition-all duration-300"
+            className="lg:hidden glass-button hover-lift flex items-center justify-center w-10 h-10"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5 neon-text-green" /> : <Menu className="w-5 h-5 neon-text-green" />}
+            {mobileMenuOpen ? <X className="w-5 h-5 text-fuchsia-400" /> : <Menu className="w-5 h-5 text-fuchsia-400" />}
           </button>
           
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-cyber-dark border-3 border-neon-green rounded-sm flex items-center justify-center neon-glow-green animate-pulse-light">
-              <Radio className="w-7 h-7 neon-text-green" />
+            <div className="w-12 h-12 glass-card flex items-center justify-center shadow-neon-pink animate-pulse-glow">
+              <Radio className="w-7 h-7 text-fuchsia-400" />
             </div>
             <div>
-              <h1 className="text-xl lg:text-2xl font-bold text-cyber-white tracking-wide">PROFESSIONAL PLAYER</h1>
-              <p className="text-sm lg:text-base text-neon-green font-mono truncate max-w-48 lg:max-w-none">{playlist.name}</p>
+              <h1 className="text-xl lg:text-2xl font-bold text-white tracking-wide font-orbitron">PROFESSIONAL PLAYER</h1>
+              <p className="text-sm lg:text-base text-fuchsia-400 font-orbitron truncate max-w-48 lg:max-w-none">{playlist.name}</p>
             </div>
           </div>
         </div>
@@ -642,7 +642,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           <button
             onClick={() => setShowPlaylistEditor(!showPlaylistEditor)}
             aria-label={showPlaylistEditor ? "Hide playlist editor" : "Show playlist editor"}
-            className={`cyber-button cyber-button-purple px-3 lg:px-4 py-2 rounded-sm flex items-center space-x-2 text-sm lg:text-base ${showPlaylistEditor ? 'active-neon-purple' : ''}`}
+            className={`btn-primary px-3 lg:px-4 py-2 flex items-center space-x-2 text-sm lg:text-base ${showPlaylistEditor ? 'shadow-neon-pink' : ''}`}
           >
             <List className="w-4 h-4 lg:w-5 lg:h-5" />
             <span className="hidden sm:inline">PLAYLIST</span>
@@ -650,19 +650,19 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           <button
             onClick={() => setShowMagicDancer(!showMagicDancer)}
             aria-label={showMagicDancer ? "Hide magic dancer" : "Show magic dancer"}
-            className={`cyber-button px-3 lg:px-4 py-2 rounded-sm flex items-center space-x-2 text-sm lg:text-base ${showMagicDancer ? 'active-neon-green' : ''}`}
+            className={`btn-secondary px-3 lg:px-4 py-2 flex items-center space-x-2 text-sm lg:text-base ${showMagicDancer ? 'shadow-neon-blue' : ''}`}
           >
             <Activity className="w-4 h-4 lg:w-5 lg:h-5" />
             <span className="hidden sm:inline">DANCER</span>
           </button>
-          <div className="hidden sm:flex items-center space-x-2 px-3 lg:px-4 py-2 bg-cyber-dark border-2 border-neon-green rounded-sm neon-glow-green">
-            <div className="w-3 h-3 bg-neon-green rounded-full animate-neon-pulse-fast"></div>
+          <div className="hidden sm:flex items-center space-x-2 px-3 lg:px-4 py-2 glass-card shadow-neon-cyan">
+            <div className="w-3 h-3 bg-cyan-400 rounded-full animate-pulse-glow"></div>
             <span className="text-xs lg:text-sm font-bold tracking-wider">LIVE</span>
           </div>
           <button
             onClick={onSessionEnd}
             aria-label="End DJ session"
-            className="cyber-button cyber-button-purple px-3 lg:px-4 py-2 rounded-sm flex items-center space-x-2 text-sm lg:text-base"
+            className="btn-primary px-3 lg:px-4 py-2 flex items-center space-x-2 text-sm lg:text-base"
           >
             <Square className="w-4 h-4 lg:w-5 lg:h-5" />
             <span className="hidden sm:inline">END</span>
@@ -671,28 +671,28 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       </div>
 
       {/* Mobile Compact Player */}
-      <div className="lg:hidden bg-cyber-dark border-b-2 border-neon-green">
+      <div className="lg:hidden bg-glass border-b border-glass">
         <div className="p-4">
           <div className="flex items-center space-x-3 mb-4">
-            <div className="w-14 h-14 deck-card deck-card-a rounded-sm flex items-center justify-center animate-deck-glow">
-              <Play className="w-7 h-7 neon-text-green" />
+            <div className="w-14 h-14 glass-card flex items-center justify-center shadow-neon-pink animate-pulse-glow">
+              <Play className="w-7 h-7 text-fuchsia-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold truncate text-cyber-white text-lg">{currentTrack.title}</h3>
-              <p className="text-sm text-neon-green truncate font-mono">{currentTrack.artist}</p>
-              <div className="flex items-center space-x-3 text-xs text-cyber-dim mt-1">
-                <span className="font-mono">{currentTrack.bpm ?? 128} BPM</span>
-                <span className="font-mono">{currentTrack.key ?? 'C'}</span>
+              <h3 className="font-bold truncate text-white text-lg font-orbitron">{currentTrack.title}</h3>
+              <p className="text-sm text-fuchsia-400 truncate font-orbitron">{currentTrack.artist}</p>
+              <div className="flex items-center space-x-3 text-xs text-slate-400 mt-1">
+                <span className="font-orbitron">{currentTrack.bpm ?? 128} BPM</span>
+                <span className="font-orbitron">{currentTrack.key ?? 'C'}</span>
               </div>
             </div>
             {isLoading && (
-              <div className="w-8 h-8 border-3 border-neon-green border-t-transparent rounded-sm animate-spin neon-glow-green"></div>
+              <div className="w-8 h-8 border-3 border-fuchsia-400 border-t-transparent rounded-sm animate-spin shadow-neon-pink"></div>
             )}
           </div>
 
           <div className="mb-4">
             <div 
-              className="w-full h-3 bg-cyber-darker border-2 border-neon-green rounded-sm cursor-pointer overflow-hidden"
+              className="w-full h-3 bg-glass border border-glass rounded-lg cursor-pointer overflow-hidden"
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const percentage = ((e.clientX - rect.left) / rect.width) * 100;
@@ -705,44 +705,44 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               aria-valuemax={100}
             >
               <div 
-                className="h-3 progress-green rounded-sm transition-all duration-300"
+                className="h-3 bg-gradient-to-r from-fuchsia-600 to-cyan-400 rounded-lg transition-all duration-300"
                 style={{ width: `${deckAProgress}%` }}
               ></div>
             </div>
-            <div className="flex justify-between text-xs text-cyber-dim mt-2 font-mono">
+            <div className="flex justify-between text-xs text-slate-400 mt-2 font-orbitron">
               <span>{formatTime(currentTime)}</span>
               <span>{formatTime(duration)}</span>
             </div>
           </div>
 
           <div className="flex items-center justify-center space-x-6">
-            <button 
+            <button
               onClick={handleSkipBack}
               aria-label="Skip to previous track"
-              className="w-12 h-12 deck-card deck-card-a rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105"
+              className="w-12 h-12 glass-button hover-lift flex items-center justify-center transition-all duration-300"
             >
-              <SkipBack className="w-6 h-6 neon-text-green" />
+              <SkipBack className="w-6 h-6 text-fuchsia-400" />
             </button>
             <button
               onClick={() => onPlayPause(!isPlaying)}
               disabled={isLoading}
               aria-label={isPlaying ? "Pause playback" : "Start playback"}
-              className="w-16 h-16 deck-card deck-card-a rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105 disabled:opacity-50"
+              className="w-16 h-16 glass-button hover-lift flex items-center justify-center transition-all duration-300 disabled:opacity-50"
             >
               {isLoading ? (
-                <div className="w-8 h-8 border-3 border-neon-green border-t-transparent rounded-sm animate-spin"></div>
+                <div className="w-8 h-8 border-3 border-fuchsia-400 border-t-transparent rounded-sm animate-spin"></div>
               ) : isPlaying ? (
-                <Pause className="w-8 h-8 neon-text-green" />
+                <Pause className="w-8 h-8 text-fuchsia-400" />
               ) : (
-                <Play className="w-8 h-8 neon-text-green" />
+                <Play className="w-8 h-8 text-fuchsia-400" />
               )}
             </button>
-            <button 
+            <button
               onClick={handleSkipForward}
               aria-label="Skip to next track"
-              className="w-12 h-12 deck-card deck-card-a rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105"
+              className="w-12 h-12 glass-button hover-lift flex items-center justify-center transition-all duration-300"
             >
-              <SkipForward className="w-6 h-6 neon-text-green" />
+              <SkipForward className="w-6 h-6 text-fuchsia-400" />
             </button>
           </div>
         </div>
@@ -753,46 +753,46 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8 h-full">
           
           {/* Enhanced Deck A */}
-          <div className="deck-card deck-card-a rounded-sm p-6 animate-fade-in">
+          <div className="glass-card hover-lift p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-neon-green rounded-sm flex items-center justify-center text-cyber-black font-bold text-lg">
+                <div className="w-8 h-8 bg-fuchsia-400 rounded-lg flex items-center justify-center text-slate-900 font-bold text-lg">
                   A
                 </div>
-                <h2 className="text-xl lg:text-2xl font-bold neon-text-green tracking-wider">DECK A</h2>
+                <h2 className="text-xl lg:text-2xl font-bold text-fuchsia-400 tracking-wider font-orbitron">DECK A</h2>
               </div>
               <div className="flex items-center space-x-2">
                 <button 
                   aria-label="Play deck A"
-                  className="w-10 h-10 bg-cyber-dark border-2 border-neon-green rounded-sm flex items-center justify-center neon-glow-green hover:scale-105 transition-all"
+                  className="w-10 h-10 glass-button hover-lift flex items-center justify-center transition-all"
                 >
-                  <Play className="w-5 h-5 neon-text-green" />
+                  <Play className="w-5 h-5 text-fuchsia-400" />
                 </button>
                 <button 
                   aria-label="Pause deck A"
-                  className="w-10 h-10 bg-cyber-dark border-2 border-neon-green rounded-sm flex items-center justify-center hover:neon-glow-green hover:scale-105 transition-all"
+                  className="w-10 h-10 glass-button hover-lift flex items-center justify-center transition-all"
                 >
-                  <Pause className="w-5 h-5 neon-text-green" />
+                  <Pause className="w-5 h-5 text-fuchsia-400" />
                 </button>
               </div>
             </div>
 
             {/* Enhanced Track Info */}
-            <div className="mb-6 p-4 bg-cyber-darker border-2 border-neon-green rounded-sm">
-              <h3 className="font-bold text-lg lg:text-xl mb-2 truncate text-cyber-white">{currentTrack.title}</h3>
-              <p className="text-neon-green mb-3 truncate font-mono text-base">{currentTrack.artist}</p>
+            <div className="mb-6 p-4 bg-glass border border-glass rounded-lg">
+              <h3 className="font-bold text-lg lg:text-xl mb-2 truncate text-white font-orbitron">{currentTrack.title}</h3>
+              <p className="text-fuchsia-400 mb-3 truncate font-orbitron text-base">{currentTrack.artist}</p>
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div className="text-center">
-                  <div className="text-neon-green font-bold text-lg">{currentTrack.bpm ?? 128}</div>
-                  <div className="text-cyber-dim text-xs">BPM</div>
+                  <div className="text-fuchsia-400 font-bold text-lg">{currentTrack.bpm ?? 128}</div>
+                  <div className="text-slate-400 text-xs">BPM</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-neon-green font-bold text-lg">{currentTrack.key ?? 'C'}</div>
-                  <div className="text-cyber-dim text-xs">KEY</div>
+                  <div className="text-fuchsia-400 font-bold text-lg">{currentTrack.key ?? 'C'}</div>
+                  <div className="text-slate-400 text-xs">KEY</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-neon-green font-bold text-lg">{formatTime(currentTrack.duration ?? 180)}</div>
-                  <div className="text-cyber-dim text-xs">TIME</div>
+                  <div className="text-fuchsia-400 font-bold text-lg">{formatTime(currentTrack.duration ?? 180)}</div>
+                  <div className="text-slate-400 text-xs">TIME</div>
                 </div>
               </div>
             </div>
@@ -803,7 +803,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 ref={waveformCanvasA}
                 width={320}
                 height={120}
-                className="w-full h-20 lg:h-28 bg-cyber-black border-2 border-neon-green rounded-sm cursor-pointer"
+                className="w-full h-20 lg:h-28 bg-slate-900 border border-glass rounded-lg cursor-pointer"
                 onClick={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   const percentage = ((e.clientX - rect.left) / rect.width) * 100;
@@ -815,9 +815,9 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 aria-valuemin={0}
                 aria-valuemax={100}
               />
-              <div className="flex justify-between text-xs text-cyber-dim mt-2 font-mono">
+              <div className="flex justify-between text-xs text-slate-400 mt-2 font-orbitron">
                 <span>{formatTime(currentTime)}</span>
-                <span className="text-neon-green">{Math.round(deckAProgress)}%</span>
+                <span className="text-fuchsia-400">{Math.round(deckAProgress)}%</span>
                 <span>{formatTime(duration || (currentTrack.duration ?? 180))}</span>
               </div>
             </div>
@@ -825,33 +825,33 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             {/* Enhanced Controls */}
             <div className="space-y-4">
               <div className="flex items-center justify-center space-x-4">
-                <button 
+                <button
                   onClick={handleSkipBack}
                   aria-label="Previous track"
-                  className="w-12 h-12 lg:w-14 lg:h-14 bg-cyber-dark border-2 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105"
+                  className="w-12 h-12 lg:w-14 lg:h-14 glass-button hover-lift flex items-center justify-center transition-all duration-300"
                 >
-                  <SkipBack className="w-6 h-6 lg:w-7 lg:h-7 neon-text-green" />
+                  <SkipBack className="w-6 h-6 lg:w-7 lg:h-7 text-fuchsia-400" />
                 </button>
                 <button
                   onClick={() => onPlayPause(!isPlaying)}
                   disabled={isLoading}
                   aria-label={isPlaying ? "Pause" : "Play"}
-                  className="w-16 h-16 lg:w-20 lg:h-20 bg-cyber-dark border-4 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105 disabled:opacity-50 animate-deck-glow active:scale-95"
+                  className="w-16 h-16 lg:w-20 lg:h-20 glass-button hover-lift flex items-center justify-center transition-all duration-300 disabled:opacity-50 shadow-neon-pink active:scale-95"
                 >
                   {isLoading ? (
-                    <div className="w-8 h-8 lg:w-10 lg:h-10 border-3 border-neon-green border-t-transparent rounded-sm animate-spin"></div>
+                    <div className="w-8 h-8 lg:w-10 lg:h-10 border-3 border-fuchsia-400 border-t-transparent rounded-sm animate-spin"></div>
                   ) : isPlaying ? (
-                    <Pause className="w-8 h-8 lg:w-10 lg:h-10 neon-text-green" />
+                    <Pause className="w-8 h-8 lg:w-10 lg:h-10 text-fuchsia-400" />
                   ) : (
-                    <Play className="w-8 h-8 lg:w-10 lg:h-10 neon-text-green" />
+                    <Play className="w-8 h-8 lg:w-10 lg:h-10 text-fuchsia-400" />
                   )}
                 </button>
-                <button 
+                <button
                   onClick={handleSkipForward}
                   aria-label="Next track"
-                  className="w-12 h-12 lg:w-14 lg:h-14 bg-cyber-dark border-2 border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105"
+                  className="w-12 h-12 lg:w-14 lg:h-14 glass-button hover-lift flex items-center justify-center transition-all duration-300"
                 >
-                  <SkipForward className="w-6 h-6 lg:w-7 lg:h-7 neon-text-green" />
+                  <SkipForward className="w-6 h-6 lg:w-7 lg:h-7 text-fuchsia-400" />
                 </button>
               </div>
 
@@ -859,10 +859,10 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <Volume2 className="w-5 h-5 text-neon-green" />
-                    <span className="text-sm font-bold text-neon-green">VOLUME</span>
+                    <Volume2 className="w-5 h-5 text-fuchsia-400" />
+                    <span className="text-sm font-bold text-fuchsia-400 font-orbitron">VOLUME</span>
                   </div>
-                  <span className="text-sm font-mono text-cyber-white">{deckAVolume}%</span>
+                  <span className="text-sm font-orbitron text-white">{deckAVolume}%</span>
                 </div>
                 <input
                   type="range"
@@ -870,7 +870,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   max="100"
                   value={deckAVolume}
                   onChange={(e) => setDeckAVolume(Number(e.target.value))}
-                  className="cyber-slider w-full"
+                  className="slider-futuristic w-full"
                   aria-label="Deck A volume"
                 />
               </div>
@@ -880,14 +880,14 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 <button
                   onClick={() => addCuePoint('deckA', deckAProgress)}
                   aria-label="Add cue point"
-                  className="cyber-button flex-1 py-3 px-4 rounded-sm text-sm font-bold flex items-center justify-center space-x-2"
+                  className="btn-secondary flex-1 py-3 px-4 text-sm font-bold flex items-center justify-center space-x-2"
                 >
                   <Crosshair className="w-4 h-4" />
                   <span>CUE</span>
                 </button>
-                <button 
+                <button
                   aria-label="Create loop"
-                  className="cyber-button cyber-button-blue flex-1 py-3 px-4 rounded-sm text-sm font-bold flex items-center justify-center space-x-2"
+                  className="btn-accent flex-1 py-3 px-4 text-sm font-bold flex items-center justify-center space-x-2"
                 >
                   <RotateCcw className="w-4 h-4" />
                   <span>LOOP</span>
@@ -897,10 +897,10 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           </div>
 
           {/* Enhanced Center Controls */}
-          <div className="flex flex-col justify-between animate-fade-in-up">
+          <div className="flex flex-col justify-between">
             {/* Enhanced Crossfader Section */}
-            <div className="cyber-card rounded-sm p-6 mb-6 bg-gradient-to-b from-cyber-medium to-cyber-dark">
-              <h3 className="text-lg lg:text-xl font-bold mb-6 text-center neon-text-blue flex items-center justify-center space-x-2">
+            <div className="glass-card hover-lift p-6 mb-6">
+              <h3 className="text-lg lg:text-xl font-bold mb-6 text-center text-cyan-400 flex items-center justify-center space-x-2 font-orbitron">
                 <Zap className="w-6 h-6" />
                 <span>CROSSFADER</span>
               </h3>
@@ -912,17 +912,17 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   max="100"
                   value={crossfaderPosition}
                   onChange={(e) => handleCrossfaderChange(Number(e.target.value))}
-                  className="cyber-slider cyber-slider-blue w-full"
+                  className="slider-futuristic w-full"
                   aria-label="Crossfader position"
                   aria-valuetext={`${crossfaderPosition > 0 ? 'Deck B' : crossfaderPosition < 0 ? 'Deck A' : 'Center'}`}
                 />
-                <div className="flex justify-between text-xs text-cyber-dim mt-3 font-mono font-bold">
-                  <span className="neon-text-green">A</span>
-                  <span className="text-cyber-white">CENTER</span>
-                  <span className="neon-text-purple">B</span>
+                <div className="flex justify-between text-xs text-slate-400 mt-3 font-orbitron font-bold">
+                  <span className="text-fuchsia-400">A</span>
+                  <span className="text-white">CENTER</span>
+                  <span className="text-cyan-400">B</span>
                 </div>
                 <div className="text-center mt-2">
-                  <span className="text-sm font-mono text-neon-blue">{crossfaderPosition > 0 ? '+' : ''}{crossfaderPosition}</span>
+                  <span className="text-sm font-orbitron text-cyan-400">{crossfaderPosition > 0 ? '+' : ''}{crossfaderPosition}</span>
                 </div>
               </div>
 
@@ -930,10 +930,10 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-2">
-                    <Headphones className="w-5 h-5 text-neon-blue" />
-                    <span className="text-sm font-bold text-neon-blue">MASTER</span>
+                    <Headphones className="w-5 h-5 text-cyan-400" />
+                    <span className="text-sm font-bold text-cyan-400 font-orbitron">MASTER</span>
                   </div>
-                  <span className="text-sm font-mono text-cyber-white">{masterVolume}%</span>
+                  <span className="text-sm font-orbitron text-white">{masterVolume}%</span>
                 </div>
                 <input
                   type="range"
@@ -941,7 +941,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   max="100"
                   value={masterVolume}
                   onChange={(e) => setMasterVolume(Number(e.target.value))}
-                  className="cyber-slider cyber-slider-blue w-full"
+                  className="slider-futuristic w-full"
                   aria-label="Master volume"
                 />
               </div>
@@ -951,8 +951,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 <button
                   onClick={() => setBpmSync(!bpmSync)}
                   aria-label={`BPM sync ${bpmSync ? 'enabled' : 'disabled'}`}
-                  className={`cyber-button py-3 px-4 rounded-sm text-sm font-bold ${
-                    bpmSync ? 'active-neon-green' : ''
+                  className={`btn-secondary py-3 px-4 text-sm font-bold ${
+                    bpmSync ? 'shadow-neon-blue' : ''
                   }`}
                 >
                   BPM SYNC
@@ -960,8 +960,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 <button
                   onClick={() => setAutoMix(!autoMix)}
                   aria-label={`Auto mix ${autoMix ? 'enabled' : 'disabled'}`}
-                  className={`cyber-button cyber-button-purple py-3 px-4 rounded-sm text-sm font-bold ${
-                    autoMix ? 'active-neon-purple' : ''
+                  className={`btn-primary py-3 px-4 text-sm font-bold ${
+                    autoMix ? 'shadow-neon-pink' : ''
                   }`}
                 >
                   AUTO MIX
@@ -970,86 +970,86 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             </div>
 
             {/* Enhanced Session Info */}
-            <div className="cyber-card rounded-sm p-6 bg-gradient-to-b from-cyber-dark to-cyber-medium">
-              <h3 className="text-lg lg:text-xl font-bold mb-4 neon-text-purple flex items-center space-x-2">
+            <div className="glass-card hover-lift p-6">
+              <h3 className="text-lg lg:text-xl font-bold mb-4 text-fuchsia-400 flex items-center space-x-2 font-orbitron">
                 <Settings className="w-5 h-5" />
                 <span>SESSION INFO</span>
               </h3>
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between items-center p-2 bg-cyber-darker rounded-sm">
-                  <span className="text-cyber-gray font-mono">Playing:</span>
-                  <span className="text-cyber-white font-bold">{currentTrackIndex + 1} / {playlist.tracks.length}</span>
+                <div className="flex justify-between items-center p-2 bg-glass rounded-lg">
+                  <span className="text-slate-400 font-orbitron">Playing:</span>
+                  <span className="text-white font-bold">{currentTrackIndex + 1} / {playlist.tracks.length}</span>
                 </div>
-                <div className="flex justify-between items-center p-2 bg-cyber-darker rounded-sm">
-                  <span className="text-cyber-gray font-mono">Remaining:</span>
-                  <span className="text-cyber-white font-bold">{formatTime((playlist.tracks.length - currentTrackIndex - 1) * 180)}</span>
+                <div className="flex justify-between items-center p-2 bg-glass rounded-lg">
+                  <span className="text-slate-400 font-orbitron">Remaining:</span>
+                  <span className="text-white font-bold">{formatTime((playlist.tracks.length - currentTrackIndex - 1) * 180)}</span>
                 </div>
-                <div className="flex justify-between items-center p-2 bg-cyber-darker rounded-sm">
-                  <span className="text-cyber-gray font-mono">BPM:</span>
-                  <span className="text-neon-green font-bold">{currentTrack.bpm ?? 128}</span>
+                <div className="flex justify-between items-center p-2 bg-glass rounded-lg">
+                  <span className="text-slate-400 font-orbitron">BPM:</span>
+                  <span className="text-fuchsia-400 font-bold">{currentTrack.bpm ?? 128}</span>
                 </div>
-                <div className="flex justify-between items-center p-2 bg-cyber-darker rounded-sm">
-                  <span className="text-cyber-gray font-mono">Key:</span>
-                  <span className="text-neon-green font-bold">{currentTrack.key ?? 'C'}</span>
+                <div className="flex justify-between items-center p-2 bg-glass rounded-lg">
+                  <span className="text-slate-400 font-orbitron">Key:</span>
+                  <span className="text-fuchsia-400 font-bold">{currentTrack.key ?? 'C'}</span>
                 </div>
-                <div className="flex justify-between items-center p-2 bg-cyber-darker rounded-sm">
-                  <span className="text-cyber-gray font-mono">Energy:</span>
-                  <span className="text-neon-blue font-bold">{Math.round((currentTrack.energy ?? 0.5) * 100)}%</span>
+                <div className="flex justify-between items-center p-2 bg-glass rounded-lg">
+                  <span className="text-slate-400 font-orbitron">Energy:</span>
+                  <span className="text-cyan-400 font-bold">{Math.round((currentTrack.energy ?? 0.5) * 100)}%</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Enhanced Deck B */}
-          <div className="deck-card deck-card-b rounded-sm p-6 animate-fade-in">
+          <div className="glass-card hover-lift p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-neon-purple rounded-sm flex items-center justify-center text-cyber-black font-bold text-lg">
+                <div className="w-8 h-8 bg-cyan-400 rounded-lg flex items-center justify-center text-slate-900 font-bold text-lg">
                   B
                 </div>
-                <h2 className="text-xl lg:text-2xl font-bold neon-text-purple tracking-wider">DECK B</h2>
+                <h2 className="text-xl lg:text-2xl font-bold text-cyan-400 tracking-wider font-orbitron">DECK B</h2>
               </div>
               <div className="flex items-center space-x-2">
                 <button 
                   aria-label="Play deck B"
-                  className="w-10 h-10 bg-cyber-dark border-2 border-neon-purple rounded-sm flex items-center justify-center neon-glow-purple hover:scale-105 transition-all"
+                  className="w-10 h-10 glass-button hover-lift flex items-center justify-center transition-all"
                 >
-                  <Play className="w-5 h-5 neon-text-purple" />
+                  <Play className="w-5 h-5 text-cyan-400" />
                 </button>
                 <button 
                   aria-label="Pause deck B"
-                  className="w-10 h-10 bg-cyber-dark border-2 border-neon-purple rounded-sm flex items-center justify-center hover:neon-glow-purple hover:scale-105 transition-all"
+                  className="w-10 h-10 glass-button hover-lift flex items-center justify-center transition-all"
                 >
-                  <Pause className="w-5 h-5 neon-text-purple" />
+                  <Pause className="w-5 h-5 text-cyan-400" />
                 </button>
               </div>
             </div>
 
             {/* Enhanced Track Info */}
-            <div className="mb-6 p-4 bg-cyber-darker border-2 border-neon-purple rounded-sm">
+            <div className="mb-6 p-4 bg-glass border border-glass rounded-lg">
               {nextTrack ? (
                 <>
-                  <h3 className="font-bold text-lg lg:text-xl mb-2 truncate text-cyber-white">{nextTrack.title}</h3>
-                  <p className="text-neon-purple mb-3 truncate font-mono text-base">{nextTrack.artist}</p>
+                  <h3 className="font-bold text-lg lg:text-xl mb-2 truncate text-white font-orbitron">{nextTrack.title}</h3>
+                  <p className="text-cyan-400 mb-3 truncate font-orbitron text-base">{nextTrack.artist}</p>
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div className="text-center">
-                      <div className="text-neon-purple font-bold text-lg">{nextTrack.bpm ?? 128}</div>
-                      <div className="text-cyber-dim text-xs">BPM</div>
+                      <div className="text-cyan-400 font-bold text-lg">{nextTrack.bpm ?? 128}</div>
+                      <div className="text-slate-400 text-xs">BPM</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-neon-purple font-bold text-lg">{nextTrack.key ?? 'C'}</div>
-                      <div className="text-cyber-dim text-xs">KEY</div>
+                      <div className="text-cyan-400 font-bold text-lg">{nextTrack.key ?? 'C'}</div>
+                      <div className="text-slate-400 text-xs">KEY</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-neon-purple font-bold text-lg">{formatTime(nextTrack.duration ?? 180)}</div>
-                      <div className="text-cyber-dim text-xs">TIME</div>
+                      <div className="text-cyan-400 font-bold text-lg">{formatTime(nextTrack.duration ?? 180)}</div>
+                      <div className="text-slate-400 text-xs">TIME</div>
                     </div>
                   </div>
                 </>
               ) : (
                 <div className="text-center py-8">
-                  <Music className="w-12 h-12 text-cyber-dim mx-auto mb-3" />
-                  <p className="text-cyber-dim font-mono">NO TRACK LOADED</p>
+                  <Music className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                  <p className="text-slate-400 font-orbitron">NO TRACK LOADED</p>
                 </div>
               )}
             </div>
@@ -1060,12 +1060,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 ref={waveformCanvasB}
                 width={320}
                 height={120}
-                className="w-full h-20 lg:h-28 bg-cyber-black border-2 border-neon-purple rounded-sm"
+                className="w-full h-20 lg:h-28 bg-slate-900 border border-glass rounded-lg"
                 aria-label="Deck B waveform display"
               />
-              <div className="flex justify-between text-xs text-cyber-dim mt-2 font-mono">
+              <div className="flex justify-between text-xs text-slate-400 mt-2 font-orbitron">
                 <span>0:00</span>
-                <span className="text-neon-purple">{Math.round(deckBProgress)}%</span>
+                <span className="text-cyan-400">{Math.round(deckBProgress)}%</span>
                 <span>{nextTrack ? formatTime(nextTrack.duration ?? 180) : '--:--'}</span>
               </div>
             </div>
@@ -1073,23 +1073,23 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             {/* Enhanced Controls */}
             <div className="space-y-4">
               <div className="flex items-center justify-center space-x-4">
-                <button 
+                <button
                   aria-label="Deck B previous"
-                  className="w-12 h-12 lg:w-14 lg:h-14 bg-cyber-dark border-2 border-neon-purple hover:neon-glow-purple rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105"
+                  className="w-12 h-12 lg:w-14 lg:h-14 glass-button hover-lift flex items-center justify-center transition-all duration-300"
                 >
-                  <SkipBack className="w-6 h-6 lg:w-7 lg:h-7 neon-text-purple" />
+                  <SkipBack className="w-6 h-6 lg:w-7 lg:h-7 text-cyan-400" />
                 </button>
-                <button 
+                <button
                   aria-label="Play deck B"
-                  className="w-16 h-16 lg:w-20 lg:h-20 bg-cyber-dark border-4 border-neon-purple hover:neon-glow-purple rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105 animate-deck-glow"
+                  className="w-16 h-16 lg:w-20 lg:h-20 glass-button hover-lift flex items-center justify-center transition-all duration-300 shadow-neon-cyan"
                 >
-                  <Play className="w-8 h-8 lg:w-10 lg:h-10 neon-text-purple" />
+                  <Play className="w-8 h-8 lg:w-10 lg:h-10 text-cyan-400" />
                 </button>
-                <button 
+                <button
                   aria-label="Deck B next"
-                  className="w-12 h-12 lg:w-14 lg:h-14 bg-cyber-dark border-2 border-neon-purple hover:neon-glow-purple rounded-sm flex items-center justify-center transition-all duration-300 hover:scale-105"
+                  className="w-12 h-12 lg:w-14 lg:h-14 glass-button hover-lift flex items-center justify-center transition-all duration-300"
                 >
-                  <SkipForward className="w-6 h-6 lg:w-7 lg:h-7 neon-text-purple" />
+                  <SkipForward className="w-6 h-6 lg:w-7 lg:h-7 text-cyan-400" />
                 </button>
               </div>
 
@@ -1097,10 +1097,10 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <Volume2 className="w-5 h-5 text-neon-purple" />
-                    <span className="text-sm font-bold text-neon-purple">VOLUME</span>
+                    <Volume2 className="w-5 h-5 text-cyan-400" />
+                    <span className="text-sm font-bold text-cyan-400 font-orbitron">VOLUME</span>
                   </div>
-                  <span className="text-sm font-mono text-cyber-white">{deckBVolume}%</span>
+                  <span className="text-sm font-orbitron text-white">{deckBVolume}%</span>
                 </div>
                 <input
                   type="range"
@@ -1108,7 +1108,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   max="100"
                   value={deckBVolume}
                   onChange={(e) => setDeckBVolume(Number(e.target.value))}
-                  className="cyber-slider cyber-slider-purple w-full"
+                  className="slider-futuristic w-full"
                   aria-label="Deck B volume"
                 />
               </div>
@@ -1118,14 +1118,14 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 <button
                   onClick={() => addCuePoint('deckB', deckBProgress)}
                   aria-label="Add cue point to deck B"
-                  className="cyber-button cyber-button-purple flex-1 py-3 px-4 rounded-sm text-sm font-bold flex items-center justify-center space-x-2"
+                  className="btn-secondary flex-1 py-3 px-4 text-sm font-bold flex items-center justify-center space-x-2"
                 >
                   <Crosshair className="w-4 h-4" />
                   <span>CUE</span>
                 </button>
-                <button 
+                <button
                   aria-label="Create loop on deck B"
-                  className="cyber-button flex-1 py-3 px-4 rounded-sm text-sm font-bold flex items-center justify-center space-x-2"
+                  className="btn-accent flex-1 py-3 px-4 text-sm font-bold flex items-center justify-center space-x-2"
                 >
                   <RotateCcw className="w-4 h-4" />
                   <span>LOOP</span>
@@ -1135,7 +1135,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           </div>
 
           {/* Enhanced Right Sidebar */}
-          <div className="space-y-6 min-h-0 animate-slide-in-right">
+          <div className="space-y-6 min-h-0">
             {showMagicDancer && (
               <MagicDancer
                 isActive={isPlaying}
@@ -1165,24 +1165,24 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             )}
             
             {!showMagicDancer && !showPlaylistEditor && (
-              <div className="cyber-card rounded-sm p-6 text-center bg-gradient-to-b from-cyber-medium to-cyber-dark">
-                <div className="w-16 h-16 bg-cyber-dark border-3 border-neon-green rounded-sm flex items-center justify-center mx-auto mb-4 neon-glow-green animate-pulse-light">
-                  <Music className="w-8 h-8 neon-text-green" />
+              <div className="glass-card hover-lift p-6 text-center">
+                <div className="w-16 h-16 glass-card flex items-center justify-center mx-auto mb-4 shadow-neon-pink animate-pulse-glow">
+                  <Music className="w-8 h-8 text-fuchsia-400" />
                 </div>
-                <h3 className="text-lg font-bold text-cyber-white mb-3">DJ TOOLS</h3>
-                <p className="text-cyber-gray mb-6 font-mono text-sm">Select tools from the header to get started</p>
+                <h3 className="text-lg font-bold text-white mb-3 font-orbitron">DJ TOOLS</h3>
+                <p className="text-slate-400 mb-6 font-orbitron text-sm">Select tools from the header to get started</p>
                 <div className="flex flex-col space-y-3">
                   <button
                     onClick={() => setShowMagicDancer(true)}
                     aria-label="Show magic dancer"
-                    className="cyber-button py-3 px-4 rounded-sm text-sm font-bold"
+                    className="btn-secondary py-3 px-4 text-sm font-bold"
                   >
                     MAGIC DANCER
                   </button>
                   <button
                     onClick={() => setShowPlaylistEditor(true)}
                     aria-label="Show playlist editor"
-                    className="cyber-button cyber-button-purple py-3 px-4 rounded-sm text-sm font-bold"
+                    className="btn-primary py-3 px-4 text-sm font-bold"
                   >
                     PLAYLIST EDITOR
                   </button>

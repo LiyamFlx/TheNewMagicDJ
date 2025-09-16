@@ -1,0 +1,114 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e8]:
+        - img [ref=e10]
+        - generic [ref=e14]:
+          - heading "MagicDJ" [level=1] [ref=e15]
+          - paragraph [ref=e16]: AI-Powered DJ Platform
+      - generic [ref=e18]:
+        - button "Home" [ref=e19] [cursor=pointer]:
+          - img [ref=e20] [cursor=pointer]
+          - generic [ref=e23] [cursor=pointer]: Home
+        - button "Create" [ref=e24] [cursor=pointer]:
+          - img [ref=e25] [cursor=pointer]
+          - generic [ref=e28] [cursor=pointer]: Create
+        - button "Play" [disabled] [ref=e29]:
+          - img [ref=e30]
+          - generic [ref=e32]: Play
+        - button "Library" [ref=e33] [cursor=pointer]:
+          - img [ref=e34] [cursor=pointer]
+          - generic [ref=e38] [cursor=pointer]: Library
+        - button "Analytics" [disabled] [ref=e39]:
+          - img [ref=e40]
+          - generic [ref=e42]: Analytics
+    - generic [ref=e45]:
+      - img [ref=e46]
+      - img [ref=e49]
+      - button "Create" [ref=e51] [cursor=pointer]
+  - generic [ref=e54]:
+    - generic [ref=e55]:
+      - generic [ref=e56]: "Quick Actions:"
+      - button "+ New Mix" [ref=e57] [cursor=pointer]
+      - button "Browse Library" [ref=e58] [cursor=pointer]
+    - generic [ref=e59]: "Current: AI Magic Studio"
+  - generic [ref=e60]:
+    - generic [ref=e66]:
+      - generic [ref=e67]:
+        - button [ref=e68] [cursor=pointer]
+        - generic [ref=e70]:
+          - img [ref=e72]
+          - generic [ref=e75]:
+            - heading "MAGIC STUDIO" [level=1] [ref=e76]
+            - paragraph [ref=e77]: AI-POWERED CREATION SUITE
+      - generic [ref=e78]:
+        - button "RECENT" [ref=e79] [cursor=pointer]:
+          - img [ref=e80] [cursor=pointer]
+          - generic [ref=e84] [cursor=pointer]: RECENT
+        - button "LIBRARY" [ref=e85] [cursor=pointer]:
+          - img [ref=e86] [cursor=pointer]
+          - generic [ref=e90] [cursor=pointer]: LIBRARY
+        - generic [ref=e92]:
+          - paragraph [ref=e93]: WELCOME BACK,
+          - paragraph
+    - generic [ref=e95]:
+      - generic [ref=e96]:
+        - heading "CHOOSE YOUR MAGIC" [level=1] [ref=e97]:
+          - text: CHOOSE YOUR
+          - generic [ref=e98]: MAGIC
+        - paragraph [ref=e99]: AI-assisted creation, playback, and analysis of DJ sets with real-time crowd sensing
+      - generic [ref=e100]:
+        - generic [ref=e102]:
+          - img [ref=e104]
+          - heading "MAGICMATCH" [level=2] [ref=e106]
+          - paragraph [ref=e107]: Recognize what's playing and let AI create the perfect continuation playlist
+          - generic [ref=e108]:
+            - button "LISTEN VIA MICROPHONE" [ref=e109] [cursor=pointer]:
+              - img [ref=e110] [cursor=pointer]
+              - generic [ref=e113] [cursor=pointer]: LISTEN VIA MICROPHONE
+            - button "UPLOAD AUDIO FILE" [ref=e114] [cursor=pointer]:
+              - img [ref=e115] [cursor=pointer]
+              - generic [ref=e118] [cursor=pointer]: UPLOAD AUDIO FILE
+            - button "CAPTURE FROM STREAM" [ref=e119] [cursor=pointer]:
+              - img [ref=e120] [cursor=pointer]
+              - generic [ref=e126] [cursor=pointer]: CAPTURE FROM STREAM
+        - generic [ref=e128]:
+          - img [ref=e130]
+          - heading "MAGICSET" [level=2] [ref=e133]
+          - paragraph [ref=e134]: Generate an AI-curated playlist from scratch based on your vibe and energy preferences
+          - generic [ref=e135]:
+            - generic [ref=e136]:
+              - generic [ref=e137]: CHOOSE YOUR VIBE
+              - generic [ref=e138]:
+                - button "ELECTRONIC" [ref=e139] [cursor=pointer]:
+                  - img [ref=e140] [cursor=pointer]
+                  - generic [ref=e142] [cursor=pointer]: ELECTRONIC
+                - button "HIP-HOP" [ref=e143] [cursor=pointer]:
+                  - img [ref=e144] [cursor=pointer]
+                  - generic [ref=e147] [cursor=pointer]: HIP-HOP
+                - button "HOUSE" [ref=e148] [cursor=pointer]:
+                  - img [ref=e149] [cursor=pointer]
+                  - generic [ref=e152] [cursor=pointer]: HOUSE
+                - button "TECHNO" [ref=e153] [cursor=pointer]:
+                  - img [ref=e154] [cursor=pointer]
+                  - generic [ref=e160] [cursor=pointer]: TECHNO
+            - generic [ref=e161]:
+              - generic [ref=e162]: ENERGY LEVEL
+              - generic [ref=e163]:
+                - button "CHILL" [ref=e164] [cursor=pointer]
+                - button "GROOVE" [ref=e165] [cursor=pointer]
+                - button "PEAK" [ref=e166] [cursor=pointer]
+      - generic [ref=e167]:
+        - generic [ref=e168]:
+          - generic [ref=e169]: 99.8%
+          - generic [ref=e170]: RECOGNITION ACCURACY
+        - generic [ref=e172]:
+          - generic [ref=e173]: <3s
+          - generic [ref=e174]: AVERAGE PROCESSING TIME
+        - generic [ref=e176]:
+          - generic [ref=e177]: 10M+
+          - generic [ref=e178]: TRACKS IN DATABASE
+```

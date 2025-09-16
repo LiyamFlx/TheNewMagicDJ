@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import Navigation, { NavigationView } from './components/Navigation';
-import { useNavigation } from './hooks/useNavigation';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import Navigation from './components/Navigation';
 import { Playlist } from './types';
 import LandingPage from './components/LandingPage';
 import MagicStudio from './components/MagicStudio';
@@ -8,23 +8,17 @@ import PlayerView from './components/PlayerView';
 import PlaylistEditor from './components/PlaylistEditor';
 import AnalyticsExport from './components/AnalyticsExport';
 import LibraryProfile from './components/LibraryProfile';
+import NotFound from './components/NotFound';
 
-function App() {
-  const { 
-    currentView, 
-    navigate, 
-    goBack, 
-    setBreadcrumbs, 
-    clearBreadcrumbs, 
-    canGoBack,
-    breadcrumbs 
-  } = useNavigation('home');
-  
+// Main App content that needs access to navigation
+function AppContent() {
+  const navigate = useNavigate();
   const [savedPlaylists, setSavedPlaylists] = useState<Playlist[]>([]);
   const [recentSessions, setRecentSessions] = useState<any[]>([]);
   const [currentPlaylist, setCurrentPlaylist] = useState<Playlist | null>(null);
-  const [currentSession, _setCurrentSession] = useState<any>(null);
-  const [user, _setUser] = useState<any>(null);
+  const [currentSession] = useState<any>(null);
+  const [user] = useState<any>(null);
+  const [isEditingPlaylist, setIsEditingPlaylist] = useState(false);
 
   // Load recent sessions (mock data) - only once on mount
   useEffect(() => {
@@ -34,54 +28,21 @@ function App() {
     ]);
   }, []);
 
-  // Handle navigation with proper breadcrumbs
-  const handleNavigation = (view: NavigationView) => {
-    clearBreadcrumbs();
-    navigate(view);
-  };
-
-  const handleStartMixing = () => {
-    navigate('create');
-    setBreadcrumbs([{ label: 'Create', onClick: () => navigate('create') }]);
-  };
-
   const handlePlaylistGenerated = (playlist: Playlist) => {
     setCurrentPlaylist(playlist);
-    navigate('create'); // Stay in create view but show editor
-    setBreadcrumbs([
-      { label: 'Create', onClick: () => navigate('create') },
-      { label: 'Edit Playlist' }
-    ]);
+    setIsEditingPlaylist(true);
   };
 
   const handlePlaylistEdited = (playlist: Playlist) => {
     setCurrentPlaylist(playlist);
-    navigate('play');
-    setBreadcrumbs([
-      { label: 'Create', onClick: () => navigate('create') },
-      { label: 'Now Playing' }
-    ]);
-  };
-
-  const handleLibraryAccess = () => {
-    navigate('library');
+    setIsEditingPlaylist(false);
+    navigate('/play');
   };
 
   const handlePlaylistSelect = (playlist: Playlist) => {
     setCurrentPlaylist(playlist);
-    navigate('create');
-    setBreadcrumbs([
-      { label: 'Library', onClick: () => navigate('library') },
-      { label: 'Edit Playlist' }
-    ]);
-  };
-
-  const handleEditAgain = () => {
-    navigate('create');
-    setBreadcrumbs([
-      { label: 'Analytics', onClick: () => navigate('analytics') },
-      { label: 'Edit Again' }
-    ]);
+    setIsEditingPlaylist(true);
+    navigate('/create');
   };
 
   const handleSaveToLibrary = (playlist: Playlist) => {
@@ -111,80 +72,116 @@ function App() {
     setCurrentPlaylist(playlist);
   };
 
-  const showEditor = currentView === 'create' && currentPlaylist && breadcrumbs.some(b => b.label === 'Edit Playlist');
-  const showPlayer = currentView === 'play' && currentPlaylist;
-
   return (
     <div className="min-h-screen gradient-bg-primary">
       <Navigation
-        currentView={currentView}
-        onNavigate={handleNavigation}
         user={user}
-        breadcrumbs={breadcrumbs}
-        showBackButton={canGoBack}
-        onBack={goBack}
+        hasPlaylist={!!currentPlaylist}
+        hasSession={!!currentSession}
       />
 
-      {currentView === 'home' && (
-        <LandingPage 
-          onStartMixing={handleStartMixing}
-          onLibraryAccess={handleLibraryAccess}
-          recentSessions={recentSessions}
-        />
-      )}
-      
-      {currentView === 'create' && !showEditor && (
-        <MagicStudio
-          user={user}
-          onPlaylistGenerated={handlePlaylistGenerated}
-          onBack={goBack}
-          onLibraryAccess={handleLibraryAccess}
-          recentSessions={recentSessions}
-        />
-      )}
-      
-      {showEditor && (
-        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8">
-          <PlaylistEditor
-            playlist={currentPlaylist!}
-            currentTrackIndex={0}
-            isPlaying={false}
-            onTrackSelect={() => {}}
-            onTrackRemove={handleTrackRemove}
-            onTrackReorder={handleTrackReorder}
-            onPlaylistUpdate={handlePlaylistUpdate}
-            onSendToPlayer={() => handlePlaylistEdited(currentPlaylist!)}
+      <Routes>
+          {/* Home Route */}
+          <Route
+            path="/"
+            element={
+              <LandingPage
+                onStartMixing={() => navigate('/create')}
+                onLibraryAccess={() => navigate('/library')}
+                recentSessions={recentSessions}
+              />
+            }
           />
-        </div>
-      )}
-      
-      {showPlayer && (
-        <PlayerView 
-          playlist={currentPlaylist}
-          onBack={goBack}
-        />
-      )}
-        
-      {currentView === 'analytics' && currentPlaylist && currentSession && (
-        <AnalyticsExport
-          playlist={currentPlaylist}
-          session={currentSession}
-          onBack={goBack}
-          onSaveToLibrary={handleSaveToLibrary}
-          onEditAgain={handleEditAgain}
-        />
-      )}
-        
-      {currentView === 'library' && (
-        <LibraryProfile
-          user={user}
-          savedPlaylists={savedPlaylists}
-          onBack={goBack}
-          onPlaylistSelect={handlePlaylistSelect}
-          onCreateNew={handleStartMixing}
-        />
-      )}
+
+          {/* Create Route */}
+          <Route
+            path="/create"
+            element={
+              isEditingPlaylist && currentPlaylist ? (
+                <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8">
+                  <PlaylistEditor
+                    playlist={currentPlaylist}
+                    currentTrackIndex={0}
+                    isPlaying={false}
+                    onTrackSelect={() => {}}
+                    onTrackRemove={handleTrackRemove}
+                    onTrackReorder={handleTrackReorder}
+                    onPlaylistUpdate={handlePlaylistUpdate}
+                    onSendToPlayer={() => handlePlaylistEdited(currentPlaylist!)}
+                  />
+                </div>
+              ) : (
+                <MagicStudio
+                  user={user}
+                  onPlaylistGenerated={handlePlaylistGenerated}
+                  onBack={() => window.history.back()}
+                  onLibraryAccess={() => navigate('/library')}
+                  recentSessions={recentSessions}
+                />
+              )
+            }
+          />
+
+          {/* Play Route - Protected */}
+          <Route
+            path="/play"
+            element={
+              currentPlaylist ? (
+                <PlayerView
+                  playlist={currentPlaylist}
+                  onBack={() => window.history.back()}
+                />
+              ) : (
+                <Navigate to="/create" replace />
+              )
+            }
+          />
+
+          {/* Library Route */}
+          <Route
+            path="/library"
+            element={
+              <LibraryProfile
+                user={user}
+                savedPlaylists={savedPlaylists}
+                onBack={() => window.history.back()}
+                onPlaylistSelect={handlePlaylistSelect}
+                onCreateNew={() => navigate('/create')}
+              />
+            }
+          />
+
+          {/* Analytics Route - Protected */}
+          <Route
+            path="/analytics"
+            element={
+              currentPlaylist && currentSession ? (
+                <AnalyticsExport
+                  playlist={currentPlaylist}
+                  session={currentSession}
+                  onBack={() => window.history.back()}
+                  onSaveToLibrary={handleSaveToLibrary}
+                  onEditAgain={() => navigate('/create')}
+                />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+
+          {/* 404 Not Found */}
+          <Route path="*" element={<NotFound />} />
+      </Routes>
     </div>
+  );
+}
+
+// Router wrapper
+function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 }
 

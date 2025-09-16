@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Menu,
   X,
@@ -9,29 +10,32 @@ import {
   Save,
   Play,
   ChevronRight,
-  User
+  User,
+  ArrowLeft
 } from 'lucide-react';
 
-export type NavigationView = 'home' | 'create' | 'play' | 'library' | 'analytics';
+interface NavigationItem {
+  path: string;
+  label: string;
+  icon: React.ComponentType<any>;
+  description: string;
+  requiresData?: boolean;
+}
 
 interface NavigationProps {
-  currentView: NavigationView;
-  onNavigate: (view: NavigationView) => void;
   user?: { email: string } | null;
-  breadcrumbs?: Array<{ label: string; onClick?: () => void }>;
-  showBackButton?: boolean;
-  onBack?: () => void;
+  hasPlaylist?: boolean;
+  hasSession?: boolean;
 }
 
 const Navigation: React.FC<NavigationProps> = ({
-  currentView,
-  onNavigate,
   user,
-  breadcrumbs = [],
-  showBackButton,
-  onBack
+  hasPlaylist = false,
+  hasSession = false
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -45,51 +49,84 @@ const Navigation: React.FC<NavigationProps> = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const navigationItems = [
+  const handleGoBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
+
+  const navigationItems: NavigationItem[] = [
     {
-      id: 'home' as NavigationView,
+      path: '/',
       label: 'Home',
       icon: Home,
       description: 'Dashboard & Recent Sessions'
     },
     {
-      id: 'create' as NavigationView,
+      path: '/create',
       label: 'Create',
       icon: Wand2,
       description: 'AI Magic Studio'
     },
     {
-      id: 'play' as NavigationView,
+      path: '/play',
       label: 'Play',
       icon: Play,
       description: 'DJ Player & Controls',
-      disabled: currentView !== 'play' // Only enabled when in play mode
+      requiresData: true // Requires playlist
     },
     {
-      id: 'library' as NavigationView,
+      path: '/library',
       label: 'Library',
       icon: Save,
       description: 'Saved Playlists & Profile'
     },
     {
-      id: 'analytics' as NavigationView,
+      path: '/analytics',
       label: 'Analytics',
       icon: BarChart3,
       description: 'Performance Insights',
-      disabled: currentView !== 'analytics' // Only enabled when analytics available
+      requiresData: true // Requires session data
     }
   ];
 
-  const handleNavigation = (view: NavigationView) => {
-    if (navigationItems.find(item => item.id === view)?.disabled) return;
-    
-    onNavigate(view);
-    setIsMobileMenuOpen(false);
+  const isItemDisabled = (item: NavigationItem) => {
+    if (!item.requiresData) return false;
+
+    // Play requires playlist
+    if (item.path === '/play') return !hasPlaylist;
+
+    // Analytics requires session
+    if (item.path === '/analytics') return !hasSession;
+
+    return false;
   };
 
-  const getCurrentNavItem = () => {
-    return navigationItems.find(item => item.id === currentView);
+  // Note: getCurrentPath available for future use
+  // const getCurrentPath = () => location.pathname;
+
+  const getBreadcrumbs = () => {
+    const path = location.pathname;
+    const segments = path.split('/').filter(Boolean);
+
+    if (segments.length === 0) return [];
+
+    return segments.map((segment, index) => {
+      const segmentPath = '/' + segments.slice(0, index + 1).join('/');
+      const item = navigationItems.find(nav => nav.path === segmentPath);
+
+      return {
+        label: item?.label || segment.charAt(0).toUpperCase() + segment.slice(1),
+        path: segmentPath,
+        isLast: index === segments.length - 1
+      };
+    });
   };
+
+  const breadcrumbs = getBreadcrumbs();
+  const canGoBack = location.pathname !== '/' && window.history.length > 1;
 
   return (
     <>
@@ -99,49 +136,61 @@ const Navigation: React.FC<NavigationProps> = ({
           <div className="flex items-center justify-between h-16">
             {/* Logo & Brand */}
             <div className="flex items-center space-x-4">
-              {showBackButton && onBack && (
+              {canGoBack && (
                 <button
-                  onClick={onBack}
-                  className="w-10 h-10 glass-button flex items-center justify-center md:hidden"
+                  onClick={handleGoBack}
+                  className="glass-button hover-lift w-10 h-10 flex items-center justify-center md:hidden"
                   aria-label="Go back"
                 >
-                  <ChevronRight className="w-5 h-5 text-gradient-accent rotate-180" />
+                  <ArrowLeft className="w-5 h-5 text-fuchsia-400" />
                 </button>
               )}
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 glass-card flex items-center justify-center animate-pulse-glow">
-                  <Music className="w-6 h-6 text-gradient-primary" />
+              <Link to="/" className="flex items-center space-x-3 hover-lift transition-transform">
+                <div className="w-12 h-12 glass-card flex items-center justify-center shadow-neon-pink animate-pulse-glow">
+                  <Music className="w-7 h-7 text-fuchsia-400" />
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold font-orbitron text-gradient-primary tracking-wider">MagicDJ</h1>
-                  <p className="text-xs text-gray-400 font-mono hidden sm:block">AI-Powered DJ Platform</p>
+                  <p className="text-xs text-slate-400 font-orbitron hidden sm:block">AI-Powered DJ Platform</p>
                 </div>
-              </div>
+              </Link>
             </div>
 
             {/* Desktop Navigation */}
             <div className="hidden md:block">
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-2">
                 {navigationItems.map((item) => {
                   const Icon = item.icon;
-                  const isActive = currentView === item.id;
-                  const isDisabled = item.disabled;
-                  
+                  const isActive = location.pathname === item.path;
+                  const isDisabled = isItemDisabled(item);
+
+                  if (isDisabled) {
+                    return (
+                      <div
+                        key={item.path}
+                        className="nav-item opacity-50 cursor-not-allowed"
+                        title={`${item.description} (${item.path === '/play' ? 'Requires playlist' : 'Requires session data'})`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span className="text-sm font-semibold font-orbitron">{item.label}</span>
+                      </div>
+                    );
+                  }
+
                   return (
-                    <button
-                      key={item.id}
-                      onClick={() => handleNavigation(item.id)}
-                      disabled={isDisabled}
+                    <Link
+                      key={item.path}
+                      to={item.path}
                       className={`
-                        nav-item font-inter tracking-wide
+                        nav-item font-orbitron tracking-wide transition-all
                         ${isActive ? 'active' : ''}
-                        ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
                       `}
                       title={item.description}
+                      onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <Icon className="w-4 h-4" />
                       <span className="text-sm font-semibold">{item.label}</span>
-                    </button>
+                    </Link>
                   );
                 })}
               </div>
@@ -176,22 +225,24 @@ const Navigation: React.FC<NavigationProps> = ({
 
         {/* Breadcrumbs */}
         {breadcrumbs.length > 0 && (
-          <div className="border-t border-glass bg-glass">
+          <div className="border-t border-glass bg-glass backdrop-blur-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center space-x-2 py-3 text-sm font-mono">
-                <Home className="w-4 h-4 text-gray-400" />
+              <div className="flex items-center space-x-2 py-3 text-sm font-orbitron">
+                <Link to="/" className="flex items-center text-slate-400 hover:text-fuchsia-400 transition-colors">
+                  <Home className="w-4 h-4" />
+                </Link>
                 {breadcrumbs.map((crumb, index) => (
                   <React.Fragment key={index}>
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
-                    {crumb.onClick ? (
-                      <button
-                        onClick={crumb.onClick}
-                        className="text-gradient-accent hover:text-gradient-primary transition-colors"
+                    <ChevronRight className="w-4 h-4 text-slate-500" />
+                    {crumb.isLast ? (
+                      <span className="text-white font-semibold">{crumb.label}</span>
+                    ) : (
+                      <Link
+                        to={crumb.path}
+                        className="text-fuchsia-400 hover:text-cyan-400 transition-colors font-medium"
                       >
                         {crumb.label}
-                      </button>
-                    ) : (
-                      <span className="text-white">{crumb.label}</span>
+                      </Link>
                     )}
                   </React.Fragment>
                 ))}
@@ -203,15 +254,20 @@ const Navigation: React.FC<NavigationProps> = ({
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
-          
-          <div className="fixed top-0 right-0 h-full w-80 max-w-sm glass-card border-l border-glass">
+        <div className="fixed inset-0 z-50 md:hidden" id="mobile-menu">
+          <div
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+
+          <div className="fixed top-0 right-0 h-full w-80 max-w-sm glass-card border-l border-glass transform transition-transform">
             <div className="flex items-center justify-between p-4 border-b border-glass">
               <h2 className="text-lg font-bold text-gradient-primary font-orbitron">Navigation</h2>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="glass-button w-8 h-8 flex items-center justify-center"
+                className="glass-button hover-lift w-8 h-8 flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-fuchsia-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                aria-label="Close navigation menu"
               >
                 <X className="w-4 h-4 text-white" />
               </button>
@@ -220,30 +276,46 @@ const Navigation: React.FC<NavigationProps> = ({
             <div className="p-4 space-y-3">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = currentView === item.id;
-                const isDisabled = item.disabled;
-                
+                const isActive = location.pathname === item.path;
+                const isDisabled = isItemDisabled(item);
+
+                if (isDisabled) {
+                  return (
+                    <div
+                      key={item.path}
+                      className="w-full p-4 rounded-lg flex items-center space-x-3 text-gray-500 cursor-not-allowed opacity-50"
+                    >
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <div>
+                        <div className="font-semibold font-orbitron">{item.label}</div>
+                        <div className="text-xs opacity-75">
+                          {item.description} - {item.path === '/play' ? 'Requires playlist' : 'Requires session data'}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleNavigation(item.id)}
-                    disabled={isDisabled}
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setIsMobileMenuOpen(false)}
                     className={`
-                      w-full p-4 rounded-sm flex items-center space-x-3 transition-all text-left
-                      ${isActive 
-                        ? 'btn-primary' 
-                        : isDisabled
-                          ? 'text-gray-500 cursor-not-allowed opacity-50'
-                          : 'glass-card hover-lift text-white'
+                      w-full p-4 rounded-lg flex items-center space-x-3 transition-all text-left block focus:outline-none focus:ring-2 focus:ring-fuchsia-400 focus:ring-offset-2 focus:ring-offset-slate-900
+                      ${isActive
+                        ? 'btn-primary'
+                        : 'glass-card hover-lift text-white'
                       }
                     `}
+                    aria-current={isActive ? 'page' : undefined}
                   >
                     <Icon className="w-5 h-5 flex-shrink-0" />
                     <div>
-                      <div className="font-semibold font-mono">{item.label}</div>
+                      <div className="font-semibold font-orbitron">{item.label}</div>
                       <div className="text-xs opacity-75">{item.description}</div>
                     </div>
-                  </button>
+                  </Link>
                 );
               })}
             </div>
@@ -266,26 +338,26 @@ const Navigation: React.FC<NavigationProps> = ({
       )}
 
       {/* Quick Actions Bar (Desktop) */}
-      <div className="hidden lg:block bg-glass border-b border-glass">
+      <div className="hidden lg:block bg-glass border-b border-glass backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-2">
-            <div className="flex items-center space-x-4 text-sm font-mono">
-              <span className="text-gray-500">Quick Actions:</span>
-              <button 
-                onClick={() => handleNavigation('create')}
-                className="text-gradient-accent hover:text-gradient-primary transition-colors"
+            <div className="flex items-center space-x-4 text-sm font-orbitron">
+              <span className="text-slate-500">Quick Actions:</span>
+              <Link
+                to="/create"
+                className="text-fuchsia-400 hover:text-cyan-400 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-fuchsia-400 focus:ring-offset-2 focus:ring-offset-slate-900 rounded px-1"
               >
                 + New Mix
-              </button>
-              <button 
-                onClick={() => handleNavigation('library')}
-                className="text-gradient-primary hover:text-gradient-accent transition-colors"
+              </Link>
+              <Link
+                to="/library"
+                className="text-cyan-400 hover:text-fuchsia-400 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-900 rounded px-1"
               >
                 Browse Library
-              </button>
+              </Link>
             </div>
-            <div className="text-xs text-gray-500 font-mono">
-              Current: {getCurrentNavItem()?.description}
+            <div className="text-xs text-slate-500 font-orbitron">
+              Current: {navigationItems.find(item => item.path === location.pathname)?.description || 'Home'}
             </div>
           </div>
         </div>
