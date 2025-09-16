@@ -38,6 +38,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   // Audio elements using refs for stability
   const audioARef = useRef<HTMLAudioElement | null>(null);
   const audioBRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   
   // Audio state
   const [currentTime, setCurrentTime] = useState(0);
@@ -136,6 +137,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
     const audio = new Audio();
     audio.preload = 'auto';
+    audio.crossOrigin = 'anonymous';
+    audio.volume = deckAVolume / 100;
     
     // Create listener functions
     const onLoadedMetadata = () => {
@@ -401,22 +404,58 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     }
 
     if (isPlaying) {
+      // Initialize AudioContext if needed
+      if (!audioContextRef.current && window.AudioContext) {
+        try {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        } catch (error) {
+          logger.warn('ProfessionalMagicPlayer', 'AudioContext creation failed', error);
+        }
+      }
+
+      // Resume AudioContext if suspended (required for autoplay policy)
+      if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume().catch(error => {
+          logger.warn('ProfessionalMagicPlayer', 'AudioContext resume failed', error);
+        });
+      }
+
       // Ensure audio is ready before playing
       logger.info('ProfessionalMagicPlayer', 'Attempting to play audio', {
         audioSrc: audio.src,
         readyState: audio.readyState,
-        networkState: audio.networkState
+        networkState: audio.networkState,
+        audioContextState: audioContextRef.current?.state
       });
 
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            logger.info('ProfessionalMagicPlayer', 'Audio playback started successfully');
-            setShowUnmuteOverlay(false);
-          })
-          .catch(error => {
-            logger.error('ProfessionalMagicPlayer', 'Audio play failed', error);
+      // Add retry mechanism for playback
+      const attemptPlay = async (retries = 3): Promise<void> => {
+        try {
+          await audio.play();
+          logger.info('ProfessionalMagicPlayer', 'Audio playback started successfully');
+          setShowUnmuteOverlay(false);
+        } catch (error: any) {
+          logger.error('ProfessionalMagicPlayer', `Audio play failed (${retries} retries left)`, {
+            error: error.message,
+            name: error.name,
+            readyState: audio.readyState,
+            networkState: audio.networkState
+          });
+
+          if (retries > 0) {
+            // Wait and retry
+            await new Promise(resolve => setTimeout(resolve, 500));
+            return attemptPlay(retries - 1);
+          } else {
+            // Show unmute overlay for user interaction
+            setShowUnmuteOverlay(true);
+            throw error;
+          }
+        }
+      };
+
+      attemptPlay().catch(error => {
+        logger.error('ProfessionalMagicPlayer', 'All play attempts failed', error);
             onPlayPause(false);
 
             // Check if this is an autoplay restriction

@@ -55,8 +55,27 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
   const clientId = process.env.VITE_SPOTIFY_CLIENT_ID || process.env.SPOTIFY_CLIENT_ID;
   const clientSecret = process.env.VITE_SPOTIFY_CLIENT_SECRET || process.env.SPOTIFY_CLIENT_SECRET;
 
+  console.log('Spotify token request - checking credentials:', {
+    hasClientId: !!clientId,
+    hasClientSecret: !!clientSecret,
+    clientIdLength: clientId?.length,
+    clientSecretLength: clientSecret?.length
+  });
+
   if (!clientId || !clientSecret) {
-    res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Server missing Spotify credentials' } });
+    console.error('Missing Spotify credentials:', {
+      VITE_SPOTIFY_CLIENT_ID: !!process.env.VITE_SPOTIFY_CLIENT_ID,
+      SPOTIFY_CLIENT_ID: !!process.env.SPOTIFY_CLIENT_ID,
+      VITE_SPOTIFY_CLIENT_SECRET: !!process.env.VITE_SPOTIFY_CLIENT_SECRET,
+      SPOTIFY_CLIENT_SECRET: !!process.env.SPOTIFY_CLIENT_SECRET
+    });
+    res.status(500).json({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Server missing Spotify credentials',
+        details: 'Check environment variables in Vercel dashboard'
+      }
+    });
     return;
   }
 
@@ -119,9 +138,17 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
           }
 
           const body = await resp.text();
+          console.error(`Spotify API error (attempt ${attempt + 1}):`, {
+            status: resp.status,
+            statusText: resp.statusText,
+            body: body,
+            headers: Object.fromEntries(resp.headers.entries())
+          });
+
           lastError = await errorFromResponse(resp, body);
           // Retry only on 5xx
           if (resp.status >= 500) {
+            console.log(`Retrying Spotify request in ${500 * (attempt + 1)}ms...`);
             await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
             attempt++;
             continue;

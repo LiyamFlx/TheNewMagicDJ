@@ -17,46 +17,75 @@ function setCached(key: string, data: any) {
 
 export const supabasePlaylistService = {
   async savePlaylist(playlist: any, userId: string) {
-    const { id: playlistId, name, tracks } = playlist;
+    try {
+      console.log('Saving playlist:', { playlistId: playlist.id, name: playlist.name, userId, trackCount: playlist.tracks?.length });
 
-    // 1. Upsert the playlist
-    const { data: playlistData, error: playlistError } = await supabase
-      .from('playlists')
-      .upsert({ id: playlistId, name, user_id: userId }, { onConflict: 'id' })
-      .select()
-      .single();
+      const { id: playlistId, name, tracks } = playlist;
 
-    if (playlistError) {
-      throw new AppError('UPSTREAM_ERROR', 'Failed to save playlist', { details: { playlistError } });
+      if (!userId) {
+        throw new AppError('VALIDATION_ERROR', 'User ID is required');
+      }
+
+      if (!name || !name.trim()) {
+        throw new AppError('VALIDATION_ERROR', 'Playlist name is required');
+      }
+
+      // 1. Insert/Update the playlist (use insert with conflict resolution)
+      const playlistPayload = {
+        id: playlistId || undefined, // Let Supabase generate UUID if not provided
+        name: name.trim(),
+        user_id: userId,
+        description: playlist.description || null
+      };
+
+      const { data: playlistData, error: playlistError } = await supabase
+        .from('playlists')
+        .insert(playlistPayload)
+        .select()
+        .single();
+
+      if (playlistError) {
+        console.error('Supabase playlist save error:', playlistError);
+        throw new AppError('UPSTREAM_ERROR', 'Failed to save playlist', { details: { playlistError } });
+      }
+
+      console.log('Playlist saved:', playlistData);
+
+      // 2. Insert tracks if provided
+      if (tracks && tracks.length > 0) {
+        const trackData = tracks.map((track: any, index: number) => ({
+          playlist_id: playlistData.id,
+          title: track.title || 'Untitled',
+          artist: track.artist || 'Unknown Artist',
+          bpm: track.bpm ? Number(track.bpm) : null,
+          energy: track.energy ? Number(track.energy) : null,
+          duration: track.duration ? Number(track.duration) : 180,
+          source_url: track.url || track.source_url || null
+        })).filter(track => track.title && track.artist); // Filter out invalid tracks
+
+        if (trackData.length > 0) {
+          const { error: tracksError } = await supabase
+            .from('tracks')
+            .insert(trackData);
+
+          if (tracksError) {
+            console.error('Supabase tracks save error:', tracksError);
+            // Don't fail the whole operation for track errors
+            console.warn('Failed to save some tracks, but playlist was saved');
+          } else {
+            console.log(`Saved ${trackData.length} tracks`);
+          }
+        }
+      }
+
+      // Bust cache
+      cache.delete(`playlists:${userId}`);
+
+      return { ...playlistData, tracks: tracks || [] };
+    } catch (error) {
+      console.error('SavePlaylist error:', error);
+      throw error;
     }
-
-    // 2. Delete existing tracks for this playlist
-    const { error: deleteError } = await supabase.from('tracks').delete().eq('playlist_id', playlistData.id);
-    if (deleteError) {
-      throw new AppError('UPSTREAM_ERROR', 'Failed to update playlist tracks', { details: { deleteError } });
-    }
-
-    // 3. Insert new tracks
-    const trackData = tracks.map((track: any) => ({
-      id: track.id,
-      playlist_id: playlistData.id,
-      title: track.title,
-      artist: track.artist,
-      bpm: track.bpm,
-      energy: track.energy,
-      duration: track.duration,
-    }));
-
-    const { error: tracksError } = await supabase.from('tracks').insert(trackData);
-
-    if (tracksError) {
-      throw new AppError('UPSTREAM_ERROR', 'Failed to save tracks', { details: { tracksError } });
-    }
-    
-    // Bust cache
-    cache.delete(`playlists:${userId}`);
-
-    return { ...playlistData, tracks };
   },
 
   async getUserPlaylists(userId: string) {
@@ -67,30 +96,66 @@ export const supabasePlaylistService = {
     const fromCache = getCached(key);
     if (fromCache) return fromCache;
 
-    // Select playlists and include normalized tracks via FK relation, alias to avoid name clash
-    const { data, error } = await supabase
-      .from("playlists")
-      .select("id, user_id, name, created_at, updated_at, items:tracks(id, title, artist, bpm, energy, duration, created_at, updated_at)")
-      .eq("user_id", userId);
+    try {
+      // First, get playlists
+      const { data: playlists, error: playlistError } = await supabase
+        .from("playlists")
+        .select("id, user_id, name, created_at, updated_at")
+        .eq("user_id", userId)
+        .order('created_at', { ascending: false });
 
-    if (error) throw new AppError('UPSTREAM_ERROR', 'Failed to fetch playlists', { details: { error } });
+      if (playlistError) {
+        console.error('Supabase playlist query error:', playlistError);
+        throw new AppError('UPSTREAM_ERROR', 'Failed to fetch playlists', { details: { playlistError } });
+      }
 
-    // Hydrate to expected shape: playlist.tracks array
-    const hydrated = (data || []).map((p: any) => ({
-      ...p,
-      tracks: (p.items || []).map((t: any) => ({
-        id: t.id,
-        title: t.title,
-        artist: t.artist,
-        bpm: t.bpm ?? undefined,
-        energy: typeof t.energy === 'number' ? Number(t.energy) : undefined,
-        duration: t.duration ?? 180,
-      })),
-      items: undefined,
-    }));
+      if (!playlists || playlists.length === 0) {
+        setCached(key, []);
+        return [];
+      }
 
-    setCached(key, hydrated);
-    return hydrated;
+      // Then, get tracks for each playlist
+      const playlistIds = playlists.map(p => p.id);
+      const { data: tracks, error: tracksError } = await supabase
+        .from("tracks")
+        .select("id, playlist_id, title, artist, bpm, energy, duration")
+        .in("playlist_id", playlistIds)
+        .order('created_at', { ascending: true });
+
+      if (tracksError) {
+        console.error('Supabase tracks query error:', tracksError);
+        // Return playlists without tracks rather than failing completely
+        const playlistsWithoutTracks = playlists.map(p => ({ ...p, tracks: [] }));
+        setCached(key, playlistsWithoutTracks);
+        return playlistsWithoutTracks;
+      }
+
+      // Group tracks by playlist
+      const tracksByPlaylist = (tracks || []).reduce((acc: any, track: any) => {
+        if (!acc[track.playlist_id]) acc[track.playlist_id] = [];
+        acc[track.playlist_id].push({
+          id: track.id,
+          title: track.title,
+          artist: track.artist,
+          bpm: track.bpm ?? undefined,
+          energy: typeof track.energy === 'number' ? Number(track.energy) : undefined,
+          duration: track.duration ?? 180,
+        });
+        return acc;
+      }, {});
+
+      // Combine playlists with their tracks
+      const hydrated = playlists.map((playlist: any) => ({
+        ...playlist,
+        tracks: tracksByPlaylist[playlist.id] || []
+      }));
+
+      setCached(key, hydrated);
+      return hydrated;
+    } catch (error) {
+      console.error('Supabase getPlaylists error:', error);
+      throw new AppError('UPSTREAM_ERROR', 'Failed to fetch playlists', { details: { error } });
+    }
   },
 
   async createPlaylist(userId: string, name: string) {
