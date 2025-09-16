@@ -1,10 +1,41 @@
 import { Playlist, Track, RecognitionResult } from '../types';
 import { productionSpotifyService } from './productionSpotifyService';
 import { mockSpotifyService } from './mockSpotifyService';
+import { youtubeService } from './youtubeService';
 import { logger } from '../utils/logger';
 
 class PlaylistService {
   private musicService = productionSpotifyService;
+
+  // Ensure all tracks have valid preview URLs
+  private validateTracks(tracks: Track[]): Track[] {
+    const fallbackUrls = [
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3'
+    ];
+
+    return tracks.map((track, index) => {
+      if (!track.preview_url || track.preview_url.trim() === '') {
+        logger.warn('PlaylistService', 'Track missing preview_url, adding fallback', {
+          trackId: track.id,
+          title: track.title
+        });
+        return {
+          ...track,
+          preview_url: fallbackUrls[index % fallbackUrls.length]
+        };
+      }
+      return track;
+    });
+  }
 
   async generateMagicMatchPlaylist(fingerprint?: string, seedTrack?: Track, userId?: string): Promise<Playlist> {
     return logger.trackOperation(
@@ -64,11 +95,25 @@ class PlaylistService {
               limit: 15
             });
           } catch (error) {
-            logger.warn('PlaylistService', 'All recommendation services failed, using mock data', error);
-            tracks = await mockSpotifyService.getRecommendations({
-              seed_genres: ['electronic', 'house', 'techno'],
-              limit: 15
-            });
+            logger.warn('PlaylistService', 'Primary recommendation service failed, trying YouTube', error);
+
+            // Try YouTube service as secondary fallback
+            try {
+              if (youtubeService.isConfigured()) {
+                tracks = await youtubeService.getRecommendations({
+                  seed_genres: ['electronic', 'house', 'techno'],
+                  limit: 15
+                });
+              } else {
+                throw new Error('YouTube service not configured');
+              }
+            } catch (youtubeError) {
+              logger.warn('PlaylistService', 'YouTube service failed, using mock data', youtubeError);
+              tracks = await mockSpotifyService.getRecommendations({
+                seed_genres: ['electronic', 'house', 'techno'],
+                limit: 15
+              });
+            }
           }
         }
 
@@ -76,6 +121,9 @@ class PlaylistService {
         if (recognizedTrack && !tracks.find(t => t.id === recognizedTrack!.id)) {
           tracks.unshift(recognizedTrack);
         }
+
+        // Validate all tracks have working audio URLs
+        tracks = this.validateTracks(tracks);
 
         const playlist: Playlist = {
           id: `magic-match-${Date.now()}`,
@@ -122,15 +170,33 @@ class PlaylistService {
           tracks = await this.musicService.getRecommendations({
             seed_genres: genres,
             limit: 20,
-            target_energy: energy
+            target_energy: energy as any
           });
         } catch (error) {
-          logger.warn('PlaylistService', 'Spotify service failed, using mock service', error);
-          tracks = await mockSpotifyService.getRecommendations({
-            seed_genres: genres,
-            limit: 20
-          });
+          logger.warn('PlaylistService', 'Primary service failed, trying YouTube', error);
+
+          // Try YouTube service as fallback
+          try {
+            if (youtubeService.isConfigured()) {
+              tracks = await youtubeService.getRecommendations({
+                seed_genres: genres,
+                limit: 20,
+                energy: energy as any
+              });
+            } else {
+              throw new Error('YouTube service not configured');
+            }
+          } catch (youtubeError) {
+            logger.warn('PlaylistService', 'YouTube service failed, using mock service', youtubeError);
+            tracks = await mockSpotifyService.getRecommendations({
+              seed_genres: genres,
+              limit: 20
+            });
+          }
         }
+
+        // Validate all tracks have working audio URLs
+        tracks = this.validateTracks(tracks);
 
         const playlist: Playlist = {
           id: `magic-set-${Date.now()}`,
@@ -172,7 +238,8 @@ class PlaylistService {
           title: randomResult.title,
           artist: randomResult.artist,
           confidence: randomResult.confidence,
-          duration: 180 + Math.floor(Math.random() * 120)
+          duration: 180 + Math.floor(Math.random() * 120),
+          preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'
         };
       },
       { fingerprint }
@@ -189,7 +256,8 @@ class PlaylistService {
           title: 'Enhanced Recognition Track',
           artist: 'AI Recognition',
           confidence: 0.95,
-          duration: 240
+          duration: 240,
+          preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
         };
       },
       { fingerprint }
@@ -210,7 +278,7 @@ class PlaylistService {
           duration: 200,
           bpm: 128,
           energy: 0.8,
-          preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+          preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3'
         };
       },
       { fileName: file.name, fileSize: file.size }

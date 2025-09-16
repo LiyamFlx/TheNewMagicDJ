@@ -203,7 +203,19 @@ class ProductionSpotifyService {
 
   private getFallbackTracks(count: number): Track[] {
     const fallbackTracks: Track[] = [];
-    
+    const demoTracks = [
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3'
+    ];
+
     for (let i = 0; i < count; i++) {
       fallbackTracks.push({
         id: `fallback-${i}`,
@@ -216,10 +228,10 @@ class ProductionSpotifyService {
         energy: Math.random(),
         danceability: Math.random(),
         valence: Math.random(),
-        preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' // Demo audio
+        preview_url: demoTracks[i % demoTracks.length] // Use different demo tracks
       });
     }
-    
+
     return fallbackTracks;
   }
 }

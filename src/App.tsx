@@ -18,7 +18,7 @@ function AppContent() {
   const [savedPlaylists, setSavedPlaylists] = useState<Playlist[]>([]);
   const [recentSessions, setRecentSessions] = useState<any[]>([]);
   const [currentPlaylist, setCurrentPlaylist] = useState<Playlist | null>(null);
-  const [currentSession, setCurrentSession] = useState<any>(null);
+  const [currentSession] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   const [isEditingPlaylist, setIsEditingPlaylist] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);

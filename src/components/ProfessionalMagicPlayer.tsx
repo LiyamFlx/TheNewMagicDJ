@@ -389,12 +389,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       currentTrack: currentTrack?.title
     });
 
-    if (!audio || isLoading || audio.readyState < HTMLAudioElement.HAVE_ENOUGH_DATA) {
+    if (!audio || isLoading || audio.readyState < 4) { // 4 = HAVE_ENOUGH_DATA
       logger.warn('ProfessionalMagicPlayer', 'Play/Pause skipped - audio not ready', {
         hasAudio: !!audio,
         isLoading,
         readyState: audio?.readyState,
-        readyStateRequired: HTMLAudioElement.HAVE_ENOUGH_DATA,
+        readyStateRequired: 4, // HAVE_ENOUGH_DATA
         audioSrc: audio?.src
       });
       return;
