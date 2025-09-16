@@ -1,34 +1,83 @@
 {
-  "name": "magicdj",
+  "name": "the-new-magic-dj",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "AI-powered DJ platform with futuristic glass morphism design",
+  "author": "LiyamFlx",
+  "license": "MIT",
+  "homepage": "https://github.com/LiyamFlx/TheNewMagicDJ#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LiyamFlx/TheNewMagicDJ.git"
+  },
+  "bugs": {
+    "url": "https://github.com/LiyamFlx/TheNewMagicDJ/issues"
+  },
+  "keywords": [
+    "dj",
+    "ai",
+    "music",
+    "react",
+    "typescript",
+    "vite",
+    "tailwindcss",
+    "glass-morphism",
+    "futuristic-ui"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:analyze": "npm run build && npx vite-bundle-analyzer dist/assets/*.js",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "lint:fix": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "clean": "rm -rf dist node_modules/.vite",
+    "clean:all": "rm -rf dist node_modules node_modules/.vite && npm install",
+    "start": "npm run preview",
+    "test:build": "npm run typecheck && npm run build",
+    "deploy": "npm run test:build && vercel --prod"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
-    "lucide-react": "^0.263.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "lucide-react": "^0.544.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/react": "^18.2.15",
-    "@types/react-dom": "^18.2.7",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "@vercel/node": "^2.3.0",
-    "@vitejs/plugin-react": "^4.0.3",
-    "autoprefixer": "^10.4.14",
-    "eslint": "^8.45.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.3",
-    "postcss": "^8.4.27",
-    "tailwindcss": "^3.3.3",
-    "typescript": "^5.0.2",
+    "@types/react": "^18.3.24",
+    "@types/react-dom": "^18.3.7",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "@vercel/node": "^2.15.10",
+    "@vitejs/plugin-react": "^4.7.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-react-refresh": "^0.4.16",
+    "postcss": "^8.5.3",
+    "prettier": "^3.4.2",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2",
     "vite": "^7.1.5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }
