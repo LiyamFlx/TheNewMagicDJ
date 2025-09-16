@@ -20,13 +20,40 @@ function AppContent() {
   const [user] = useState<any>(null);
   const [isEditingPlaylist, setIsEditingPlaylist] = useState(false);
 
-  // Load recent sessions (mock data) - only once on mount
+  // Load recent sessions and persist playlist across navigation
   useEffect(() => {
+    // Load mock recent sessions
     setRecentSessions([
       { id: '1', name: 'Electronic Night', tracks: 15, created_at: new Date(Date.now() - 86400000).toISOString() },
       { id: '2', name: 'House Party Mix', tracks: 20, created_at: new Date(Date.now() - 172800000).toISOString() }
     ]);
+
+    // Restore current playlist from localStorage on app load
+    try {
+      const savedCurrentPlaylist = localStorage.getItem('magicdj_current_playlist');
+      if (savedCurrentPlaylist) {
+        const playlist = JSON.parse(savedCurrentPlaylist);
+        setCurrentPlaylist(playlist);
+        console.log('Restored playlist from localStorage:', playlist.name);
+      }
+    } catch (error) {
+      console.error('Failed to restore playlist from localStorage:', error);
+      localStorage.removeItem('magicdj_current_playlist'); // Clean up corrupted data
+    }
   }, []);
+
+  // Persist current playlist to localStorage whenever it changes
+  useEffect(() => {
+    if (currentPlaylist) {
+      try {
+        localStorage.setItem('magicdj_current_playlist', JSON.stringify(currentPlaylist));
+      } catch (error) {
+        console.error('Failed to save playlist to localStorage:', error);
+      }
+    } else {
+      localStorage.removeItem('magicdj_current_playlist');
+    }
+  }, [currentPlaylist]);
 
   const handlePlaylistGenerated = (playlist: Playlist) => {
     setCurrentPlaylist(playlist);
