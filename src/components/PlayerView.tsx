@@ -118,18 +118,9 @@ const PlayerView: React.FC<PlayerViewProps> = ({ playlist, onBack }) => {
   };
 
   const handleSavePlaylist = () => {
-    // Save playlist to localStorage for now
-    const savedPlaylists = JSON.parse(localStorage.getItem('savedPlaylists') || '[]');
-    const playlistToSave = {
-      ...playlist,
-      savedAt: new Date().toISOString()
-    };
-
-    savedPlaylists.push(playlistToSave);
-    localStorage.setItem('savedPlaylists', JSON.stringify(savedPlaylists));
-
-    // Show success message
-    alert(`Playlist "${playlist.name}" saved successfully!`);
+    // Note: Playlist is already saved via Supabase in parent component
+    // Just show confirmation to user
+    alert(`Playlist "${playlist.name}" is already saved to your library!`);
   };
 
   const handleSharePlaylist = () => {
