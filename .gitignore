@@ -94,3 +94,7 @@ final_fix.sh
 .netlify
 .vercel
 .env*.local
+
+# Ignore Playwright outputs
+playwright-report/
+test-results/
