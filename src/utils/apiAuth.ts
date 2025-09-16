@@ -1,8 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
+// Support both browser (Vite) and serverless (Node) environments
+const isBrowser = typeof window !== 'undefined';
+// @ts-ignore Node process may be undefined in browser builds
+const SUPABASE_URL = (typeof process !== 'undefined' && process?.env?.SUPABASE_URL) ||
+  (isBrowser ? (import.meta as any)?.env?.VITE_SUPABASE_URL : undefined);
+// @ts-ignore Node process may be undefined in browser builds
+const SUPABASE_ANON_KEY = (typeof process !== 'undefined' && process?.env?.SUPABASE_ANON_KEY) ||
+  (isBrowser ? (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY : undefined);
+
 const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL!,
-  import.meta.env.VITE_SUPABASE_ANON_KEY!
+  SUPABASE_URL as string,
+  SUPABASE_ANON_KEY as string
 );
 
 export async function verifySupabaseJWT(authHeader: string): Promise<{ user: any; error?: string }> {
@@ -31,7 +40,7 @@ export function requireAuth(handler: any) {
     const { user, error } = await verifySupabaseJWT(authHeader);
 
     if (error || !user) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } });
     }
 
     req.user = user;
