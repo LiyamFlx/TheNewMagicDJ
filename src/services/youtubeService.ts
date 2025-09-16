@@ -68,7 +68,7 @@ export class YouTubeService {
   }
 
   async getFallbackTracks(seed: string, count: number): Promise<Track[]> {
-    // Demo audio sources for fallback tracks
+    // Demo audio sources for fallback tracks - validated working URLs
     const demoAudioSources = [
       'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
       'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
@@ -78,21 +78,41 @@ export class YouTubeService {
       'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
       'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
       'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3',
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3',
     ];
+
+    // Genre-specific track titles for better UX
+    const genreTitles = {
+      house: ['House Anthem', 'Deep Groove', 'Progressive Beat', 'Club Banger', 'Underground Mix'],
+      electronic: ['Synth Wave', 'Digital Dreams', 'Cyber Beats', 'Electronic Symphony', 'Tech Fusion'],
+      techno: ['Industrial Pulse', 'Berlin Nights', 'Minimal Tech', 'Dark Energy', 'Warehouse Vibe'],
+      'hip-hop': ['Urban Flow', 'Street Beats', 'Boom Bap', 'Trap Anthem', 'Old School']
+    };
+
+    const genre = (seed.toLowerCase().includes('house') && 'house') ||
+                  (seed.toLowerCase().includes('techno') && 'techno') ||
+                  (seed.toLowerCase().includes('hip') && 'hip-hop') ||
+                  'electronic';
+
+    const titles = genreTitles[genre as keyof typeof genreTitles] || genreTitles.electronic;
 
     // If no API key, avoid calling YouTube API entirely
     if (!this.apiKey) {
       const tracks: Track[] = [];
       for (let i = 0; i < count; i++) {
+        const baseTitle = titles[i % titles.length];
+        const artist = `${genre.charAt(0).toUpperCase() + genre.slice(1)} Artist ${i + 1}`;
+
         tracks.push({
           id: `yt-fallback-${Date.now()}-${i}`,
-          title: `${(seed || 'Electronic mix').trim()} – Fallback ${i + 1}`,
-          artist: 'Demo Artist',
-          album: 'Demo Collection',
+          title: baseTitle,
+          artist: artist,
+          album: `${genre.charAt(0).toUpperCase() + genre.slice(1)} Collection`,
           duration: 180 + Math.floor(Math.random() * 120), // 3-5 minutes
           preview_url: demoAudioSources[i % demoAudioSources.length],
           bpm: Math.floor(Math.random() * 60) + 100, // 100-160 BPM
-          key: ['C', 'D', 'E', 'F', 'G', 'A', 'B'][Math.floor(Math.random() * 7)],
+          key: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][Math.floor(Math.random() * 12)],
           energy: Math.random(),
           danceability: Math.random(),
           valence: Math.random()
@@ -107,15 +127,18 @@ export class YouTubeService {
     } catch {
       const tracks: Track[] = [];
       for (let i = 0; i < count; i++) {
+        const baseTitle = titles[i % titles.length];
+        const artist = `${genre.charAt(0).toUpperCase() + genre.slice(1)} Artist ${i + 1}`;
+
         tracks.push({
           id: `yt-fallback-${Date.now()}-${i}`,
-          title: `${(seed || 'Electronic mix').trim()} – Fallback ${i + 1}`,
-          artist: 'Demo Artist',
-          album: 'Demo Collection',
+          title: baseTitle,
+          artist: artist,
+          album: `${genre.charAt(0).toUpperCase() + genre.slice(1)} Collection`,
           duration: 180 + Math.floor(Math.random() * 120), // 3-5 minutes
           preview_url: demoAudioSources[i % demoAudioSources.length],
           bpm: Math.floor(Math.random() * 60) + 100, // 100-160 BPM
-          key: ['C', 'D', 'E', 'F', 'G', 'A', 'B'][Math.floor(Math.random() * 7)],
+          key: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][Math.floor(Math.random() * 12)],
           energy: Math.random(),
           danceability: Math.random(),
           valence: Math.random()

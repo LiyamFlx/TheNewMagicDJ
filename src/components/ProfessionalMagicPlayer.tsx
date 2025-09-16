@@ -44,6 +44,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showPlaylistEditor, setShowPlaylistEditor] = useState(false);
   const [showMagicDancer, setShowMagicDancer] = useState(true);
+  const [showUnmuteOverlay, setShowUnmuteOverlay] = useState(false);
   
   const waveformCanvasA = useRef<HTMLCanvasElement>(null);
   const waveformCanvasB = useRef<HTMLCanvasElement>(null);
@@ -131,6 +132,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
     const audio = new Audio();
     audio.preload = 'metadata';
+    audio.crossOrigin = 'anonymous';
     
     // Create listener functions
     const onLoadedMetadata = () => {
@@ -156,6 +158,19 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       });
       setIsLoading(false);
       setDuration(currentTrack.duration ?? 180);
+
+      // Auto-skip to next track if current track fails to load
+      if (error && error.code !== 1) { // Skip unless MEDIA_ERR_ABORTED (user initiated)
+        logger.info('ProfessionalMagicPlayer', 'Auto-skipping failed track', {
+          currentIndex: currentTrackIndex,
+          totalTracks: playlist?.tracks.length
+        });
+        setTimeout(() => {
+          if (currentTrackIndex < (playlist?.tracks.length ?? 0) - 1) {
+            handleSkipForward();
+          }
+        }, 1000);
+      }
     };
     
     // Store listeners for cleanup
@@ -215,6 +230,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
     const audio = new Audio();
     audio.preload = 'metadata';
+    audio.crossOrigin = 'anonymous';
     
     // Create listener functions for deck B
     const onLoadedMetadata = () => {
@@ -282,14 +298,22 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         playPromise
           .then(() => {
             logger.info('ProfessionalMagicPlayer', 'Audio playback started successfully');
+            setShowUnmuteOverlay(false);
           })
           .catch(error => {
             logger.error('ProfessionalMagicPlayer', 'Audio play failed', error);
             onPlayPause(false);
-            // Try to reload the audio
-            setTimeout(() => {
-              audio.load();
-            }, 1000);
+
+            // Check if this is an autoplay restriction
+            if (error.name === 'NotAllowedError') {
+              setShowUnmuteOverlay(true);
+              logger.info('ProfessionalMagicPlayer', 'Autoplay blocked - showing unmute overlay');
+            } else {
+              // Try to reload the audio for other errors
+              setTimeout(() => {
+                audio.load();
+              }, 1000);
+            }
           });
       }
     } else {
@@ -606,8 +630,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     );
   }
 
+  const handleUnmute = () => {
+    setShowUnmuteOverlay(false);
+    onPlayPause(true);
+  };
+
   return (
-    <div className="min-h-screen gradient-bg-primary overflow-hidden font-orbitron">
+    <div className="min-h-screen gradient-bg-primary overflow-hidden font-orbitron relative">
       {/* Enhanced Header */}
       <div className="flex items-center justify-between p-4 lg:p-6 border-b border-glass nav-sticky">
         <div className="flex items-center space-x-4">
@@ -1192,6 +1221,25 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Unmute Overlay for Autoplay Restrictions */}
+      {showUnmuteOverlay && (
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="glass-card p-8 text-center max-w-md mx-4 shadow-neon-pink">
+            <div className="w-20 h-20 bg-glass border border-fuchsia-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-neon-pink animate-pulse-glow">
+              <Volume2 className="w-10 h-10 text-fuchsia-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-4 font-orbitron">TAP TO UNMUTE</h2>
+            <p className="text-slate-400 mb-6 font-orbitron">Your browser requires user interaction before playing audio</p>
+            <button
+              onClick={handleUnmute}
+              className="btn-primary px-8 py-4 text-lg font-bold shadow-neon-pink"
+            >
+              START PLAYING
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
