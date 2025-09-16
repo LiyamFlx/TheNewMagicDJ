@@ -1,0 +1,72 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e8]:
+        - img [ref=e10]
+        - generic [ref=e14]:
+          - heading "MagicDJ" [level=1] [ref=e15]
+          - paragraph [ref=e16]: AI-Powered DJ Platform
+      - generic [ref=e18]:
+        - button "Home" [ref=e19] [cursor=pointer]:
+          - img [ref=e20] [cursor=pointer]
+          - generic [ref=e23] [cursor=pointer]: Home
+        - button "Create" [ref=e24] [cursor=pointer]:
+          - img [ref=e25] [cursor=pointer]
+          - generic [ref=e28] [cursor=pointer]: Create
+        - button "Play" [disabled] [ref=e29]:
+          - img [ref=e30]
+          - generic [ref=e32]: Play
+        - button "Library" [ref=e33] [cursor=pointer]:
+          - img [ref=e34] [cursor=pointer]
+          - generic [ref=e38] [cursor=pointer]: Library
+        - button "Analytics" [disabled] [ref=e39]:
+          - img [ref=e40]
+          - generic [ref=e42]: Analytics
+  - generic [ref=e45]:
+    - generic [ref=e46]:
+      - generic [ref=e47]: "Quick Actions:"
+      - button "+ New Mix" [ref=e48] [cursor=pointer]
+      - button "Browse Library" [ref=e49] [cursor=pointer]
+    - generic [ref=e50]: "Current: Dashboard & Recent Sessions"
+  - generic [ref=e56]:
+    - generic [ref=e57]:
+      - heading "The Future of AI DJing" [level=1] [ref=e58]:
+        - generic [ref=e59]: The Future of
+        - generic [ref=e60]: AI DJing
+      - paragraph [ref=e61]: Create, perform, and analyze your DJ sets with cutting-edge AI technology. Experience the perfect blend of artificial intelligence and musical creativity.
+      - generic [ref=e84]:
+        - button "Start Creating Now" [ref=e85] [cursor=pointer]:
+          - img [ref=e86] [cursor=pointer]
+          - generic [ref=e88] [cursor=pointer]: Start Creating Now
+        - button "Watch Demo" [ref=e89] [cursor=pointer]
+    - generic [ref=e90]:
+      - generic [ref=e91]:
+        - img [ref=e93]
+        - heading "AI Track Recognition" [level=3] [ref=e95]
+        - paragraph [ref=e96]: Instantly identify any song and build the perfect playlist
+      - generic [ref=e97]:
+        - img [ref=e99]
+        - heading "Smart Playlist Generation" [level=3] [ref=e103]
+        - paragraph [ref=e104]: Create DJ sets tailored to any mood or energy level
+      - generic [ref=e105]:
+        - img [ref=e107]
+        - heading "Real-time Analytics" [level=3] [ref=e109]
+        - paragraph [ref=e110]: Track performance and crowd engagement in real-time
+      - generic [ref=e111]:
+        - img [ref=e113]
+        - heading "Crowd Intelligence" [level=3] [ref=e118]
+        - paragraph [ref=e119]: AI-powered crowd analysis for perfect timing
+    - generic [ref=e121]:
+      - generic [ref=e122]:
+        - generic [ref=e123]: 10M+
+        - generic [ref=e124]: Tracks Analyzed
+      - generic [ref=e125]:
+        - generic [ref=e126]: 50K+
+        - generic [ref=e127]: AI Sets Created
+      - generic [ref=e128]:
+        - generic [ref=e129]: 99.8%
+        - generic [ref=e130]: Recognition Accuracy
+```
