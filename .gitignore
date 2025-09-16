@@ -92,3 +92,4 @@ final_fix.sh
 
 # Local Netlify folder
 .netlify
+.vercel
