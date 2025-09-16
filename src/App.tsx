@@ -19,6 +19,7 @@ function AppContent() {
   const [currentSession] = useState<any>(null);
   const [user] = useState<any>(null);
   const [isEditingPlaylist, setIsEditingPlaylist] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // Load recent sessions and persist playlist across navigation
   useEffect(() => {
@@ -157,8 +158,8 @@ function AppContent() {
                 <ProfessionalMagicPlayer
                   playlist={currentPlaylist}
                   session={currentSession}
-                  isPlaying={false}
-                  onPlayPause={(playing) => console.log('Play/Pause:', playing)}
+                  isPlaying={isPlaying}
+                  onPlayPause={setIsPlaying}
                   onSessionEnd={() => navigate('/')}
                   onBack={() => window.history.back()}
                 />

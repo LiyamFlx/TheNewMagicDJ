@@ -189,9 +189,17 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     // Set audio source - prioritize track's preview_url
     if (currentTrack.preview_url && currentTrack.preview_url.trim() !== '') {
       audio.src = currentTrack.preview_url;
+      logger.info('ProfessionalMagicPlayer', 'Audio A source set to track preview', {
+        trackTitle: currentTrack.title,
+        audioSrc: currentTrack.preview_url
+      });
     } else {
       // Use a simple silent audio data URL as fallback
       audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeBDKJ0fPOgzEHIHjJ+tycRw0UW7zv85xrGw5UqObsu2AcBjSO2OzNeSsFJHPN7tmSPwhGn+J+t2ApDS+5vG0t';
+      logger.info('ProfessionalMagicPlayer', 'Audio A source set to fallback data URL', {
+        trackTitle: currentTrack.title,
+        reason: 'No preview_url available'
+      });
     }
     
     // Set volume immediately
@@ -287,10 +295,32 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   // Handle play/pause
   useEffect(() => {
     const audio = audioARef.current;
-    if (!audio || isLoading) return;
+
+    logger.info('ProfessionalMagicPlayer', 'Play/Pause effect triggered', {
+      isPlaying,
+      hasAudio: !!audio,
+      audioSrc: audio?.src,
+      isLoading,
+      currentTrack: currentTrack?.title
+    });
+
+    if (!audio || isLoading) {
+      logger.warn('ProfessionalMagicPlayer', 'Play/Pause skipped - audio not ready', {
+        hasAudio: !!audio,
+        isLoading,
+        audioSrc: audio?.src
+      });
+      return;
+    }
 
     if (isPlaying) {
       // Ensure audio is ready before playing
+      logger.info('ProfessionalMagicPlayer', 'Attempting to play audio', {
+        audioSrc: audio.src,
+        readyState: audio.readyState,
+        networkState: audio.networkState
+      });
+
       const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise
@@ -315,9 +345,10 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           });
       }
     } else {
+      logger.info('ProfessionalMagicPlayer', 'Pausing audio');
       audio.pause();
     }
-  }, [isPlaying]);
+  }, [isPlaying, isLoading, currentTrack]);
 
   // Handle volume changes
   useEffect(() => {
