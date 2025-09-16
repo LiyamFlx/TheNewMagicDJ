@@ -128,39 +128,39 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
   const getTrackStatusIcon = (index: number) => {
     if (index === currentTrackIndex) {
       return isPlaying ? (
-        <Pause className="w-4 h-4 neon-text-green animate-neon-pulse" />
+        <Pause className="w-4 h-4 text-gradient-accent" />
       ) : (
-        <Play className="w-4 h-4 neon-text-green" />
+        <Play className="w-4 h-4 text-gradient-accent" />
       );
     }
-    return <Music className="w-4 h-4 text-cyber-dim" />;
+    return <Music className="w-4 h-4 text-gray-500" />;
   };
 
   const getTrackRowClass = (index: number) => {
     let baseClass = "group flex items-center space-x-4 p-4 rounded-sm border-2 transition-all duration-300 cursor-pointer";
 
     if (index === currentTrackIndex) {
-      baseClass += " bg-cyber-medium border-neon-green neon-glow-green animate-pulse-light";
+      baseClass += " btn-primary shadow-neon-cyan";
     } else if (index < currentTrackIndex) {
-      baseClass += " bg-cyber-darker/50 border-cyber-light opacity-60";
+      baseClass += " glass-card opacity-60";
     } else {
-      baseClass += " bg-cyber-dark border-cyber-light hover:bg-cyber-medium hover:border-neon-purple hover:neon-glow-purple";
+      baseClass += " glass-card hover-lift";
     }
 
     if (dragOverIndex === index) {
-      baseClass += " border-neon-purple neon-glow-purple scale-105";
+      baseClass += " border-gradient-primary shadow-neon-pink scale-105";
     }
 
     return baseClass;
   };
 
   return (
-    <div className={`bg-cyber-black border-2 border-neon-green rounded-sm p-4 lg:p-6 neon-glow-green ${className}`}>
+    <div className={`glass-card p-4 lg:p-6 shadow-neon-cyan ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-neon-green">
+      <div className="flex items-center justify-between mb-6 pb-4 border-b border-glass">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-cyber-dark border-2 border-neon-green rounded-sm flex items-center justify-center neon-glow-green animate-pulse-light">
-            <List className="w-7 h-7 neon-text-green" />
+          <div className="w-12 h-12 gradient-bg-accent rounded-xl flex items-center justify-center shadow-neon-cyan animate-pulse-glow">
+            <List className="w-7 h-7 text-white" />
           </div>
           <div>
             {editingName ? (
@@ -169,38 +169,38 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
                   type="text"
                   value={playlistName}
                   onChange={(e) => setPlaylistName(e.target.value)}
-                  className="bg-cyber-darker border-2 border-neon-green rounded-sm px-3 py-2 text-base focus:outline-none focus:border-neon-purple neon-text-green font-mono"
+                  className="glass-card px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-secondary-400 text-gradient-accent font-inter"
                   onKeyPress={(e) => e.key === 'Enter' && handleSavePlaylistName()}
                   autoFocus
                 />
                 <button
                   onClick={handleSavePlaylistName}
-                  className="w-8 h-8 bg-cyber-dark border-2 border-neon-green rounded-sm flex items-center justify-center hover:neon-glow-green transition-all"
+                  className="w-8 h-8 btn-accent flex items-center justify-center hover-lift"
                 >
-                  <Save className="w-4 h-4 neon-text-green" />
+                  <Save className="w-4 h-4 text-white" />
                 </button>
                 <button
                   onClick={() => {
                     setEditingName(false);
                     setPlaylistName(playlist.name);
                   }}
-                  className="w-8 h-8 bg-cyber-dark border-2 border-red-500 rounded-sm flex items-center justify-center hover:bg-red-900/20 transition-all"
+                  className="w-8 h-8 glass-button flex items-center justify-center hover-lift border border-red-400"
                 >
                   <X className="w-4 h-4 text-red-400" />
                 </button>
               </div>
             ) : (
               <div className="flex items-center space-x-2 group">
-                <h3 className="text-xl font-bold neon-text-green tracking-wider font-mono">{playlist.name}</h3>
+                <h3 className="text-xl font-bold text-gradient-accent tracking-wider font-orbitron">{playlist.name}</h3>
                 <button
                   onClick={() => setEditingName(true)}
-                  className="w-8 h-8 bg-cyber-dark border-2 border-neon-purple rounded-sm flex items-center justify-center hover:neon-glow-purple opacity-0 group-hover:opacity-100 transition-all"
+                  className="w-8 h-8 btn-secondary flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover-lift"
                 >
-                  <Edit3 className="w-4 h-4 neon-text-purple" />
+                  <Edit3 className="w-4 h-4 text-white" />
                 </button>
               </div>
             )}
-            <p className="text-base text-neon-green font-mono mt-2">
+            <p className="text-base text-gradient-accent font-inter mt-2">
               {playlist.tracks.length} TRACKS • {formatTime(totalDuration)}
             </p>
           </div>
@@ -210,7 +210,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
           {onSendToPlayer && (
             <button
               onClick={onSendToPlayer}
-              className="cyber-button px-4 py-3 rounded-sm flex items-center space-x-2 text-base font-bold tracking-wider"
+              className="btn-accent px-4 py-3 flex items-center space-x-2 text-base font-bold tracking-wider hover-lift"
             >
               <Music className="w-5 h-5" />
               <span className="hidden sm:inline">SEND TO PLAYER</span>
@@ -218,7 +218,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
           )}
           <button
             onClick={shufflePlaylist}
-            className="cyber-button cyber-button-purple px-4 py-3 rounded-sm flex items-center space-x-2 text-base font-bold tracking-wider"
+            className="btn-primary px-4 py-3 flex items-center space-x-2 text-base font-bold tracking-wider hover-lift"
           >
             <Shuffle className="w-5 h-5" />
             <span className="hidden sm:inline">SHUFFLE</span>
@@ -228,42 +228,42 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
 
       {/* Enhanced Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="text-center p-4 bg-cyber-dark border-2 border-neon-green rounded-sm neon-glow-green animate-fade-in">
-          <div className="text-2xl font-bold neon-text-green font-mono">{playlist.tracks.length}</div>
-          <div className="text-sm text-cyber-gray font-mono tracking-wider">TRACKS</div>
+        <div className="text-center p-4 glass-card shadow-neon-cyan hover-lift">
+          <div className="text-2xl font-bold text-gradient-accent font-orbitron">{playlist.tracks.length}</div>
+          <div className="text-sm text-gray-400 font-inter tracking-wider">TRACKS</div>
         </div>
-        <div className="text-center p-4 bg-cyber-dark border-2 border-neon-purple rounded-sm neon-glow-purple animate-fade-in">
-          <div className="text-2xl font-bold neon-text-purple font-mono">{formatTime(totalDuration)}</div>
-          <div className="text-sm text-cyber-gray font-mono tracking-wider">TOTAL</div>
+        <div className="text-center p-4 glass-card shadow-neon-pink hover-lift">
+          <div className="text-2xl font-bold text-gradient-primary font-orbitron">{formatTime(totalDuration)}</div>
+          <div className="text-sm text-gray-400 font-inter tracking-wider">TOTAL</div>
         </div>
-        <div className="text-center p-4 bg-cyber-dark border-2 border-neon-green rounded-sm neon-glow-green animate-fade-in">
-          <div className="text-2xl font-bold neon-text-green font-mono">{formatTime(remainingDuration)}</div>
-          <div className="text-sm text-cyber-gray font-mono tracking-wider">REMAINING</div>
+        <div className="text-center p-4 glass-card shadow-neon-cyan hover-lift">
+          <div className="text-2xl font-bold text-gradient-accent font-orbitron">{formatTime(remainingDuration)}</div>
+          <div className="text-sm text-gray-400 font-inter tracking-wider">REMAINING</div>
         </div>
-        <div className="text-center p-4 bg-cyber-dark border-2 border-neon-purple rounded-sm neon-glow-purple animate-fade-in">
-          <div className="text-2xl font-bold neon-text-purple font-mono">{currentTrackIndex + 1}</div>
-          <div className="text-sm text-cyber-gray font-mono tracking-wider">CURRENT</div>
+        <div className="text-center p-4 glass-card shadow-neon-pink hover-lift">
+          <div className="text-2xl font-bold text-gradient-primary font-orbitron">{currentTrackIndex + 1}</div>
+          <div className="text-sm text-gray-400 font-inter tracking-wider">CURRENT</div>
         </div>
       </div>
 
       {/* Enhanced Search */}
       <div className="relative mb-6">
-        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 neon-text-green" />
+        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gradient-accent" />
         <input
           type="text"
           placeholder="SEARCH TRACKS..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-12 pr-4 py-3 bg-cyber-darker border-2 border-neon-green rounded-sm focus:outline-none focus:border-neon-purple neon-text-green placeholder-cyber-dim font-mono text-base tracking-wider"
+          className="w-full pl-12 pr-4 py-3 glass-card focus:outline-none focus:ring-2 focus:ring-secondary-400 text-gradient-accent placeholder-gray-500 font-inter text-base tracking-wider"
         />
       </div>
 
       {/* Track List */}
       <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
         {filteredTracks.length === 0 ? (
-          <div className="text-center py-12 text-cyber-dim">
-            <div className="w-16 h-16 bg-cyber-dark border-2 border-neon-green rounded-sm flex items-center justify-center mx-auto mb-6 neon-glow-green">
-              <Music className="w-8 h-8 neon-text-green opacity-50" />
+          <div className="text-center py-12 text-gray-500">
+            <div className="w-16 h-16 glass-card flex items-center justify-center mx-auto mb-6 shadow-neon-cyan">
+              <Music className="w-8 h-8 text-gradient-accent opacity-50" />
             </div>
             <p className="text-xl font-mono tracking-wider">NO TRACKS FOUND</p>
           </div>
@@ -283,7 +283,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
                 onClick={() => onTrackSelect(originalIndex)}
               >
                 {/* Track Number & Status */}
-                <div className="w-10 h-10 flex items-center justify-center bg-cyber-darker border border-neon-green rounded-sm">
+                <div className="w-10 h-10 flex items-center justify-center glass-card border border-gradient-accent">
                   {getTrackStatusIcon(originalIndex)}
                 </div>
 
@@ -291,19 +291,19 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-4">
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold truncate text-cyber-white group-hover:neon-text-green transition-colors text-lg font-mono">
+                      <h4 className="font-bold truncate text-white group-hover:text-gradient-accent transition-colors text-lg font-inter">
                         {track.title}
                       </h4>
-                      <p className="text-base neon-text-green truncate font-mono">{track.artist}</p>
+                      <p className="text-base text-gradient-accent truncate font-inter">{track.artist}</p>
                       {track.album && (
-                        <p className="text-sm text-cyber-dim truncate font-mono">{track.album}</p>
+                        <p className="text-sm text-gray-500 truncate font-inter">{track.album}</p>
                       )}
                     </div>
 
                     {/* Track Details */}
-                    <div className="hidden lg:flex items-center space-x-6 text-sm text-cyber-dim font-mono">
-                      {track.bpm && <span className="text-neon-purple font-bold">{track.bpm} BPM</span>}
-                      {track.key && <span className="text-neon-green font-bold">{track.key}</span>}
+                    <div className="hidden lg:flex items-center space-x-6 text-sm text-gray-500 font-inter">
+                      {track.bpm && <span className="text-gradient-primary font-bold">{track.bpm} BPM</span>}
+                      {track.key && <span className="text-gradient-accent font-bold">{track.key}</span>}
                       <span className="flex items-center space-x-2">
                         <Clock className="w-4 h-4" />
                         <span className="font-bold">{formatTime(track.duration ?? 0)}</span>
@@ -319,7 +319,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
                       e.stopPropagation();
                       onTrackRemove(originalIndex);
                     }}
-                    className="w-10 h-10 bg-cyber-dark border-2 border-red-500 rounded-sm flex items-center justify-center hover:bg-red-900/20 hover:scale-110 transition-all"
+                    className="w-10 h-10 glass-button flex items-center justify-center hover:scale-110 transition-all border border-red-400 hover:border-red-300"
                   >
                     <Trash2 className="w-5 h-5 text-red-400" />
                   </button>
@@ -331,18 +331,18 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
       </div>
 
       {/* Enhanced Footer Actions */}
-      <div className="flex items-center justify-between mt-8 pt-6 border-t-2 border-neon-green">
-        <div className="flex items-center space-x-3 text-base neon-text-green font-mono">
+      <div className="flex items-center justify-between mt-8 pt-6 border-t border-glass">
+        <div className="flex items-center space-x-3 text-base text-gradient-accent font-inter">
           <Volume2 className="w-5 h-5" />
           <span>DRAG TO REORDER • CLICK TO PLAY</span>
         </div>
 
         <div className="flex items-center space-x-3">
-          <button className="cyber-button px-4 py-3 rounded-sm flex items-center space-x-2 text-base font-bold tracking-wider">
+          <button className="btn-secondary px-4 py-3 flex items-center space-x-2 text-base font-bold tracking-wider hover-lift">
             <Plus className="w-5 h-5" />
             <span className="hidden sm:inline">ADD TRACKS</span>
           </button>
-          <button className="cyber-button cyber-button-purple px-4 py-3 rounded-sm flex items-center space-x-2 text-base font-bold tracking-wider">
+          <button className="btn-primary px-4 py-3 flex items-center space-x-2 text-base font-bold tracking-wider hover-lift">
             <RotateCcw className="w-5 h-5" />
             <span className="hidden sm:inline">RESET</span>
           </button>

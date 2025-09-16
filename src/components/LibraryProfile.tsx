@@ -80,7 +80,7 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
   };
 
   const getEnergyColor = (energy: number) => {
-    if (energy >= 80) return 'neon-text-green';
+    if (energy >= 80) return 'text-gradient-accent';
     if (energy >= 60) return 'text-yellow-400';
     if (energy >= 40) return 'text-orange-400';
     return 'text-red-400';
@@ -105,7 +105,7 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-cyber-black flex items-center justify-center">
+      <div className="min-h-screen gradient-bg-primary flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-neon-green border-t-transparent rounded-none animate-spin mx-auto mb-4 neon-glow-green"></div>
           <p className="text-cyber-gray">Loading your library...</p>
@@ -115,9 +115,9 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-cyber-black">
+    <div className="min-h-screen gradient-bg-primary relative overflow-hidden">
       {/* Header */}
-      <div className="px-4 lg:px-6 py-4 lg:py-6 border-b border-neon-green">
+      <div className="relative z-10 px-4 lg:px-6 py-4 lg:py-6 nav-sticky">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <button
