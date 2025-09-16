@@ -95,7 +95,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
       }
 
       try {
-        const playlist = await playlistService.generateMagicMatchPlaylist(fingerprint);
+        const playlist = await playlistService.generateMagicMatchPlaylist({ fingerprint });
         logger.info('MagicStudio', 'MagicMatch playlist generated successfully', {
           trackCount: playlist.tracks.length,
           duration: playlist.total_duration
@@ -150,7 +150,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
       }
 
       try {
-        const playlist = await playlistService.generateMagicSetPlaylist(vibe, energy, user?.id);
+        const playlist = await playlistService.generateMagicSetPlaylist({ vibe, energyLevel: energy, userId: user?.id });
         logger.info('MagicStudio', 'MagicSet playlist generated successfully', {
           vibe,
           energy,
@@ -204,7 +204,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
             setStatusMessage('Track recognized from file!');
             setProgress(60);
             
-            const playlist = await playlistService.generateMagicMatchPlaylist();
+            const playlist = await playlistService.generateMagicMatchPlaylist({});
             playlist.tracks.unshift(result);
             onPlaylistGenerated(playlist);
             return;
@@ -227,7 +227,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
             await new Promise(resolve => setTimeout(resolve, 600));
           }
           
-          const playlist = await playlistService.generateMagicMatchPlaylist(fingerprintResult.fingerprint);
+          const playlist = await playlistService.generateMagicMatchPlaylist({ fingerprint: fingerprintResult.fingerprint });
           onPlaylistGenerated(playlist);
         })
         .catch(async (error) => {
