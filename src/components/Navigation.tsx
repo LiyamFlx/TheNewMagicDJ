@@ -102,10 +102,10 @@ const Navigation: React.FC<NavigationProps> = ({
               {showBackButton && onBack && (
                 <button
                   onClick={onBack}
-                  className="w-10 h-10 bg-cyber-medium border border-neon-green hover:neon-glow-green rounded-sm flex items-center justify-center transition-all md:hidden"
+                  className="w-10 h-10 glass-button flex items-center justify-center md:hidden"
                   aria-label="Go back"
                 >
-                  <ChevronRight className="w-5 h-5 neon-text-green rotate-180" />
+                  <ChevronRight className="w-5 h-5 text-gradient-accent rotate-180" />
                 </button>
               )}
               <div className="flex items-center space-x-3">
@@ -150,9 +150,9 @@ const Navigation: React.FC<NavigationProps> = ({
             {/* User Profile & Mobile Menu */}
             <div className="flex items-center space-x-3">
               {user && (
-                <div className="hidden sm:flex items-center space-x-2 px-3 py-1 bg-cyber-medium border border-neon-purple rounded-sm">
-                  <User className="w-4 h-4 neon-text-purple" />
-                  <span className="text-sm text-cyber-white font-mono max-w-24 truncate">
+                <div className="hidden sm:flex items-center space-x-2 px-3 py-1 glass-card">
+                  <User className="w-4 h-4 text-gradient-primary" />
+                  <span className="text-sm text-white font-mono max-w-24 truncate">
                     {user.email.split('@')[0]}
                   </span>
                 </div>
@@ -161,13 +161,13 @@ const Navigation: React.FC<NavigationProps> = ({
               {/* Mobile menu button */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden w-10 h-10 bg-cyber-medium border border-neon-green rounded-sm flex items-center justify-center transition-all"
+                className="md:hidden w-10 h-10 glass-button flex items-center justify-center"
                 aria-label="Toggle mobile menu"
               >
                 {isMobileMenuOpen ? (
-                  <X className="w-5 h-5 neon-text-green" />
+                  <X className="w-5 h-5 text-gradient-accent" />
                 ) : (
-                  <Menu className="w-5 h-5 neon-text-green" />
+                  <Menu className="w-5 h-5 text-gradient-accent" />
                 )}
               </button>
             </div>
@@ -186,7 +186,7 @@ const Navigation: React.FC<NavigationProps> = ({
                     {crumb.onClick ? (
                       <button
                         onClick={crumb.onClick}
-                        className="text-gradient-accent hover:text-neon-glow transition-colors"
+                        className="text-gradient-accent hover:text-gradient-primary transition-colors"
                       >
                         {crumb.label}
                       </button>
@@ -231,10 +231,10 @@ const Navigation: React.FC<NavigationProps> = ({
                     className={`
                       w-full p-4 rounded-sm flex items-center space-x-3 transition-all text-left
                       ${isActive 
-                        ? 'bg-neon-green text-cyber-black border border-neon-green' 
+                        ? 'btn-primary' 
                         : isDisabled
-                          ? 'text-cyber-dim cursor-not-allowed opacity-50 bg-cyber-darker'
-                          : 'bg-cyber-medium hover:bg-cyber-light text-cyber-white hover:neon-glow-green'
+                          ? 'text-gray-500 cursor-not-allowed opacity-50'
+                          : 'glass-card hover-lift text-white'
                       }
                     `}
                   >
@@ -249,14 +249,14 @@ const Navigation: React.FC<NavigationProps> = ({
             </div>
 
             {user && (
-              <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-cyber-light bg-cyber-darker">
-                <div className="flex items-center space-x-3 p-3 bg-cyber-medium rounded-sm border border-neon-purple">
-                  <div className="w-10 h-10 bg-neon-purple rounded-sm flex items-center justify-center">
-                    <User className="w-5 h-5 text-cyber-black" />
+              <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-glass bg-glass">
+                <div className="flex items-center space-x-3 p-3 glass-card shadow-neon-pink">
+                  <div className="w-10 h-10 gradient-bg-secondary rounded-sm flex items-center justify-center">
+                    <User className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <div className="font-medium text-cyber-white font-mono">{user.email.split('@')[0]}</div>
-                    <div className="text-xs text-cyber-gray">{user.email}</div>
+                    <div className="font-medium text-white font-mono">{user.email.split('@')[0]}</div>
+                    <div className="text-xs text-gray-400">{user.email}</div>
                   </div>
                 </div>
               </div>
@@ -266,25 +266,25 @@ const Navigation: React.FC<NavigationProps> = ({
       )}
 
       {/* Quick Actions Bar (Desktop) */}
-      <div className="hidden lg:block bg-cyber-darker border-b border-cyber-light">
+      <div className="hidden lg:block bg-glass border-b border-glass">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-2">
             <div className="flex items-center space-x-4 text-sm font-mono">
-              <span className="text-cyber-dim">Quick Actions:</span>
+              <span className="text-gray-500">Quick Actions:</span>
               <button 
                 onClick={() => handleNavigation('create')}
-                className="text-neon-green hover:text-neon-green-bright transition-colors"
+                className="text-gradient-accent hover:text-gradient-primary transition-colors"
               >
                 + New Mix
               </button>
               <button 
                 onClick={() => handleNavigation('library')}
-                className="text-neon-purple hover:text-neon-purple-bright transition-colors"
+                className="text-gradient-primary hover:text-gradient-accent transition-colors"
               >
                 Browse Library
               </button>
             </div>
-            <div className="text-xs text-cyber-dim font-mono">
+            <div className="text-xs text-gray-500 font-mono">
               Current: {getCurrentNavItem()?.description}
             </div>
           </div>

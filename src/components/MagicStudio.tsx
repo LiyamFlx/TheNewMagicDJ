@@ -249,40 +249,48 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
 
   if (isProcessing) {
     return (
-      <div className="min-h-screen bg-cyber-black flex items-center justify-center font-dj">
-        <div className="text-center max-w-lg mx-auto p-8">
-          {/* Enhanced Animated Logo */}
-          <div className={`w-32 h-32 bg-cyber-dark border-4 ${activeMode === 'match' ? 'border-neon-green neon-glow-green' : 'border-neon-purple neon-glow-purple'} rounded-sm flex items-center justify-center mx-auto mb-8 animate-deck-glow`}>
-            {activeMode === 'match' ? 
-              <Zap className="w-16 h-16 neon-text-green animate-pulse-light" /> : 
-              <Wand2 className="w-16 h-16 neon-text-purple animate-pulse-light" />
+      <div className="min-h-screen gradient-bg-primary flex items-center justify-center relative overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-float"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full blur-3xl animate-float" style={{animationDelay: '1s'}}></div>
+        </div>
+
+        <div className="relative z-10 text-center max-w-lg mx-auto p-8">
+          {/* Futuristic Animated Logo */}
+          <div className={`w-32 h-32 glass-card flex items-center justify-center mx-auto mb-8 animate-pulse-glow ${activeMode === 'match' ? 'shadow-neon-cyan' : 'shadow-neon-pink'}`}>
+            {activeMode === 'match' ?
+              <Zap className="w-16 h-16 text-gradient-accent" /> :
+              <Wand2 className="w-16 h-16 text-gradient-primary" />
             }
           </div>
 
-          {/* Enhanced Progress Bar */}
-          <div className={`w-full bg-cyber-dark border-2 ${activeMode === 'match' ? 'border-neon-green' : 'border-neon-purple'} rounded-sm h-4 mb-8 overflow-hidden`}>
-            <div 
-              className={`h-4 rounded-sm transition-all duration-500 ${activeMode === 'match' ? 'progress-green' : 'progress-purple'}`}
+          {/* Glass Progress Bar */}
+          <div className="w-full glass-card h-4 mb-8 overflow-hidden relative">
+            <div
+              className={`h-full transition-all duration-500 ${activeMode === 'match' ? 'gradient-bg-accent' : 'gradient-bg-secondary'}`}
               style={{ width: `${progress}%` }}
             ></div>
           </div>
 
-          {/* Enhanced Status Message */}
-          <h2 className={`text-3xl font-bold mb-4 ${activeMode === 'match' ? 'neon-text-green' : 'neon-text-purple'} tracking-wide`}>
+          {/* Futuristic Status Message */}
+          <h2 className={`text-3xl font-bold mb-4 font-orbitron tracking-wide ${activeMode === 'match' ? 'text-gradient-accent' : 'text-gradient-primary'}`}>
             {activeMode === 'match' ? 'MAGICMATCH' : 'MAGICSET'} PROCESSING
           </h2>
-          <p className="text-cyber-gray text-xl font-mono mb-2">{statusMessage}</p>
-          <p className="text-cyber-dim text-sm font-mono">{Math.round(progress)}% COMPLETE</p>
+          <p className="text-gray-300 text-xl font-inter mb-2">{statusMessage}</p>
+          <p className="text-gray-500 text-sm font-mono">{Math.round(progress)}% COMPLETE</p>
 
-          {/* Enhanced Audio Visualization */}
-          <div className="loading-cyber mt-12 justify-center">
-            {[...Array(7)].map((_, i) => (
-              <div
-                key={i}
-                className={`${activeMode === 'match' ? 'bg-neon-green neon-glow-green' : 'bg-neon-purple neon-glow-purple'}`}
-                style={{ animationDelay: `${i * 0.1}s` }}
-              ></div>
-            ))}
+          {/* Animated Waveform Visualization */}
+          <div className="flex justify-center mt-12">
+            <div className="flex items-end space-x-1 h-16">
+              {Array.from({ length: 15 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="waveform-bar"
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                ></div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -290,31 +298,38 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-cyber-black font-dj">
-      {/* Enhanced Header */}
-      <div className="px-4 lg:px-6 py-4 lg:py-6 border-b-2 border-neon-green bg-gradient-to-r from-cyber-darker to-cyber-dark backdrop-blur-sm">
+    <div className="min-h-screen gradient-bg-primary relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-full blur-3xl animate-float" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-3/4 left-1/2 w-48 h-48 bg-gradient-to-r from-green-500/10 to-cyan-500/10 rounded-full blur-3xl animate-float" style={{animationDelay: '4s'}}></div>
+      </div>
+
+      {/* Glass Header */}
+      <div className="relative z-10 px-4 lg:px-6 py-4 lg:py-6 nav-sticky">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <button
               onClick={onBack}
-              className="w-10 h-10 lg:w-12 lg:h-12 rounded-sm bg-cyber-medium border-2 border-neon-green hover:neon-glow-green flex items-center justify-center transition-all duration-300 hover:scale-105"
+              className="w-10 h-10 lg:w-12 lg:h-12 glass-button flex items-center justify-center hover-lift"
             >
-              <ArrowLeft className="w-5 h-5 lg:w-6 lg:h-6 neon-text-green" />
+              <ArrowLeft className="w-5 h-5 lg:w-6 lg:h-6 text-gradient-accent" />
             </button>
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-cyber-dark border-3 border-neon-green rounded-sm flex items-center justify-center neon-glow-green animate-pulse-light">
-                <Sparkles className="w-6 h-6 lg:w-7 lg:h-7 neon-text-green" />
+              <div className="w-10 h-10 lg:w-12 lg:h-12 glass-card flex items-center justify-center animate-pulse-glow">
+                <Sparkles className="w-6 h-6 lg:w-7 lg:h-7 text-gradient-primary" />
               </div>
               <div>
-                <h1 className="text-xl lg:text-2xl font-bold text-cyber-white tracking-wide">MAGIC STUDIO</h1>
-                <p className="text-sm text-neon-green font-mono">AI-POWERED CREATION SUITE</p>
+                <h1 className="text-xl lg:text-2xl font-bold text-gradient-primary tracking-wide font-orbitron">MAGIC STUDIO</h1>
+                <p className="text-sm text-gradient-accent font-mono">AI-POWERED CREATION SUITE</p>
               </div>
             </div>
           </div>
           <div className="flex items-center space-x-3 lg:space-x-4">
             <button
               onClick={() => setShowRecentSessions(!showRecentSessions)}
-              className="cyber-button px-3 py-2 rounded-sm flex items-center space-x-2 text-sm"
+              className="glass-button px-3 py-2 flex items-center space-x-2 text-sm font-inter"
             >
               <History className="w-4 h-4" />
               <span className="hidden sm:inline">RECENT</span>
@@ -322,7 +337,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
             {onLibraryAccess && (
               <button
                 onClick={onLibraryAccess}
-                className="cyber-button cyber-button-purple px-3 py-2 rounded-sm flex items-center space-x-2 text-sm"
+                className="btn-secondary px-3 py-2 flex items-center space-x-2 text-sm"
               >
                 <Save className="w-4 h-4" />
                 <span className="hidden sm:inline">LIBRARY</span>
@@ -330,147 +345,127 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
             )}
             <div className="hidden sm:flex items-center text-right">
               <div>
-                <p className="text-sm text-cyber-dim font-mono">WELCOME BACK,</p>
-                <p className="font-bold truncate max-w-32 lg:max-w-none text-neon-green font-mono">{user?.email}</p>
+                <p className="text-sm text-gray-400 font-mono">WELCOME BACK,</p>
+                <p className="font-bold truncate max-w-32 lg:max-w-none text-gradient-accent font-mono">{user?.email}</p>
               </div>
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-cyber-dark border-2 border-neon-purple rounded-sm flex items-center justify-center neon-glow-purple ml-3">
-                <span className="font-bold neon-text-purple text-lg">{user?.email?.[0]?.toUpperCase()}</span>
+              <div className="w-10 h-10 lg:w-12 lg:h-12 glass-card flex items-center justify-center shadow-neon-pink ml-3">
+                <span className="font-bold text-gradient-primary text-lg">{user?.email?.[0]?.toUpperCase()}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Recent Sessions Panel */}
-      {showRecentSessions && (
-        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-4">
-          <div className="cyber-card rounded-none p-4">
-            <h3 className="text-lg font-bold neon-text-green mb-4">Recent Sessions</h3>
-            {recentSessions.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {recentSessions.slice(0, 6).map((session, index) => (
-                  <div key={index} className="cyber-card rounded-none p-3 hover:neon-glow-green cursor-pointer">
-                    <h4 className="font-medium text-cyber-white truncate">{session.name || `Session ${index + 1}`}</h4>
-                    <p className="text-sm text-cyber-gray">{session.tracks?.length || 0} tracks</p>
-                    <p className="text-xs text-cyber-dim">{new Date(session.created_at || Date.now()).toLocaleDateString()}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-cyber-gray">No recent sessions found</p>
-            )}
-          </div>
-        </div>
-      )}
 
-      {/* Enhanced Recent Sessions Panel */}
+      {/* Glass Recent Sessions Panel */}
       {showRecentSessions && (
-        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6 animate-fade-in-up">
-          <div className="cyber-card rounded-sm p-6 bg-gradient-to-r from-cyber-medium/50 to-cyber-dark/50 backdrop-blur-sm">
-            <h3 className="text-lg font-bold neon-text-green mb-4 flex items-center space-x-2">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 lg:px-6 py-6 hover-lift">
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-bold text-gradient-accent mb-4 flex items-center space-x-2 font-orbitron">
               <History className="w-5 h-5" />
               <span>RECENT SESSIONS</span>
             </h3>
             {recentSessions.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {recentSessions.slice(0, 6).map((session, index) => (
-                  <div key={index} className="cyber-card rounded-sm p-4 hover:neon-glow-green cursor-pointer transition-all duration-300 hover:scale-105 group">
+                  <div key={index} className="glass-card p-4 hover-lift cursor-pointer group">
                     <div className="flex items-center space-x-3 mb-2">
-                      <div className="w-8 h-8 bg-neon-green/20 border border-neon-green rounded-sm flex items-center justify-center">
-                        <Music className="w-4 h-4 neon-text-green" />
+                      <div className="w-8 h-8 gradient-bg-accent rounded-full flex items-center justify-center shadow-neon-cyan">
+                        <Music className="w-4 h-4 text-white" />
                       </div>
-                      <h4 className="font-bold text-cyber-white truncate group-hover:neon-text-green transition-colors">{session.name || `Session ${index + 1}`}</h4>
+                      <h4 className="font-bold text-white truncate group-hover:text-gradient-accent transition-colors font-inter">{session.name || `Session ${index + 1}`}</h4>
                     </div>
-                    <p className="text-sm text-cyber-gray font-mono">{session.tracks?.length || 0} tracks</p>
-                    <p className="text-xs text-cyber-dim font-mono">{new Date(session.created_at || Date.now()).toLocaleDateString()}</p>
+                    <p className="text-sm text-gray-400 font-mono">{session.tracks?.length || 0} tracks</p>
+                    <p className="text-xs text-gray-500 font-mono">{new Date(session.created_at || Date.now()).toLocaleDateString()}</p>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-8">
-                <BarChart3 className="w-12 h-12 text-cyber-dim mx-auto mb-3" />
-                <p className="text-cyber-gray font-mono">No recent sessions found</p>
+                <BarChart3 className="w-12 h-12 text-gray-500 mx-auto mb-3" />
+                <p className="text-gray-400 font-inter">No recent sessions found</p>
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Enhanced Main Content */}
-      <div className="max-w-7xl mx-auto px-4 lg:px-6 py-12 lg:py-16">
+      {/* Futuristic Main Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 lg:px-6 py-12 lg:py-16">
         <div className="text-center mb-12 lg:mb-20">
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold mb-6 lg:mb-8 text-cyber-white animate-fade-in-up tracking-wide">
+          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold mb-6 lg:mb-8 text-white font-orbitron tracking-wide">
             CHOOSE YOUR
-            <span className="block bg-gradient-to-r from-neon-green via-neon-blue to-neon-purple bg-clip-text text-transparent animate-pulse-light">
+            <span className="block text-gradient-primary text-neon-glow animate-pulse-glow">
               MAGIC
             </span>
           </h1>
-          <p className="text-lg lg:text-xl text-cyber-gray max-w-3xl mx-auto px-4 font-mono leading-relaxed">
+          <p className="text-lg lg:text-xl text-gray-300 max-w-3xl mx-auto px-4 font-inter leading-relaxed">
             AI-assisted creation, playback, and analysis of DJ sets with real-time crowd sensing
           </p>
         </div>
 
-        {/* Enhanced Mode Selection */}
+        {/* Glass Mode Selection */}
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 max-w-6xl mx-auto mb-16">
-          {/* Enhanced MagicMatch */}
-          <div className="group animate-slide-in-left">
-            <div className="cyber-card rounded-sm p-8 lg:p-10 transition-all duration-500 hover:scale-105 bg-gradient-to-b from-cyber-medium/30 to-cyber-dark/50 backdrop-blur-sm">
-              <div className="flex items-center justify-center w-20 h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-neon-green to-neon-green-bright rounded-sm mb-8 mx-auto group-hover:scale-110 transition-transform animate-deck-glow">
-                <Zap className="w-12 h-12 lg:w-14 lg:h-14 text-cyber-black" />
+          {/* Glass MagicMatch */}
+          <div className="group hover-lift">
+            <div className="glass-card p-8 lg:p-10">
+              <div className="flex items-center justify-center w-20 h-20 lg:w-24 lg:h-24 gradient-bg-accent rounded-xl mb-8 mx-auto group-hover:scale-110 transition-transform shadow-neon-cyan animate-pulse-glow">
+                <Zap className="w-12 h-12 lg:w-14 lg:h-14 text-white" />
               </div>
-              
-              <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-center neon-text-green tracking-wider">MAGICMATCH</h2>
-              <p className="text-base lg:text-lg text-cyber-gray text-center mb-8 leading-relaxed font-mono">
+
+              <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-center text-gradient-accent tracking-wider font-orbitron">MAGICMATCH</h2>
+              <p className="text-base lg:text-lg text-gray-300 text-center mb-8 leading-relaxed font-inter">
                 Recognize what's playing and let AI create the perfect continuation playlist
               </p>
 
               <div className="space-y-4">
                 <button
                   onClick={() => handleMagicMatch('mic')}
-                  className="cyber-button w-full py-4 lg:py-5 px-6 rounded-sm flex items-center justify-center space-x-3 text-base lg:text-lg font-bold group/btn"
+                  className="btn-accent w-full py-4 lg:py-5 px-6 flex items-center justify-center space-x-3 text-base lg:text-lg font-bold hover-lift"
                 >
-                  <Mic className="w-6 h-6 group-hover/btn:animate-bounce-subtle" />
+                  <Mic className="w-6 h-6" />
                   <span>LISTEN VIA MICROPHONE</span>
                 </button>
 
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="cyber-button w-full py-4 lg:py-5 px-6 rounded-sm flex items-center justify-center space-x-3 text-base lg:text-lg font-bold group/btn"
+                  className="glass-button w-full py-4 lg:py-5 px-6 flex items-center justify-center space-x-3 text-base lg:text-lg font-bold hover-lift"
                 >
-                  <Upload className="w-6 h-6 group-hover/btn:animate-bounce-subtle" />
+                  <Upload className="w-6 h-6" />
                   <span>UPLOAD AUDIO FILE</span>
                 </button>
 
                 <button
                   onClick={() => handleMagicMatch('stream')}
-                  className="cyber-button w-full py-4 lg:py-5 px-6 rounded-sm flex items-center justify-center space-x-3 text-base lg:text-lg font-bold group/btn"
+                  className="glass-button w-full py-4 lg:py-5 px-6 flex items-center justify-center space-x-3 text-base lg:text-lg font-bold hover-lift"
                 >
-                  <Radio className="w-6 h-6 group-hover/btn:animate-bounce-subtle" />
+                  <Radio className="w-6 h-6" />
                   <span>CAPTURE FROM STREAM</span>
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Enhanced MagicSet */}
-          <div className="group animate-slide-in-right">
-            <div className="cyber-card rounded-sm p-8 lg:p-10 transition-all duration-500 hover:scale-105 bg-gradient-to-b from-cyber-medium/30 to-cyber-dark/50 backdrop-blur-sm">
-              <div className="flex items-center justify-center w-20 h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-neon-purple to-neon-purple-bright rounded-sm mb-8 mx-auto group-hover:scale-110 transition-transform animate-deck-glow">
-                <Wand2 className="w-12 h-12 lg:w-14 lg:h-14 text-cyber-black" />
+          {/* Glass MagicSet */}
+          <div className="group hover-lift">
+            <div className="glass-card p-8 lg:p-10">
+              <div className="flex items-center justify-center w-20 h-20 lg:w-24 lg:h-24 gradient-bg-secondary rounded-xl mb-8 mx-auto group-hover:scale-110 transition-transform shadow-neon-pink animate-pulse-glow">
+                <Wand2 className="w-12 h-12 lg:w-14 lg:h-14 text-white" />
               </div>
-              
-              <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-center neon-text-purple tracking-wider">MAGICSET</h2>
-              <p className="text-base lg:text-lg text-cyber-gray text-center mb-8 leading-relaxed font-mono">
+
+              <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-center text-gradient-primary tracking-wider font-orbitron">MAGICSET</h2>
+              <p className="text-base lg:text-lg text-gray-300 text-center mb-8 leading-relaxed font-inter">
                 Generate an AI-curated playlist from scratch based on your vibe and energy preferences
               </p>
 
               <div className="space-y-6">
-                {/* Enhanced Vibe Selection */}
+                {/* Glass Vibe Selection */}
                 <div>
-                  <label className="block text-sm lg:text-base font-bold text-cyber-gray mb-4 tracking-wide">CHOOSE YOUR VIBE</label>
+                  <label className="block text-sm lg:text-base font-bold text-gray-300 mb-4 tracking-wide font-orbitron">CHOOSE YOUR VIBE</label>
                   <div className="grid grid-cols-2 gap-3">
                     {vibes.map((vibe) => {
                       const Icon = vibe.icon;
+                      const isSelected = selectedVibe === vibe.name.toLowerCase();
                       return (
                         <button
                           key={vibe.name}
@@ -480,11 +475,11 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
                               handleMagicSet(vibe.name.toLowerCase(), selectedEnergy);
                             }
                           }}
-                          className={`cyber-button cyber-button-purple py-3 lg:py-4 px-4 rounded-sm text-sm lg:text-base font-bold flex items-center justify-center space-x-2 group/vibe ${
-                            selectedVibe === vibe.name.toLowerCase() ? 'active-neon-purple' : ''
+                          className={`py-3 lg:py-4 px-4 text-sm lg:text-base font-bold flex items-center justify-center space-x-2 transition-all hover-lift ${
+                            isSelected ? 'btn-primary' : 'glass-button'
                           }`}
                         >
-                          <Icon className="w-4 h-4 group-hover/vibe:animate-bounce-subtle" />
+                          <Icon className="w-4 h-4" />
                           <span>{vibe.name.toUpperCase()}</span>
                         </button>
                       );
@@ -492,26 +487,29 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
                   </div>
                 </div>
 
-                {/* Enhanced Energy Level */}
+                {/* Glass Energy Level */}
                 <div>
-                  <label className="block text-sm lg:text-base font-bold text-cyber-gray mb-4 tracking-wide">ENERGY LEVEL</label>
+                  <label className="block text-sm lg:text-base font-bold text-gray-300 mb-4 tracking-wide font-orbitron">ENERGY LEVEL</label>
                   <div className="grid grid-cols-3 gap-2">
-                    {energyLevels.map(({ level, label, color }) => (
-                      <button
-                        key={level}
-                        onClick={() => {
-                          setSelectedEnergy(level as 'low' | 'medium' | 'high');
-                          if (selectedVibe) {
-                            handleMagicSet(selectedVibe, level as 'low' | 'medium' | 'high');
-                          }
-                        }}
-                        className={`cyber-button py-3 lg:py-4 px-3 rounded-sm text-sm lg:text-base font-bold transition-all duration-300 ${
-                          level === 'medium' ? '' : 'cyber-button-purple'
-                        } ${selectedEnergy === level ? `active-${color}` : ''}`}
-                      >
-                        {label.toUpperCase()}
-                      </button>
-                    ))}
+                    {energyLevels.map(({ level, label }) => {
+                      const isSelected = selectedEnergy === level;
+                      return (
+                        <button
+                          key={level}
+                          onClick={() => {
+                            setSelectedEnergy(level as 'low' | 'medium' | 'high');
+                            if (selectedVibe) {
+                              handleMagicSet(selectedVibe, level as 'low' | 'medium' | 'high');
+                            }
+                          }}
+                          className={`py-3 lg:py-4 px-3 text-sm lg:text-base font-bold transition-all hover-lift ${
+                            isSelected ? 'btn-secondary' : 'glass-button'
+                          }`}
+                        >
+                          {label.toUpperCase()}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -519,7 +517,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
                 {selectedVibe && selectedEnergy && (
                   <button
                     onClick={() => handleMagicSet(selectedVibe, selectedEnergy)}
-                    className="cyber-button w-full py-4 px-6 rounded-sm text-lg font-bold bg-gradient-to-r from-neon-purple to-neon-purple-bright text-cyber-black border-neon-purple animate-fade-in-up"
+                    className="btn-primary w-full py-4 px-6 text-lg font-bold hover-lift animate-pulse-glow"
                   >
                     GENERATE {selectedVibe.toUpperCase()} SET
                   </button>
@@ -529,22 +527,22 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
           </div>
         </div>
 
-        {/* Enhanced Quick Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto animate-fade-in-up">
-          <div className="text-center p-6 lg:p-8 cyber-card rounded-sm group hover:neon-glow-green transition-all duration-300">
-            <div className="text-3xl lg:text-4xl font-bold neon-text-green mb-3 animate-neon-pulse font-mono group-hover:scale-110 transition-transform">99.8%</div>
-            <div className="text-sm lg:text-base text-cyber-gray font-mono tracking-wide">RECOGNITION ACCURACY</div>
-            <div className="w-12 h-1 bg-gradient-to-r from-neon-green to-transparent mx-auto mt-2"></div>
+        {/* Glass Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
+          <div className="text-center p-6 lg:p-8 glass-card hover-lift group">
+            <div className="text-3xl lg:text-4xl font-bold text-gradient-accent mb-3 font-orbitron group-hover:scale-110 transition-transform">99.8%</div>
+            <div className="text-sm lg:text-base text-gray-400 font-inter tracking-wide">RECOGNITION ACCURACY</div>
+            <div className="w-12 h-1 gradient-bg-accent mx-auto mt-2 rounded-full"></div>
           </div>
-          <div className="text-center p-6 lg:p-8 cyber-card rounded-sm group hover:neon-glow-purple transition-all duration-300">
-            <div className="text-3xl lg:text-4xl font-bold neon-text-purple mb-3 animate-neon-pulse font-mono group-hover:scale-110 transition-transform" style={{ animationDelay: '0.5s' }}>&lt;3s</div>
-            <div className="text-sm lg:text-base text-cyber-gray font-mono tracking-wide">AVERAGE PROCESSING TIME</div>
-            <div className="w-12 h-1 bg-gradient-to-r from-neon-purple to-transparent mx-auto mt-2"></div>
+          <div className="text-center p-6 lg:p-8 glass-card hover-lift group">
+            <div className="text-3xl lg:text-4xl font-bold text-gradient-primary mb-3 font-orbitron group-hover:scale-110 transition-transform">&lt;3s</div>
+            <div className="text-sm lg:text-base text-gray-400 font-inter tracking-wide">AVERAGE PROCESSING TIME</div>
+            <div className="w-12 h-1 gradient-bg-secondary mx-auto mt-2 rounded-full"></div>
           </div>
-          <div className="text-center p-6 lg:p-8 cyber-card rounded-sm group hover:neon-glow-blue transition-all duration-300">
-            <div className="text-3xl lg:text-4xl font-bold neon-text-blue mb-3 animate-neon-pulse font-mono group-hover:scale-110 transition-transform" style={{ animationDelay: '1s' }}>10M+</div>
-            <div className="text-sm lg:text-base text-cyber-gray font-mono tracking-wide">TRACKS IN DATABASE</div>
-            <div className="w-12 h-1 bg-gradient-to-r from-neon-blue to-transparent mx-auto mt-2"></div>
+          <div className="text-center p-6 lg:p-8 glass-card hover-lift group">
+            <div className="text-3xl lg:text-4xl font-bold text-gradient-accent mb-3 font-orbitron group-hover:scale-110 transition-transform">10M+</div>
+            <div className="text-sm lg:text-base text-gray-400 font-inter tracking-wide">TRACKS IN DATABASE</div>
+            <div className="w-12 h-1 gradient-bg-accent mx-auto mt-2 rounded-full"></div>
           </div>
         </div>
       </div>
