@@ -18,6 +18,14 @@ function setCached(key: string, data: any) {
 export const supabasePlaylistService = {
   async savePlaylist(playlist: any, userId: string) {
     try {
+      // If not authenticated with Supabase, no-op to avoid 401s
+      const { data: sessionData } = await supabase.auth.getSession();
+      const hasSession = !!sessionData?.session?.access_token;
+      if (!hasSession) {
+        console.warn('Supabase not authenticated; skipping remote save. Caching locally.');
+        cache.delete(`playlists:${userId}`);
+        return { ...playlist };
+      }
       console.log('Saving playlist:', { playlistId: playlist.id, name: playlist.name, userId, trackCount: playlist.tracks?.length });
 
       const { id: playlistId, name, tracks } = playlist;
@@ -97,6 +105,14 @@ export const supabasePlaylistService = {
     if (fromCache) return fromCache;
 
     try {
+      // If not authenticated with Supabase, return empty to avoid 401s
+      const { data: sessionData } = await supabase.auth.getSession();
+      const hasSession = !!sessionData?.session?.access_token;
+      if (!hasSession) {
+        console.warn('Supabase not authenticated; returning empty playlists.');
+        setCached(key, []);
+        return [];
+      }
       // First, get playlists
       const { data: playlists, error: playlistError } = await supabase
         .from("playlists")
@@ -159,6 +175,14 @@ export const supabasePlaylistService = {
   },
 
   async createPlaylist(userId: string, name: string) {
+    // If not authenticated with Supabase, no-op:
+    const { data: sessionData } = await supabase.auth.getSession();
+    const hasSession = !!sessionData?.session?.access_token;
+    if (!hasSession) {
+      console.warn('Supabase not authenticated; skipping remote create.');
+      return { id: `local-${Date.now()}`, user_id: userId, name, created_at: new Date().toISOString() };
+    }
+
     const { data, error } = await supabase
       .from("playlists")
       .insert([{ user_id: userId, name }])

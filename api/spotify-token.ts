@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { withIdempotency } from '../src/utils/idempotency';
+import { withIdempotency } from "../utils/idempotency";
 import { requireAuth } from '../src/utils/apiAuth';
 import { AppError, errorFromResponse, normalizeError } from '../src/utils/errors';
 

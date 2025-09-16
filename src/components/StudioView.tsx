@@ -73,7 +73,8 @@ const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) 
       duration: 180 + Math.floor(Math.random() * 180), // 3-6 minutes
       bpm: track.bpm,
       energy: energyRange.min + Math.random() * (energyRange.max - energyRange.min),
-      preview_url: `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(index % 4) + 1}.mp3`
+      // Leave preview_url undefined to avoid cross-origin audio CORS issues; players will generate safe fallback audio
+      preview_url: undefined
     }));
 
     return {

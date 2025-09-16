@@ -43,6 +43,7 @@ interface SpotifyRecommendationsResponse {
 class ProductionSpotifyService {
   private accessToken: string | null = null;
   private tokenExpiry: number = 0;
+  private authBackoffUntil: number = 0;
   private recsCache = new Map<string, { data: Track[]; expiry: number }>();
   private readonly recsTtlMs = 120_000; // 2 minutes
 
@@ -58,6 +59,11 @@ class ProductionSpotifyService {
       async () => {
         if (this.accessToken && Date.now() < this.tokenExpiry) {
           return this.accessToken;
+        }
+
+        // If previous authentication failed recently, back off to avoid spamming the API
+        if (Date.now() < this.authBackoffUntil) {
+          throw new Error('Spotify authentication temporarily disabled due to recent failures');
         }
 
         try {
@@ -83,6 +89,8 @@ class ProductionSpotifyService {
           return this.accessToken;
         } catch (error) {
           logger.error('ProductionSpotifyService', 'Authentication request failed', error);
+          // Back off for 5 minutes after auth failure
+          this.authBackoffUntil = Date.now() + 5 * 60 * 1000;
           throw error;
         }
       }
