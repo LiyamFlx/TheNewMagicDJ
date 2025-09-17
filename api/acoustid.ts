@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 // Import from app-level utils to ensure Vercel bundling resolves path
 import { withIdempotency } from '../utils/idempotency';
 import { requireAuth } from '../src/utils/apiAuth';
+import apiConfig from './config';
 import { errorFromResponse, normalizeError } from '../src/utils/errors';
 
 // Simple per-user/IP token bucket
@@ -125,4 +126,6 @@ async function acoustidHandler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default withIdempotency(requireAuth(acoustidHandler));
+export default (apiConfig.ENABLE_IDEMPOTENCY
+  ? withIdempotency(requireAuth(acoustidHandler))
+  : requireAuth(acoustidHandler));

@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 // Import from app-level utils to ensure Vercel bundling resolves path
 import { withIdempotency } from '../utils/idempotency';
 import { requireAuth } from '../src/utils/apiAuth';
+import apiConfig from './config';
 import { errorFromResponse, normalizeError } from '../src/utils/errors';
 
 const AUDD_URL = 'https://api.audd.io/';
@@ -146,4 +147,6 @@ async function auddHandler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default withIdempotency(requireAuth(auddHandler));
+export default (apiConfig.ENABLE_IDEMPOTENCY
+  ? withIdempotency(requireAuth(auddHandler))
+  : requireAuth(auddHandler));

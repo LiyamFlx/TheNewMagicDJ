@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 // Use the top-level utils copy, which Vercel includes alongside api/
 import { withIdempotency } from '../utils/idempotency';
+import apiConfig from './config';
 import {
   AppError,
   errorFromResponse,
@@ -66,10 +67,8 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
       .json({ error: { code: 'BAD_REQUEST', message: 'Method not allowed' } });
   }
 
-  const clientId =
-    process.env.SPOTIFY_CLIENT_ID || process.env.VITA_SPOTIFY_CLIENT_ID;
-  const clientSecret =
-    process.env.SPOTIFY_CLIENT_SECRET || process.env.VITA_SPOTIFY_CLIENT_SECRET;
+  const clientId = apiConfig.SPOTIFY_CLIENT_ID;
+  const clientSecret = apiConfig.SPOTIFY_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
     // Don't spam logs in production, return graceful error
@@ -177,4 +176,6 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default withIdempotency(spotifyTokenHandler);
+export default (apiConfig.ENABLE_IDEMPOTENCY
+  ? withIdempotency(spotifyTokenHandler)
+  : spotifyTokenHandler);

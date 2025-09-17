@@ -1,6 +1,7 @@
 import { Track } from '../types';
 import { mockSpotifyService } from './mockSpotifyService';
 import { productionSpotifyService } from './productionSpotifyService';
+import config from '../config';
 
 interface SpotifyRecommendationParams {
   seed_tracks?: string[];
@@ -28,18 +29,7 @@ class UnifiedSpotifyService implements SpotifyService {
   }
 
   private shouldUseMock(): boolean {
-    // Use mock in development or when Spotify credentials are not available
-    if (import.meta.env?.DEV) {
-      return true;
-    }
-
-    // Check if Spotify credentials are available
-    const hasCredentials =
-      import.meta.env?.VITE_SPOTIFY_CLIENT_ID ||
-      process.env?.SPOTIFY_CLIENT_ID ||
-      process.env?.VITA_SPOTIFY_CLIENT_ID;
-
-    return !hasCredentials;
+    return config.USE_SPOTIFY_MOCK;
   }
 
   initialize(token: string): void {
