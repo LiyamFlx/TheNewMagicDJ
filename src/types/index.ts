@@ -23,6 +23,7 @@ export interface Playlist {
   total_duration?: number;
   description?: string;
   created_at?: string;
+  updated_at?: string;
   metadata?: Record<string, any>;
   user_id?: string;
 }
@@ -34,6 +35,11 @@ export interface Session {
   started_at: string;
   ended_at?: string;
   status: 'active' | 'completed';
+  name: string;
+  tracks: number;
+  duration: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface User {
@@ -41,4 +47,22 @@ export interface User {
   email: string;
   name: string;
   created_at: string;
+}
+
+// Recognition results from third-party services
+export interface RecognitionResult {
+  title: string;
+  artist: string;
+  album?: string;
+  duration?: number;
+  confidence: number;
+  preview_url?: string;
+  spotify_id?: string;
+}
+
+// Audio fingerprint payloads used in processing
+export interface AudioFingerprint {
+  fingerprint: string;
+  confidence: number;
+  duration: number;
 }

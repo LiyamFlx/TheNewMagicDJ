@@ -1,7 +1,7 @@
 import { logger } from '../utils/logger';
 import { rateLimiter } from '../utils/rateLimiter';
 import { errorHandler } from '../utils/errorHandler';
-import { RecognitionResult } from '../types';
+import { RecognitionResult } from '../types/index';
 import { fetchWithRetry } from '../utils/http';
 
 interface AudDResponse {

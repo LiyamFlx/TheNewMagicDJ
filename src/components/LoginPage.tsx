@@ -19,15 +19,45 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate authentication
-    setTimeout(() => {
-      onLogin({
-        id: Date.now().toString(),
-        email: formData.email,
-        name: formData.name || formData.email.split('@')[0],
-      });
+    try {
+      // Validate input
+      if (!formData.email || !formData.email.includes('@')) {
+        throw new Error('Please enter a valid email address');
+      }
+
+      if (!formData.password || formData.password.length < 6) {
+        throw new Error('Password must be at least 6 characters');
+      }
+
+      // Simulate authentication with error handling
+      setTimeout(() => {
+        try {
+          // Additional validation for email format
+          const emailParts = formData.email.split('@');
+          if (emailParts.length !== 2 || !emailParts[0] || !emailParts[1]) {
+            throw new Error('Invalid email format');
+          }
+
+          const user = {
+            id: Date.now().toString(),
+            email: formData.email,
+            name: formData.name || emailParts[0],
+            created_at: new Date().toISOString(),
+          };
+
+          onLogin(user);
+        } catch (error) {
+          console.error('Authentication failed:', error);
+          alert(error instanceof Error ? error.message : 'Authentication failed');
+        } finally {
+          setIsLoading(false);
+        }
+      }, 1500);
+    } catch (error) {
+      console.error('Form validation failed:', error);
+      alert(error instanceof Error ? error.message : 'Please check your input');
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

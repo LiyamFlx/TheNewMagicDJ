@@ -1,255 +1,561 @@
-import { useState, useEffect } from 'react';
+import React, { useReducer, useEffect, useCallback, Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
   useNavigate,
-} from 'react-router-dom';
-import Navigation from './components/Navigation';
-import { Playlist } from './types';
-import LandingPage from './components/LandingPage';
-import MagicStudio from './components/MagicStudio';
-import ProfessionalMagicPlayer from './components/ProfessionalMagicPlayer';
-import AuthSaveBanner from './components/AuthSaveBanner';
-import PlaylistEditor from './components/PlaylistEditor';
-import AnalyticsExport from './components/AnalyticsExport';
-import LibraryProfile from './components/LibraryProfile';
-import NotFound from './components/NotFound';
-import LoginPage from './components/LoginPage';
-import { supabasePlaylistService } from './services/supabasePlaylistService';
+} from "react-router-dom";
 
-// Main App content that needs access to navigation
+import Navigation from "./components/Navigation";
+import LandingPage from "./components/LandingPage";
+import LoginPage from "./components/LoginPage";
+import LoadingSpinner from "./components/LoadingSpinner";
+import ErrorBoundary from "./components/ErrorBoundary";
+import AuthSaveBanner from "./components/AuthSaveBanner";
+import NotFound from "./components/NotFound";
+
+import { Playlist, User, Session } from "./types/index";
+import { supabasePlaylistService } from "./services/supabasePlaylistService";
+import { spotifyService } from "./services/spotifyService";
+import { useLocalStorage } from "./hooks/useLocalStorage";
+import { useSpotifyToken } from "./hooks/useSpotifyToken";
+import { useToast } from "./hooks/useToast";
+
+// Lazy-loaded heavy components
+const MagicStudio = React.lazy(() => import("./components/MagicStudio"));
+const ProfessionalMagicPlayer = React.lazy(() =>
+  import("./components/ProfessionalMagicPlayer")
+);
+const PlaylistEditor = React.lazy(() => import("./components/PlaylistEditor"));
+const AnalyticsExport = React.lazy(() => import("./components/AnalyticsExport"));
+const LibraryProfile = React.lazy(() => import("./components/LibraryProfile"));
+
+// --- Central Logger ---
+const Logger = {
+  info: (...args: any[]) => console.log("[INFO]", ...args),
+  error: (...args: any[]) => console.error("[ERROR]", ...args),
+  warn: (...args: any[]) => console.warn("[WARN]", ...args),
+};
+
+// --- State ---
+interface AppState {
+  user: User | null;
+  savedPlaylists: Playlist[];
+  recentSessions: Session[];
+  currentPlaylist: Playlist | null;
+  currentSession: Session | null;
+  isPlaying: boolean;
+  isEditingPlaylist: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+const initialState: AppState = {
+  user: null,
+  savedPlaylists: [],
+  recentSessions: [],
+  currentPlaylist: null,
+  currentSession: null,
+  isPlaying: false,
+  isEditingPlaylist: false,
+  isLoading: true,
+  error: null,
+};
+
+type Action =
+  | { type: "SET_USER"; payload: User | null }
+  | { type: "SET_PLAYLIST"; payload: Playlist | null }
+  | { type: "SET_SESSION"; payload: Session | null }
+  | { type: "SET_PLAYLISTS"; payload: Playlist[] }
+  | { type: "SET_SESSIONS"; payload: Session[] }
+  | { type: "SET_LOADING"; payload: boolean }
+  | { type: "SET_ERROR"; payload: string | null }
+  | { type: "SET_PLAYING"; payload: boolean }
+  | { type: "SET_EDITING"; payload: boolean };
+
+function appReducer(state: AppState, action: Action): AppState {
+  switch (action.type) {
+    case "SET_USER":
+      return { ...state, user: action.payload };
+    case "SET_PLAYLIST":
+      return { ...state, currentPlaylist: action.payload };
+    case "SET_SESSION":
+      return { ...state, currentSession: action.payload };
+    case "SET_PLAYLISTS":
+      return { ...state, savedPlaylists: action.payload };
+    case "SET_SESSIONS":
+      return { ...state, recentSessions: action.payload };
+    case "SET_LOADING":
+      return { ...state, isLoading: action.payload };
+    case "SET_ERROR":
+      return { ...state, error: action.payload };
+    case "SET_PLAYING":
+      return { ...state, isPlaying: action.payload };
+    case "SET_EDITING":
+      return { ...state, isEditingPlaylist: action.payload };
+    default:
+      return state;
+  }
+}
+
+// --- Main AppContent ---
 function AppContent() {
   const navigate = useNavigate();
-  const [savedPlaylists, setSavedPlaylists] = useState<Playlist[]>([]);
-  const [recentSessions, setRecentSessions] = useState<any[]>([]);
-  const [currentPlaylist, setCurrentPlaylist] = useState<Playlist | null>(null);
-  const [currentSession] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
-  const [isEditingPlaylist, setIsEditingPlaylist] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const { showToast } = useToast();
+  const [state, dispatch] = useReducer(appReducer, initialState);
 
-  // Load recent sessions and restore playlist from Supabase
+  // Spotify token
+  const {
+    token: spotifyToken,
+    isLoading: tokenLoading,
+    error: tokenError,
+    refetch: refetchToken,
+  } = useSpotifyToken();
+
+  // Local storage
+  const [userPreferences] = useLocalStorage("user-preferences", {
+    theme: "dark",
+    autoSave: true,
+    notifications: true,
+  });
+  const [lastPlaylistId, setLastPlaylistId] = useLocalStorage<string>(
+    "last-playlist-id",
+    ""
+  );
+
+  // --- Initialize Spotify ---
   useEffect(() => {
-    // Load mock recent sessions
-    setRecentSessions([
-      {
-        id: '1',
-        name: 'Electronic Night',
-        tracks: 15,
-        created_at: new Date(Date.now() - 86400000).toISOString(),
-      },
-      {
-        id: '2',
-        name: 'House Party Mix',
-        tracks: 20,
-        created_at: new Date(Date.now() - 172800000).toISOString(),
-      },
-    ]);
+    if (spotifyToken && !tokenError) {
+      spotifyService.initialize(spotifyToken);
+      Logger.info("Spotify service initialized");
+    }
+  }, [spotifyToken, tokenError]);
 
-    const loadLastPlaylist = async () => {
-      if (!user) return;
-      const playlists = await supabasePlaylistService.getUserPlaylists(user.id);
-      if (playlists && playlists.length > 0) {
-        const lastPlaylist = playlists.sort(
-          (a: any, b: any) =>
-            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-        )[0];
-        setCurrentPlaylist(lastPlaylist);
-        console.log('Restored playlist from Supabase:', lastPlaylist.name);
+  // Retry on Spotify token error
+  useEffect(() => {
+    if (tokenError) {
+      Logger.error("Spotify token error", tokenError);
+      showToast("Spotify service temporarily unavailable", "error");
+      const retryTimeout = setTimeout(refetchToken, 30000);
+      return () => clearTimeout(retryTimeout);
+    }
+  }, [tokenError, refetchToken, showToast]);
+
+  // --- Initialize App ---
+  useEffect(() => {
+    const initializeApp = async () => {
+      dispatch({ type: "SET_LOADING", payload: true });
+      dispatch({ type: "SET_ERROR", payload: null });
+
+      try {
+        // Mock sessions (replace with Supabase)
+        const mockSessions: Session[] = [
+          {
+            id: "1",
+            name: "Electronic Night",
+            tracks: 15,
+            duration: 3600,
+            user_id: "mock",
+            playlist_id: "mock",
+            started_at: new Date().toISOString(),
+            status: "completed" as const,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ];
+        dispatch({ type: "SET_SESSIONS", payload: mockSessions });
+      } catch (err) {
+        Logger.error("Init error", err);
+        dispatch({ type: "SET_ERROR", payload: "Failed to load application data" });
+        showToast("Failed to load application data", "error");
+      } finally {
+        dispatch({ type: "SET_LOADING", payload: false });
       }
     };
+    initializeApp();
+  }, []); // Remove state.user dependency to prevent infinite loops
 
-    loadLastPlaylist();
-  }, [user]);
+  // Separate effect for user data loading
+  useEffect(() => {
+    if (state.user?.id) {
+      loadUserData(state.user.id).catch((err) => {
+        Logger.error("Load user data error", err);
+        showToast("Failed to load user data", "error");
+      });
+    }
+  }, [state.user?.id]);
 
-  const saveCurrentPlaylist = async (playlist: Playlist) => {
-    if (!user) {
-      console.warn('Cannot save playlist, user not logged in.');
+  // --- Load user data ---
+  const loadUserData = async (userId: string) => {
+    if (!userId) {
+      Logger.error("loadUserData", "No user ID provided");
       return;
     }
+
     try {
-      await supabasePlaylistService.savePlaylist(playlist, user.id);
-    } catch (error) {
-      console.error('Failed to save playlist to Supabase:', error);
+      Logger.info("loadUserData", "Loading playlists for user", { userId });
+      const playlists = await supabasePlaylistService.getUserPlaylists(userId);
+
+      // Ensure playlists is an array
+      const safePlayists = Array.isArray(playlists) ? playlists : [];
+      dispatch({ type: "SET_PLAYLISTS", payload: safePlayists });
+
+      // Restore last playlist with additional safety checks
+      if (safePlayists.length > 0) {
+        const candidate = lastPlaylistId
+          ? safePlayists.find((p: Playlist) => p && p.id === lastPlaylistId)
+          : null;
+
+        const playlistToRestore = candidate || safePlayists
+          .filter((p: Playlist) => p && p.updated_at) // Filter out invalid playlists
+          .sort(
+            (a: Playlist, b: Playlist) =>
+              new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime()
+          )[0];
+
+        if (playlistToRestore && playlistToRestore.id && playlistToRestore.name) {
+          dispatch({ type: "SET_PLAYLIST", payload: playlistToRestore });
+          setLastPlaylistId(playlistToRestore.id);
+          Logger.info("Restored playlist", playlistToRestore.name);
+          showToast(`Restored playlist: ${playlistToRestore.name}`, "success");
+        }
+      }
+    } catch (err) {
+      Logger.error("Load user data error", err);
+
+      // Graceful fallback - don't crash the app
+      dispatch({ type: "SET_PLAYLISTS", payload: [] });
+
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
+        showToast("Network error - working offline", "warning");
+      } else {
+        showToast("Failed to load playlists - working offline", "warning");
+      }
     }
   };
 
-  const handleLogin = (user: any) => {
-    setUser(user);
-    navigate('/');
+  // --- Playlist save handler ---
+  const saveCurrentPlaylist = useCallback(
+    async (playlist: Playlist) => {
+      if (!playlist || !playlist.id) {
+        Logger.error("saveCurrentPlaylist", "Invalid playlist provided", playlist);
+        return;
+      }
+
+      if (!state.user || !state.user.id) {
+        Logger.warn("saveCurrentPlaylist", "No user logged in, skipping save");
+        return;
+      }
+
+      if (!userPreferences.autoSave) {
+        Logger.info("saveCurrentPlaylist", "Auto-save disabled, skipping save");
+        return;
+      }
+
+      try {
+        Logger.info("saveCurrentPlaylist", "Saving playlist", { playlistId: playlist.id, userId: state.user.id });
+
+        const saved = await supabasePlaylistService.savePlaylist(
+          playlist,
+          state.user.id
+        );
+
+        if (saved && saved.id) {
+          setLastPlaylistId(playlist.id);
+
+          // Safely update playlists array
+          const updatedPlaylists = state.savedPlaylists.map((p) =>
+            p && p.id === playlist.id ? saved : p
+          );
+
+          // Add playlist if it's new
+          if (!state.savedPlaylists.find(p => p && p.id === playlist.id)) {
+            updatedPlaylists.push(saved);
+          }
+
+          dispatch({
+            type: "SET_PLAYLISTS",
+            payload: updatedPlaylists,
+          });
+
+          if (userPreferences.notifications) {
+            showToast("Playlist saved", "success", { dedupe: true });
+          }
+        } else {
+          throw new Error("Invalid saved playlist response");
+        }
+      } catch (err) {
+        Logger.error("Save playlist error", err);
+
+        const errorMessage = err instanceof Error ? err.message : "Unknown error";
+        if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
+          showToast("Network error - playlist saved locally", "warning");
+        } else {
+          showToast("Failed to save playlist to cloud", "error");
+        }
+      }
+    },
+    [state.user, state.savedPlaylists, userPreferences, setLastPlaylistId, showToast]
+  );
+
+  // --- Auth handlers ---
+  const handleLogin = (user: User) => {
+    dispatch({ type: "SET_USER", payload: user });
+    showToast(`Welcome, ${user.name || user.email}`, "success");
+    navigate("/");
   };
 
-  const handlePlaylistGenerated = (playlist: Playlist) => {
-    setCurrentPlaylist(playlist);
-    setIsEditingPlaylist(true);
-    saveCurrentPlaylist(playlist);
+  // --- Playlist handlers ---
+  const handlePlaylistGenerated = (pl: Playlist) => {
+    dispatch({ type: "SET_PLAYLIST", payload: pl });
+    dispatch({ type: "SET_EDITING", payload: true });
+    saveCurrentPlaylist(pl);
+    showToast("Playlist generated!", "success");
   };
 
-  const handlePlaylistEdited = (playlist: Playlist) => {
-    setCurrentPlaylist(playlist);
-    setIsEditingPlaylist(false);
-    navigate('/play');
-    saveCurrentPlaylist(playlist);
+  const handlePlaylistEdited = (pl: Playlist) => {
+    dispatch({ type: "SET_PLAYLIST", payload: pl });
+    dispatch({ type: "SET_EDITING", payload: false });
+    saveCurrentPlaylist(pl);
+    navigate("/play");
   };
 
-  const handlePlaylistSelect = (playlist: Playlist) => {
-    setCurrentPlaylist(playlist);
-    setIsEditingPlaylist(true);
-    navigate('/create');
-  };
-
-  const handleSaveToLibrary = (playlist: Playlist) => {
-    setSavedPlaylists(prev => [...prev, playlist]);
-    saveCurrentPlaylist(playlist);
+  const handlePlaylistSelect = (pl: Playlist) => {
+    dispatch({ type: "SET_PLAYLIST", payload: pl });
+    dispatch({ type: "SET_EDITING", payload: true });
+    setLastPlaylistId(pl.id);
+    navigate("/create");
   };
 
   const handleTrackReorder = (fromIndex: number, toIndex: number) => {
-    if (!currentPlaylist) return;
+    if (!state.currentPlaylist || !state.currentPlaylist.tracks) {
+      Logger.error("handleTrackReorder", "No playlist or tracks available");
+      showToast("Cannot reorder tracks: No playlist selected", "error");
+      return;
+    }
 
-    const newTracks = [...currentPlaylist.tracks];
-    const [movedTrack] = newTracks.splice(fromIndex, 1);
-    newTracks.splice(toIndex, 0, movedTrack);
+    // Validate indices
+    if (fromIndex < 0 || fromIndex >= state.currentPlaylist.tracks.length ||
+        toIndex < 0 || toIndex >= state.currentPlaylist.tracks.length) {
+      Logger.error("handleTrackReorder", "Invalid track indices", { fromIndex, toIndex, trackCount: state.currentPlaylist.tracks.length });
+      showToast("Cannot reorder tracks: Invalid track position", "error");
+      return;
+    }
 
-    const updatedPlaylist = { ...currentPlaylist, tracks: newTracks };
-    setCurrentPlaylist(updatedPlaylist);
-    saveCurrentPlaylist(updatedPlaylist);
+    try {
+      const newTracks = [...state.currentPlaylist.tracks];
+      const [movedTrack] = newTracks.splice(fromIndex, 1);
+      newTracks.splice(toIndex, 0, movedTrack);
+
+      const updatedPlaylist = {
+        ...state.currentPlaylist,
+        tracks: newTracks,
+        updated_at: new Date().toISOString()
+      };
+      dispatch({ type: "SET_PLAYLIST", payload: updatedPlaylist });
+      saveCurrentPlaylist(updatedPlaylist);
+    } catch (error) {
+      Logger.error("handleTrackReorder", "Failed to reorder tracks", error);
+      showToast("Failed to reorder tracks", "error");
+    }
   };
 
   const handleTrackRemove = (index: number) => {
-    if (!currentPlaylist) return;
+    if (!state.currentPlaylist || !state.currentPlaylist.tracks) {
+      Logger.error("handleTrackRemove", "No playlist or tracks available");
+      showToast("Cannot remove track: No playlist selected", "error");
+      return;
+    }
 
-    const newTracks = currentPlaylist.tracks.filter((_, i) => i !== index);
-    const updatedPlaylist = { ...currentPlaylist, tracks: newTracks };
-    setCurrentPlaylist(updatedPlaylist);
-    saveCurrentPlaylist(updatedPlaylist);
+    // Validate index
+    if (index < 0 || index >= state.currentPlaylist.tracks.length) {
+      Logger.error("handleTrackRemove", "Invalid track index", { index, trackCount: state.currentPlaylist.tracks.length });
+      showToast("Cannot remove track: Invalid track position", "error");
+      return;
+    }
+
+    try {
+      const newTracks = state.currentPlaylist.tracks.filter((_, i) => i !== index);
+      const updatedPlaylist = {
+        ...state.currentPlaylist,
+        tracks: newTracks,
+        updated_at: new Date().toISOString()
+      };
+      dispatch({ type: "SET_PLAYLIST", payload: updatedPlaylist });
+      saveCurrentPlaylist(updatedPlaylist);
+      showToast("Track removed successfully", "success");
+    } catch (error) {
+      Logger.error("handleTrackRemove", "Failed to remove track", error);
+      showToast("Failed to remove track", "error");
+    }
   };
 
   const handlePlaylistUpdate = (playlist: Playlist) => {
-    setCurrentPlaylist(playlist);
+    dispatch({ type: "SET_PLAYLIST", payload: playlist });
     saveCurrentPlaylist(playlist);
   };
 
-  if (!user) {
+  // --- Session handlers ---
+  const handleSessionEnd = () => {
+    dispatch({ type: "SET_SESSION", payload: null });
+    dispatch({ type: "SET_PLAYING", payload: false });
+    navigate("/");
+    showToast("Session ended", "info");
+  };
+
+  // --- Render states ---
+  if (state.isLoading || tokenLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="large" text="Loading The New Magic DJ..." />
+      </div>
+    );
+  }
+
+  if (!state.user) {
     return <LoginPage onLogin={handleLogin} />;
   }
 
   return (
     <div className="min-h-screen gradient-bg-primary">
       <AuthSaveBanner />
+
       <Navigation
-        user={user}
-        hasPlaylist={!!currentPlaylist}
-        hasSession={!!currentSession}
+        user={state.user}
+        hasPlaylist={!!state.currentPlaylist}
+        hasSession={!!state.currentSession}
       />
 
-      <Routes>
-        {/* Home Route */}
-        <Route
-          path="/"
-          element={
-            <LandingPage
-              onStartMixing={() => navigate('/create')}
-              onLibraryAccess={() => navigate('/library')}
-              recentSessions={recentSessions}
-            />
-          }
-        />
+      {state.error && (
+        <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-2 mx-4 mt-4 rounded-lg">
+          {state.error}
+          <button
+            onClick={() => dispatch({ type: "SET_ERROR", payload: null })}
+            className="ml-2"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
-        {/* Create Route */}
-        <Route
-          path="/create"
-          element={
-            isEditingPlaylist && currentPlaylist ? (
-              <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8">
-                <PlaylistEditor
-                  playlist={currentPlaylist}
-                  currentTrackIndex={0}
-                  isPlaying={false}
-                  onTrackSelect={() => {}}
-                  onTrackRemove={handleTrackRemove}
-                  onTrackReorder={handleTrackReorder}
-                  onPlaylistUpdate={handlePlaylistUpdate}
-                  onSendToPlayer={() => handlePlaylistEdited(currentPlaylist!)}
+      <Suspense fallback={<LoadingSpinner text="Loading..." />}>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <ErrorBoundary>
+                <LandingPage
+                  onStartMixing={() => navigate("/create")}
+                  onLibraryAccess={() => navigate("/library")}
+                  recentSessions={state.recentSessions}
                 />
-              </div>
-            ) : (
-              <MagicStudio
-                user={user}
-                onPlaylistGenerated={handlePlaylistGenerated}
-                onBack={() => window.history.back()}
-                onLibraryAccess={() => navigate('/library')}
-                recentSessions={recentSessions}
-              />
-            )
-          }
-        />
+              </ErrorBoundary>
+            }
+          />
 
-        {/* Play Route - Protected */}
-        <Route
-          path="/play"
-          element={
-            currentPlaylist ? (
-              <ProfessionalMagicPlayer
-                playlist={currentPlaylist}
-                session={currentSession}
-                isPlaying={isPlaying}
-                onPlayPause={setIsPlaying}
-                onSessionEnd={() => navigate('/')}
-                onBack={() => window.history.back()}
-              />
-            ) : (
-              <Navigate to="/create" replace />
-            )
-          }
-        />
+          <Route
+            path="/create"
+            element={
+              <ErrorBoundary>
+                {state.isEditingPlaylist && state.currentPlaylist ? (
+                  <PlaylistEditor
+                    playlist={state.currentPlaylist}
+                    currentTrackIndex={0}
+                    isPlaying={state.isPlaying}
+                    onTrackSelect={() => {}}
+                    onTrackRemove={handleTrackRemove}
+                    onTrackReorder={handleTrackReorder}
+                    onPlaylistUpdate={handlePlaylistUpdate}
+                    onSendToPlayer={() =>
+                      state.currentPlaylist && handlePlaylistEdited(state.currentPlaylist)
+                    }
+                  />
+                ) : (
+                  <MagicStudio
+                    user={state.user}
+                    onPlaylistGenerated={handlePlaylistGenerated}
+                    onBack={() => window.history.back()}
+                    onLibraryAccess={() => navigate("/library")}
+                    recentSessions={state.recentSessions}
+                  />
+                )}
+              </ErrorBoundary>
+            }
+          />
 
-        {/* Library Route */}
-        <Route
-          path="/library"
-          element={
-            <LibraryProfile
-              user={user}
-              savedPlaylists={savedPlaylists}
-              onBack={() => window.history.back()}
-              onPlaylistSelect={handlePlaylistSelect}
-              onCreateNew={() => navigate('/create')}
-            />
-          }
-        />
+          <Route
+            path="/play"
+            element={
+              <ErrorBoundary>
+                {state.currentPlaylist ? (
+                  <ProfessionalMagicPlayer
+                    playlist={state.currentPlaylist}
+                    session={state.currentSession}
+                    isPlaying={state.isPlaying}
+                    onPlayPause={(playing) =>
+                      dispatch({ type: "SET_PLAYING", payload: playing })
+                    }
+                    onSessionEnd={handleSessionEnd}
+                    onBack={() => navigate("/create")}
+                  />
+                ) : (
+                  <Navigate to="/create" replace />
+                )}
+              </ErrorBoundary>
+            }
+          />
 
-        {/* Analytics Route - Protected */}
-        <Route
-          path="/analytics"
-          element={
-            currentPlaylist && currentSession ? (
-              <AnalyticsExport
-                playlist={currentPlaylist}
-                session={currentSession}
-                onBack={() => window.history.back()}
-                onSaveToLibrary={handleSaveToLibrary}
-                onEditAgain={() => navigate('/create')}
-              />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
+          <Route
+            path="/library"
+            element={
+              <ErrorBoundary>
+                <LibraryProfile
+                  user={state.user}
+                  savedPlaylists={state.savedPlaylists}
+                  onBack={() => window.history.back()}
+                  onPlaylistSelect={handlePlaylistSelect}
+                  onCreateNew={() => navigate("/create")}
+                />
+              </ErrorBoundary>
+            }
+          />
 
-        {/* 404 Not Found */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          <Route
+            path="/analytics"
+            element={
+              <ErrorBoundary>
+                {state.currentPlaylist && state.currentSession ? (
+                  <AnalyticsExport
+                    playlist={state.currentPlaylist}
+                    session={state.currentSession}
+                    onBack={() => window.history.back()}
+                    onSaveToLibrary={saveCurrentPlaylist}
+                    onEditAgain={() => navigate("/create")}
+                  />
+                ) : (
+                  <Navigate to="/" replace />
+                )}
+              </ErrorBoundary>
+            }
+          />
+
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </div>
   );
 }
 
-// Router wrapper
+// --- App wrapper ---
 function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <AppContent />
+      </Router>
+    </ErrorBoundary>
   );
 }
 

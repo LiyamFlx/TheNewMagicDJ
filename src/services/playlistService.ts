@@ -1,4 +1,4 @@
-import { Playlist, Track, RecognitionResult } from '../types';
+import { Playlist, Track, RecognitionResult } from '../types/index';
 import { productionSpotifyService } from './productionSpotifyService';
 import { mockSpotifyService } from './mockSpotifyService';
 import { youtubeService } from './youtubeService';

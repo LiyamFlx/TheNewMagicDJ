@@ -1,4 +1,4 @@
-import { AudioFingerprint } from '../types';
+import { AudioFingerprint } from '../types/index';
 import { logger } from '../utils/logger';
 import { acoustidService } from './acoustidService';
 import { auddService } from './auddService';
