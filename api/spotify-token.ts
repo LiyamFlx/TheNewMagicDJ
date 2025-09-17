@@ -93,11 +93,9 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
         'Retry-After',
         Math.ceil((bucket.retryAfter || 1000) / 1000).toString()
       );
-      return res
-        .status(429)
-        .json({
-          error: { code: 'RATE_LIMITED', message: 'Too many requests' },
-        });
+      return res.status(429).json({
+        error: { code: 'RATE_LIMITED', message: 'Too many requests' },
+      });
     }
 
     const now = Date.now();

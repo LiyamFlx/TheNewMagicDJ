@@ -72,11 +72,9 @@ async function auddHandler(req: VercelRequest, res: VercelResponse) {
         'Retry-After',
         Math.ceil((bucket.retryAfter || 1000) / 1000).toString()
       );
-      return res
-        .status(429)
-        .json({
-          error: { code: 'RATE_LIMITED', message: 'Too many requests' },
-        });
+      return res.status(429).json({
+        error: { code: 'RATE_LIMITED', message: 'Too many requests' },
+      });
     }
 
     const chunks: Buffer[] = [];
@@ -85,14 +83,12 @@ async function auddHandler(req: VercelRequest, res: VercelResponse) {
 
     const token = process.env.AUDD_API_TOKEN;
     if (!token) {
-      res
-        .status(500)
-        .json({
-          error: {
-            code: 'INTERNAL_ERROR',
-            message: 'Server missing AUDD_API_TOKEN',
-          },
-        });
+      res.status(500).json({
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Server missing AUDD_API_TOKEN',
+        },
+      });
       return;
     }
 

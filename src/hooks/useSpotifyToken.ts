@@ -56,7 +56,7 @@ export function useSpotifyToken(): UseSpotifyTokenReturn {
         token: data.access_token,
         isLoading: false,
         error: null,
-        expiresAt: Date.now() + (data.expires_in * 1000) - 60000,
+        expiresAt: Date.now() + data.expires_in * 1000 - 60000,
       });
     } catch (error) {
       setState({

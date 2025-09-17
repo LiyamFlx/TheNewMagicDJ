@@ -52,7 +52,9 @@ class UnifiedSpotifyService implements SpotifyService {
     }
   }
 
-  async getRecommendations(params: SpotifyRecommendationParams): Promise<Track[]> {
+  async getRecommendations(
+    params: SpotifyRecommendationParams
+  ): Promise<Track[]> {
     if (this.useMock || this.token === 'mock-spotify-token-dev') {
       return mockSpotifyService.getRecommendations(params);
     }

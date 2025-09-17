@@ -61,27 +61,23 @@ async function acoustidHandler(req: VercelRequest, res: VercelResponse) {
 
   const key = process.env.ACOUSTID_API_KEY;
   if (!key) {
-    res
-      .status(500)
-      .json({
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Server missing ACOUSTID_API_KEY',
-        },
-      });
+    res.status(500).json({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Server missing ACOUSTID_API_KEY',
+      },
+    });
     return;
   }
 
   const { fingerprint, duration } = req.query;
   if (!fingerprint || !duration) {
-    res
-      .status(400)
-      .json({
-        error: {
-          code: 'BAD_REQUEST',
-          message: 'Missing fingerprint or duration',
-        },
-      });
+    res.status(400).json({
+      error: {
+        code: 'BAD_REQUEST',
+        message: 'Missing fingerprint or duration',
+      },
+    });
     return;
   }
 
@@ -100,11 +96,9 @@ async function acoustidHandler(req: VercelRequest, res: VercelResponse) {
         'Retry-After',
         Math.ceil((bucket.retryAfter || 1000) / 1000).toString()
       );
-      return res
-        .status(429)
-        .json({
-          error: { code: 'RATE_LIMITED', message: 'Too many requests' },
-        });
+      return res.status(429).json({
+        error: { code: 'RATE_LIMITED', message: 'Too many requests' },
+      });
     }
 
     const response = await fetchWithTimeout(

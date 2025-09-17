@@ -9,7 +9,11 @@ interface ToastOptions {
 }
 
 interface UseToastReturn {
-  showToast: (message: string, type?: ToastType, options?: ToastOptions) => void;
+  showToast: (
+    message: string,
+    type?: ToastType,
+    options?: ToastOptions
+  ) => void;
 }
 
 export function useToast(): UseToastReturn {

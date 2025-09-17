@@ -48,7 +48,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           onLogin(user);
         } catch (error) {
           console.error('Authentication failed:', error);
-          alert(error instanceof Error ? error.message : 'Authentication failed');
+          alert(
+            error instanceof Error ? error.message : 'Authentication failed'
+          );
         } finally {
           setIsLoading(false);
         }
