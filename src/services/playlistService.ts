@@ -1019,7 +1019,7 @@ class PlaylistService {
               : [];
             tracks = await this.musicService.getRecommendations({
               seed_tracks,
-              seed_genres: ['electronic', 'house', 'techno'],
+              seed_genres: seed_tracks.length > 0 ? [] : ['electronic'],
               limit: 15,
             });
           } catch (error) {
@@ -1034,7 +1034,7 @@ class PlaylistService {
         if (tracks.length === 0) {
           try {
             tracks = await this.musicService.getRecommendations({
-              seed_genres: ['electronic', 'house', 'techno'],
+              seed_genres: ['electronic'],
               limit: 15,
             });
           } catch (error) {
@@ -1047,7 +1047,7 @@ class PlaylistService {
             try {
               if (youtubeService.isConfigured()) {
                 const ytTracks = await youtubeService.getRecommendations({
-                  seed_genres: ['electronic', 'house', 'techno'],
+                  seed_genres: ['electronic'],
                   limit: 15,
                 });
                 tracks = ytTracks || [];
@@ -1061,7 +1061,7 @@ class PlaylistService {
                 youtubeError
               );
               tracks = await productionSpotifyService.getRecommendations({
-                seed_genres: ['electronic', 'house', 'techno'],
+                seed_genres: ['electronic'],
                 limit: 15,
               });
             }
