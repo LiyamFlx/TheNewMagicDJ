@@ -63,16 +63,13 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET || process.env.VITA_SPOTIFY_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    console.error('Spotify credentials missing:', {
-      hasClientId: !!clientId,
-      hasClientSecret: !!clientSecret,
-      envKeys: Object.keys(process.env).filter(k => k.includes('SPOTIFY'))
-    });
+    // Don't spam logs in production, return graceful error
     return res.status(503).json({
       error: {
         code: 'MISSING_CREDENTIALS',
-        message: 'Spotify credentials not configured',
-        httpStatus: 503
+        message: 'Spotify service temporarily unavailable',
+        httpStatus: 503,
+        retryable: true
       }
     });
   }
@@ -139,10 +136,9 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
       expires_in: Math.max(0, Math.floor((token.expires_at - Date.now()) / 1000)),
     });
   } catch (e: any) {
-    console.error('Spotify token error:', e);
     const normalized = normalizeError(e, {
       code: 'SPOTIFY_API_ERROR',
-      message: 'Spotify service unavailable',
+      message: 'Spotify service temporarily unavailable',
     });
     // Return 503 for service unavailable to trigger proper fallback
     res.status(503).json({

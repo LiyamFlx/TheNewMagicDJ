@@ -75,6 +75,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     error?: (e: Event) => void;
   }>({});
 
+  // Error throttling to prevent spam
+  const errorThrottleRef = useRef<{
+    lastError: number;
+    errorCount: number;
+  }>({ lastError: 0, errorCount: 0 });
+
   const currentTrack = playlist?.tracks[currentTrackIndex];
   const nextTrack = playlist?.tracks[currentTrackIndex + 1];
 
@@ -172,24 +178,40 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     const onError = (e: Event) => {
       const target = e.target as HTMLAudioElement;
       const error = target.error;
+      const now = Date.now();
+
+      // Throttle error logging to prevent spam
+      if (now - errorThrottleRef.current.lastError < 2000) {
+        errorThrottleRef.current.errorCount++;
+        if (errorThrottleRef.current.errorCount > 5) {
+          return; // Stop logging after 5 rapid errors
+        }
+      } else {
+        errorThrottleRef.current.errorCount = 1;
+      }
+      errorThrottleRef.current.lastError = now;
+
       logger.error('ProfessionalMagicPlayer', 'Audio A playback error', {
         code: error?.code,
         message: error?.message,
         src: target.src,
         networkState: target.networkState,
-        readyState: target.readyState
+        readyState: target.readyState,
+        errorCount: errorThrottleRef.current.errorCount
       });
+
       setIsLoading(false);
       setDuration(currentTrack.duration ?? 180);
 
-      // Show user-friendly error message
-      if (target.src && !target.src.startsWith('data:audio/wav')) {
+      // Only show error message on first few errors, not repeatedly
+      if (errorThrottleRef.current.errorCount <= 2 && target.src && !target.src.startsWith('data:audio/wav')) {
         setErrorMessage('Audio failed, using demo audio');
+        setIsDegraded(true);
         setTimeout(() => setErrorMessage(null), 3000);
       }
 
-      // Auto-skip to next track if current track fails to load
-      if (error && error.code !== 1) { // Skip unless MEDIA_ERR_ABORTED (user initiated)
+      // Auto-skip to next track if current track fails to load (but not repeatedly)
+      if (error && error.code !== 1 && errorThrottleRef.current.errorCount === 1) {
         logger.info('ProfessionalMagicPlayer', 'Auto-skipping failed track', {
           currentIndex: currentTrackIndex,
           totalTracks: playlist?.tracks.length
@@ -289,11 +311,30 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     const onError = (e: Event) => {
       const target = e.target as HTMLAudioElement;
       const error = target.error;
+      const now = Date.now();
+
+      // Use same throttling for Audio B
+      if (now - errorThrottleRef.current.lastError < 2000) {
+        errorThrottleRef.current.errorCount++;
+        if (errorThrottleRef.current.errorCount > 5) {
+          return; // Stop logging after 5 rapid errors
+        }
+      } else {
+        errorThrottleRef.current.errorCount = 1;
+      }
+      errorThrottleRef.current.lastError = now;
+
       logger.error('ProfessionalMagicPlayer', 'Audio B playback error', {
         code: error?.code,
         message: error?.message,
-        src: target.src
+        src: target.src,
+        errorCount: errorThrottleRef.current.errorCount
       });
+
+      // Set degraded mode if errors persist
+      if (errorThrottleRef.current.errorCount <= 2) {
+        setIsDegraded(true);
+      }
     };
     
     // Store listeners for cleanup
@@ -367,8 +408,19 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       if (!audioContextRef.current && window.AudioContext) {
         try {
           audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        } catch (error) {
+
+          // Handle AudioContext state changes
+          audioContextRef.current.addEventListener('statechange', () => {
+            logger.info('ProfessionalMagicPlayer', 'AudioContext state changed', {
+              state: audioContextRef.current?.state
+            });
+          });
+
+        } catch (error: any) {
           logger.warn('ProfessionalMagicPlayer', 'AudioContext creation failed', error);
+          setErrorMessage('Audio device unavailable. Using basic playback.');
+          setIsDegraded(true);
+          setTimeout(() => setErrorMessage(null), 3000);
         }
       }
 
@@ -376,6 +428,15 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
         audioContextRef.current.resume().catch(error => {
           logger.warn('ProfessionalMagicPlayer', 'AudioContext resume failed', error);
+
+          // Check if this is a device error
+          if (error.name === 'NotSupportedError' || error.message.includes('audio device')) {
+            setErrorMessage('Audio device error. Check system audio settings.');
+            setIsDegraded(true);
+            setTimeout(() => setErrorMessage(null), 5000);
+          } else {
+            setShowUnmuteOverlay(true);
+          }
         });
       }
 
