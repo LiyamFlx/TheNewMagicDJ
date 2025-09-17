@@ -8,6 +8,11 @@ on:
   push:
     branches: ["main"]
   pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+  pull_request:
   workflow_dispatch:  #  allows manual triggers from GitHub UI or gh cli
 jobs:
   build:
