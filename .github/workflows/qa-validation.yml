@@ -24,6 +24,11 @@ jobs:
           cache: 'npm'
 
       - name: 🔧 Install dependencies
+      - name: ♻️ Cache Playwright
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
         run: npm ci
 
       - name: 🔍 TypeScript check
@@ -139,6 +144,11 @@ jobs:
           cache: 'npm'
 
       - name: 🔧 Install dependencies
+      - name: ♻️ Cache Playwright
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
         run: npm ci
 
       - name: 🚀 Deploy to Vercel
