@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { withIdempotency } from '../src/utils/idempotency';
+// Import from app-level utils to ensure Vercel bundling resolves path
+import { withIdempotency } from '../utils/idempotency';
 import { requireAuth } from '../src/utils/apiAuth';
 import { errorFromResponse, normalizeError } from '../src/utils/errors';
 

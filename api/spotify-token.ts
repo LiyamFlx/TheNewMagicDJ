@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+// Use the top-level utils copy, which Vercel includes alongside api/
 import { withIdempotency } from '../utils/idempotency';
 import {
   AppError,
