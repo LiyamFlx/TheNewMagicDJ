@@ -6,4 +6,5 @@ jobs:
   hello:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Hello from Actions ✅"
+      - name: Say hello
+        run: echo "Hello from Actions ✅"
