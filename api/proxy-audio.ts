@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { withIdempotency } from '../utils/idempotency';
-import apiConfig from './config';
+import { withIdempotency } from '../utils/idempotency.js';
+import apiConfig from './config.js';
 
 // Simple in-memory cache for audio URLs to reduce upstream requests
 const audioCache = new Map<string, {

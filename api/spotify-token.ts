@@ -1,12 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 // Use the top-level utils copy, which Vercel includes alongside api/
-import { withIdempotency } from '../utils/idempotency';
-import apiConfig from './config';
+import { withIdempotency } from '../utils/idempotency.js';
+import apiConfig from './config.js';
 import {
   AppError,
   errorFromResponse,
   normalizeError,
-} from '../src/utils/errors';
+} from '../src/utils/errors.js';
 
 type TokenCache = {
   access_token: string;
