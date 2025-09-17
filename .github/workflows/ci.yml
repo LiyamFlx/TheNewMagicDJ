@@ -10,6 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - run: echo "✅ Workflow reached jobs successfully"
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
