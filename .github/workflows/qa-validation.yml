@@ -1,5 +1,5 @@
 ---
-name: CI/CD QA Validation
+name: QA Validation
 
 on:
   push:
@@ -9,19 +9,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  validate:
+  lint-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: 20
-
-      - name: Run lint
-        run: npm run lint --if-present
-
-      - name: Run tests
-        run: npm test --if-present
+      - run: npm ci
+      - run: npm run lint --if-present
+      - run: npm test --if-present
