@@ -1,3 +1,4 @@
+---
 name: CI/CD
 
 concurrency:
@@ -6,9 +7,9 @@ concurrency:
 
 on:
   push:
-    branches: [ main ]
+    branches: ["main"]
   pull_request:
-    branches: [ main ]
+    branches: ["main"]
   workflow_dispatch:   # ✅ allows manual triggers from GitHub UI or gh cli
 
 jobs:
@@ -83,3 +84,4 @@ jobs:
         run: vercel deploy --prod --yes --token $VERCEL_TOKEN
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
