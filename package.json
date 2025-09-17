@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "AI-powered DJ platform with futuristic glass morphism design",
+  "description": "AI-powered DJ platform with futuristic glass morphism design and Spotify integration",
   "author": "LiyamFlx",
   "license": "MIT",
   "homepage": "https://github.com/LiyamFlx/TheNewMagicDJ#readme",
@@ -18,28 +18,39 @@
     "dj",
     "ai",
     "music",
+    "spotify",
     "react",
     "typescript",
     "vite",
     "tailwindcss",
     "glass-morphism",
-    "futuristic-ui"
+    "futuristic-ui",
+    "vercel",
+    "serverless"
   ],
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
+    "dev:api": "vercel dev",
     "build": "tsc && vite build",
     "build:analyze": "npm run build && npx vite-bundle-analyzer dist/assets/*.js",
+    "build:vercel": "vercel build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix",
-    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "clean": "rm -rf dist node_modules/.vite",
-    "clean:all": "rm -rf dist node_modules node_modules/.vite && npm install",
+    "typecheck:api": "tsc --noEmit --project api/tsconfig.json",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings 0",
+    "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix --max-warnings 0",
+    "lint:api": "eslint api/**/*.ts --max-warnings 0",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\" \"api/**/*.{ts,js,json}\" \"utils/**/*.{ts,js,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\" \"api/**/*.{ts,js,json}\" \"utils/**/*.{ts,js,json}\"",
+    "clean": "rm -rf dist .vercel node_modules/.vite",
+    "clean:all": "rm -rf dist .vercel node_modules node_modules/.vite && npm install",
     "start": "npm run preview",
-    "test:build": "npm run typecheck && npm run build",
+    "api:test": "node --loader ts-node/esm test/api/test-spotify-token.ts",
+    "api:health": "curl -s http://localhost:3000/api/spotify-token?health=true | jq || curl -s http://localhost:3000/api/spotify-token?health=true",
+    "test:build": "npm run typecheck && npm run typecheck:api && npm run build",
+    "test:api": "npm run api:test",
     "deploy": "npm run test:build && vercel --prod",
+    "deploy:preview": "vercel",
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",
     "test:e2e:debug": "npx playwright test --debug",
@@ -47,7 +58,9 @@
     "test:qa": "npx playwright test --grep @qa-validation",
     "test:qa:headed": "npx playwright test --grep @qa-validation --headed",
     "test:install": "npx playwright install",
-    "test:install-deps": "npx playwright install-deps"
+    "test:install-deps": "npx playwright install-deps",
+    "env:check": "node -e \"console.log('Spotify Client ID:', process.env.VITA_SPOTIFY_CLIENT_ID ? 'Set' : 'Missing'); console.log('Spotify Secret:', process.env.VITA_SPOTIFY_CLIENT_SECRET ? 'Set' : 'Missing');\"",
+    "validate": "npm run typecheck && npm run typecheck:api && npm run lint && npm run format:check && npm run test:build"
   },
   "dependencies": {
     "@googleapis/youtube": "^28.0.0",
@@ -64,11 +77,12 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",
+    "@types/node": "^22.10.2",
     "@types/react": "^18.3.24",
     "@types/react-dom": "^18.3.7",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
-    "@vercel/node": "^2.3.0",
+    "@vercel/node": "^3.2.14",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.1",
@@ -77,7 +91,9 @@
     "postcss": "^8.5.3",
     "prettier": "^3.4.2",
     "tailwindcss": "^3.4.17",
+    "ts-node": "^10.9.2",
     "typescript": "^5.7.2",
+    "vercel": "^39.2.4",
     "vite": "^7.1.5"
   },
   "engines": {
@@ -95,5 +111,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "volta": {
+    "node": "18.19.0",
+    "npm": "10.2.3"
   }
 }

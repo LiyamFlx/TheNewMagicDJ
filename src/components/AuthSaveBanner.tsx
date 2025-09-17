@@ -25,10 +25,10 @@ export default function AuthSaveBanner() {
     <div className="px-4 py-2 bg-yellow-900/50 border-b border-yellow-600 text-yellow-200 text-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <span>
-          Sign in to save your playlists to the cloud. You’re browsing without a Supabase session, so saves are local-only.
+          Sign in to save your playlists to the cloud. You’re browsing without a
+          Supabase session, so saves are local-only.
         </span>
       </div>
     </div>
   );
 }
-

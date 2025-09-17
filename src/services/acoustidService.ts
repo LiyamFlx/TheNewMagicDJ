@@ -38,17 +38,24 @@ class AcoustIDService {
     }
   }
 
-  async recognizeFingerprint(fingerprint: string, duration: number): Promise<RecognitionResult | null> {
+  async recognizeFingerprint(
+    fingerprint: string,
+    duration: number
+  ): Promise<RecognitionResult | null> {
     return logger.trackOperation(
       'AcoustIDService',
       'recognizeFingerprint',
       async () => {
         // Validate fingerprint format - AcoustID fingerprints should be much longer
         if (!fingerprint || fingerprint.length < 20) {
-          logger.warn('AcoustIDService', 'Invalid fingerprint format, skipping AcoustID lookup', {
-            fingerprintLength: fingerprint?.length || 0,
-            duration
-          });
+          logger.warn(
+            'AcoustIDService',
+            'Invalid fingerprint format, skipping AcoustID lookup',
+            {
+              fingerprintLength: fingerprint?.length || 0,
+              duration,
+            }
+          );
           return null;
         }
 
@@ -57,7 +64,10 @@ class AcoustIDService {
         // Check rate limit
         const limitCheck = await rateLimiter.checkLimit('acoustid');
         if (!limitCheck.allowed) {
-          const error = errorHandler.createRateLimitError('AcoustID', limitCheck.retryAfter || 20000);
+          const error = errorHandler.createRateLimitError(
+            'AcoustID',
+            limitCheck.retryAfter || 20000
+          );
           errorHandler.handleError(error);
           throw new Error(error.message);
         }
@@ -66,33 +76,48 @@ class AcoustIDService {
           meta: 'recordings+releasegroups+compress',
           fingerprint,
           duration: duration.toString(),
-          format: 'json'
+          format: 'json',
         });
         if (this.apiKey) params.set('client', this.apiKey);
 
         const startTime = Date.now();
 
         try {
-          const url = useProxy ? `/api/acoustid?${new URLSearchParams({ fingerprint, duration: duration.toString() }).toString()}` : `${this.baseUrl}?${params.toString()}`;
-          const response = await fetchWithRetry(url, {
-            method: 'GET',
-            headers: {
-              'User-Agent': 'MagicDJ/1.0'
-            }
-          }, { timeoutMs: 15000, retries: 2 });
+          const url = useProxy
+            ? `/api/acoustid?${new URLSearchParams({ fingerprint, duration: duration.toString() }).toString()}`
+            : `${this.baseUrl}?${params.toString()}`;
+          const response = await fetchWithRetry(
+            url,
+            {
+              method: 'GET',
+              headers: {
+                'User-Agent': 'MagicDJ/1.0',
+              },
+            },
+            { timeoutMs: 15000, retries: 2 }
+          );
 
           const responseTime = Date.now() - startTime;
           logger.trackAPICall('acoustid', 'lookup', responseTime, response.ok);
 
           if (!response.ok) {
-            const error = errorHandler.createAPIError('AcoustID', 'lookup', response.status, response.statusText);
+            const error = errorHandler.createAPIError(
+              'AcoustID',
+              'lookup',
+              response.status,
+              response.statusText
+            );
             errorHandler.handleError(error);
             throw new Error(error.message);
           }
 
           const data: AcoustIDResponse = await response.json();
 
-          if (data.status !== 'ok' || !data.results || data.results.length === 0) {
+          if (
+            data.status !== 'ok' ||
+            !data.results ||
+            data.results.length === 0
+          ) {
             logger.info('AcoustIDService', 'No recognition results found');
             return null;
           }
@@ -116,23 +141,24 @@ class AcoustIDService {
             artist,
             album,
             confidence: bestResult.score,
-            duration: recording.duration
+            duration: recording.duration,
           };
 
           logger.info('AcoustIDService', 'Track recognized successfully', {
             title,
             artist,
-            confidence: bestResult.score
+            confidence: bestResult.score,
           });
 
           return result;
-
         } catch (error) {
           const responseTime = Date.now() - startTime;
           logger.trackAPICall('acoustid', 'lookup', responseTime, false);
 
           if (error instanceof TypeError && error.message.includes('fetch')) {
-            const networkError = errorHandler.createNetworkError('AcoustID recognition');
+            const networkError = errorHandler.createNetworkError(
+              'AcoustID recognition'
+            );
             errorHandler.handleError(networkError);
             throw new Error(networkError.message);
           }

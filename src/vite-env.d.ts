@@ -14,4 +14,6 @@ interface ImportMetaEnv {
   readonly VITE_ACOUSTID_RATE_LIMIT: string;
   readonly VITE_AUDD_RATE_LIMIT: string;
 }
-interface ImportMeta { readonly env: ImportMetaEnv; }
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}

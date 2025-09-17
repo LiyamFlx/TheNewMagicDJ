@@ -21,7 +21,7 @@ class ErrorBoundary extends Component<Props, State> {
     this.state = {
       hasError: false,
       error: null,
-      errorId: null
+      errorId: null,
     };
   }
 
@@ -29,34 +29,35 @@ class ErrorBoundary extends Component<Props, State> {
     return {
       hasError: true,
       error,
-      errorId: `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      errorId: `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const errorId = this.state.errorId || 'unknown';
-    
+
     // Log the error
     logger.error('ErrorBoundary', 'React component error caught', {
       error,
       errorInfo,
       errorId,
-      componentStack: errorInfo.componentStack
+      componentStack: errorInfo.componentStack,
     });
 
     // Handle with error handler
     const appError = {
       code: 'REACT_ERROR_BOUNDARY',
       message: error.message,
-      userMessage: 'A component error occurred. The page will be refreshed automatically.',
+      userMessage:
+        'A component error occurred. The page will be refreshed automatically.',
       severity: 'high' as const,
       recoverable: true,
       context: {
         errorId,
         stack: error.stack,
-        componentStack: errorInfo.componentStack
+        componentStack: errorInfo.componentStack,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     errorHandler.handleError(appError);
@@ -69,21 +70,21 @@ class ErrorBoundary extends Component<Props, State> {
 
   handleRetry = () => {
     logger.info('ErrorBoundary', 'User initiated retry', {
-      errorId: this.state.errorId
+      errorId: this.state.errorId,
     });
-    
+
     this.setState({
       hasError: false,
       error: null,
-      errorId: null
+      errorId: null,
     });
   };
 
   handleGoHome = () => {
     logger.info('ErrorBoundary', 'User navigated to home', {
-      errorId: this.state.errorId
+      errorId: this.state.errorId,
     });
-    
+
     window.location.href = '/';
   };
 
@@ -99,13 +100,14 @@ class ErrorBoundary extends Component<Props, State> {
             <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <AlertTriangle className="w-8 h-8 text-red-400" />
             </div>
-            
+
             <h1 className="text-2xl font-bold mb-4 text-white">
               Oops! Something went wrong
             </h1>
-            
+
             <p className="text-gray-300 mb-6 leading-relaxed">
-              We encountered an unexpected error. Don't worry, our team has been notified and we're working on a fix.
+              We encountered an unexpected error. Don't worry, our team has been
+              notified and we're working on a fix.
             </p>
 
             {this.state.error && (
@@ -130,7 +132,7 @@ class ErrorBoundary extends Component<Props, State> {
                 <RefreshCw className="w-4 h-4" />
                 <span>Try Again</span>
               </button>
-              
+
               <button
                 onClick={this.handleGoHome}
                 className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"

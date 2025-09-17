@@ -30,12 +30,13 @@ class Logger {
     this.sessionId = this.generateSessionId();
     this.logLevel = import.meta.env.VITE_LOG_LEVEL || 'info';
     this.telemetryEndpoint = import.meta.env.VITE_TELEMETRY_ENDPOINT;
-    this.enableObservability = import.meta.env.VITE_ENABLE_OBSERVABILITY === 'true';
-    
+    this.enableObservability =
+      import.meta.env.VITE_ENABLE_OBSERVABILITY === 'true';
+
     this.info('Logger', 'Logger initialized', {
       sessionId: this.sessionId,
       logLevel: this.logLevel,
-      observabilityEnabled: this.enableObservability
+      observabilityEnabled: this.enableObservability,
     });
   }
 
@@ -68,11 +69,11 @@ class Logger {
       error,
       sessionId: this.sessionId,
       userId,
-      correlationId
+      correlationId,
     };
 
     this.logs.push(entry);
-    
+
     // Keep only the most recent logs
     if (this.logs.length > this.maxLogs) {
       this.logs = this.logs.slice(-this.maxLogs);
@@ -81,7 +82,7 @@ class Logger {
     // Console output with formatting
     const logMessage = `[${entry.timestamp}] ${component}: ${message}`;
     const logData = { ...data, sessionId: this.sessionId, correlationId };
-    
+
     if (level === 'error') {
       console.error(logMessage, logData, error);
     } else if (level === 'warn') {
@@ -101,11 +102,11 @@ class Logger {
           message,
           data,
           error: error?.message,
-          stack: error?.stack
+          stack: error?.stack,
         },
         timestamp: entry.timestamp,
         sessionId: this.sessionId,
-        userId
+        userId,
       });
     }
   }
@@ -115,27 +116,83 @@ class Logger {
       await fetch(this.telemetryEndpoint!, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
     } catch (error) {
       console.warn('Failed to send telemetry:', error);
     }
   }
 
-  debug(component: string, message: string, data?: any, userId?: string, correlationId?: string) {
-    this.addLog('debug', component, message, data, undefined, userId, correlationId);
+  debug(
+    component: string,
+    message: string,
+    data?: any,
+    userId?: string,
+    correlationId?: string
+  ) {
+    this.addLog(
+      'debug',
+      component,
+      message,
+      data,
+      undefined,
+      userId,
+      correlationId
+    );
   }
 
-  info(component: string, message: string, data?: any, userId?: string, correlationId?: string) {
-    this.addLog('info', component, message, data, undefined, userId, correlationId);
+  info(
+    component: string,
+    message: string,
+    data?: any,
+    userId?: string,
+    correlationId?: string
+  ) {
+    this.addLog(
+      'info',
+      component,
+      message,
+      data,
+      undefined,
+      userId,
+      correlationId
+    );
   }
 
-  warn(component: string, message: string, data?: any, userId?: string, correlationId?: string) {
-    this.addLog('warn', component, message, data, undefined, userId, correlationId);
+  warn(
+    component: string,
+    message: string,
+    data?: any,
+    userId?: string,
+    correlationId?: string
+  ) {
+    this.addLog(
+      'warn',
+      component,
+      message,
+      data,
+      undefined,
+      userId,
+      correlationId
+    );
   }
 
-  error(component: string, message: string, error?: any, userId?: string, correlationId?: string) {
-    this.addLog('error', component, message, undefined, error, userId, correlationId);
+  error(
+    component: string,
+    message: string,
+    error?: any,
+    userId?: string,
+    correlationId?: string
+  ) {
+    this.addLog(
+      'error',
+      component,
+      message,
+      undefined,
+      error,
+      userId,
+      correlationId
+    );
   }
 
   async trackOperation<T>(
@@ -147,54 +204,86 @@ class Logger {
   ): Promise<T> {
     const correlationId = `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const startTime = Date.now();
-    
-    this.info(component, `Starting ${operation}`, { metadata, correlationId }, userId, correlationId);
-    
+
+    this.info(
+      component,
+      `Starting ${operation}`,
+      { metadata, correlationId },
+      userId,
+      correlationId
+    );
+
     try {
       const result = await fn();
       const duration = Date.now() - startTime;
-      
-      this.info(component, `Completed ${operation}`, { 
-        duration, 
-        metadata, 
-        correlationId,
-        success: true 
-      }, userId, correlationId);
-      
+
+      this.info(
+        component,
+        `Completed ${operation}`,
+        {
+          duration,
+          metadata,
+          correlationId,
+          success: true,
+        },
+        userId,
+        correlationId
+      );
+
       // Track successful operations
       if (this.enableObservability) {
-        this.trackEvent('operation_success', {
-          component,
-          operation,
-          duration,
-          metadata
-        }, userId);
+        this.trackEvent(
+          'operation_success',
+          {
+            component,
+            operation,
+            duration,
+            metadata,
+          },
+          userId
+        );
       }
-      
+
       return result;
     } catch (error) {
       const duration = Date.now() - startTime;
-      
-      this.error(component, `Failed ${operation}`, error, userId, correlationId);
-      this.info(component, `Operation failed after ${duration}ms`, { 
-        duration, 
-        metadata, 
-        correlationId,
-        success: false,
-        errorMessage: error instanceof Error ? error.message : String(error)
-      }, userId, correlationId);
-      
-      // Track failed operations
-      if (this.enableObservability) {
-        this.trackEvent('operation_failure', {
-          component,
-          operation,
+
+      this.error(
+        component,
+        `Failed ${operation}`,
+        error,
+        userId,
+        correlationId
+      );
+      this.info(
+        component,
+        `Operation failed after ${duration}ms`,
+        {
           duration,
           metadata,
-          error: error instanceof Error ? error.message : String(error)
-        }, userId);
+          correlationId,
+          success: false,
+          errorMessage: error instanceof Error ? error.message : String(error),
+        },
+        userId,
+        correlationId
+      );
+
+      // Track failed operations
+      if (this.enableObservability) {
+        this.trackEvent(
+          'operation_failure',
+          {
+            component,
+            operation,
+            duration,
+            metadata,
+            error: error instanceof Error ? error.message : String(error),
+          },
+          userId
+        );
       }
-      
+
       throw error;
     }
   }
@@ -207,7 +296,7 @@ class Logger {
       properties,
       timestamp: new Date().toISOString(),
       sessionId: this.sessionId,
-      userId
+      userId,
     };
 
     this.info('Analytics', `Event: ${event}`, properties, userId);
@@ -217,30 +306,47 @@ class Logger {
     }
   }
 
-  trackUserAction(action: string, properties?: Record<string, any>, userId?: string) {
+  trackUserAction(
+    action: string,
+    properties?: Record<string, any>,
+    userId?: string
+  ) {
     this.trackEvent(`user_${action}`, properties || {}, userId);
   }
 
-  trackAPICall(service: string, endpoint: string, duration: number, success: boolean, userId?: string) {
-    this.trackEvent('api_call', {
-      service,
-      endpoint,
-      duration,
-      success
-    }, userId);
+  trackAPICall(
+    service: string,
+    endpoint: string,
+    duration: number,
+    success: boolean,
+    userId?: string
+  ) {
+    this.trackEvent(
+      'api_call',
+      {
+        service,
+        endpoint,
+        duration,
+        success,
+      },
+      userId
+    );
   }
 
-  getLogs(level?: 'debug' | 'info' | 'warn' | 'error', component?: string): LogEntry[] {
+  getLogs(
+    level?: 'debug' | 'info' | 'warn' | 'error',
+    component?: string
+  ): LogEntry[] {
     let filteredLogs = [...this.logs];
-    
+
     if (level) {
       filteredLogs = filteredLogs.filter(log => log.level === level);
     }
-    
+
     if (component) {
       filteredLogs = filteredLogs.filter(log => log.component === component);
     }
-    
+
     return filteredLogs;
   }
 

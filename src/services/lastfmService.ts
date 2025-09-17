@@ -49,7 +49,7 @@ class LastFmService {
 
   constructor() {
     this.apiKey = import.meta.env.VITE_LASTFM_API_KEY;
-    
+
     if (!this.apiKey) {
       logger.warn('LastFmService', 'API key not configured');
     }
@@ -67,7 +67,10 @@ class LastFmService {
         // Check rate limit
         const limitCheck = await rateLimiter.checkLimit('lastfm');
         if (!limitCheck.allowed) {
-          const error = errorHandler.createRateLimitError('Last.fm', limitCheck.retryAfter || 5000);
+          const error = errorHandler.createRateLimitError(
+            'Last.fm',
+            limitCheck.retryAfter || 5000
+          );
           errorHandler.handleError(error);
           throw new Error(error.message);
         }
@@ -77,18 +80,32 @@ class LastFmService {
           api_key: this.apiKey,
           artist,
           track,
-          format: 'json'
+          format: 'json',
         });
 
         const startTime = Date.now();
 
         try {
-          const response = await fetchWithRetry(`${this.baseUrl}?${params.toString()}`, {}, { timeoutMs: 12000, retries: 2 });
+          const response = await fetchWithRetry(
+            `${this.baseUrl}?${params.toString()}`,
+            {},
+            { timeoutMs: 12000, retries: 2 }
+          );
           const responseTime = Date.now() - startTime;
-          logger.trackAPICall('lastfm', 'track.getInfo', responseTime, response.ok);
+          logger.trackAPICall(
+            'lastfm',
+            'track.getInfo',
+            responseTime,
+            response.ok
+          );
 
           if (!response.ok) {
-            const error = errorHandler.createAPIError('Last.fm', 'track.getInfo', response.status, response.statusText);
+            const error = errorHandler.createAPIError(
+              'Last.fm',
+              'track.getInfo',
+              response.status,
+              response.statusText
+            );
             errorHandler.handleError(error);
             throw new Error(error.message);
           }
@@ -104,27 +121,31 @@ class LastFmService {
             title: data.track.name,
             artist: data.track.artist.name,
             album: data.track.album?.title,
-            duration: data.track.duration ? parseInt(data.track.duration, 10) : 180,
+            duration: data.track.duration
+              ? parseInt(data.track.duration, 10)
+              : 180,
             images: data.track.album?.image?.map(img => ({
               url: img['#text'],
-              height: img.size === 'large' ? 300 : img.size === 'medium' ? 174 : 64,
-              width: img.size === 'large' ? 300 : img.size === 'medium' ? 174 : 64
-            }))
+              height:
+                img.size === 'large' ? 300 : img.size === 'medium' ? 174 : 64,
+              width:
+                img.size === 'large' ? 300 : img.size === 'medium' ? 174 : 64,
+            })),
           };
 
           logger.info('LastFmService', 'Track info retrieved successfully', {
             title: trackInfo.title,
-            artist: trackInfo.artist
+            artist: trackInfo.artist,
           });
 
           return trackInfo;
-
         } catch (error) {
           const responseTime = Date.now() - startTime;
           logger.trackAPICall('lastfm', 'track.getInfo', responseTime, false);
 
           if (error instanceof TypeError && error.message.includes('fetch')) {
-            const networkError = errorHandler.createNetworkError('Last.fm track info');
+            const networkError =
+              errorHandler.createNetworkError('Last.fm track info');
             errorHandler.handleError(networkError);
             throw new Error(networkError.message);
           }
@@ -136,7 +157,11 @@ class LastFmService {
     );
   }
 
-  async getSimilarTracks(artist: string, track: string, limit: number = 10): Promise<Track[]> {
+  async getSimilarTracks(
+    artist: string,
+    track: string,
+    limit: number = 10
+  ): Promise<Track[]> {
     return logger.trackOperation(
       'LastFmService',
       'getSimilarTracks',
@@ -157,18 +182,32 @@ class LastFmService {
           artist,
           track,
           limit: limit.toString(),
-          format: 'json'
+          format: 'json',
         });
 
         const startTime = Date.now();
 
         try {
-          const response = await fetchWithRetry(`${this.baseUrl}?${params.toString()}`, {}, { timeoutMs: 12000, retries: 2 });
+          const response = await fetchWithRetry(
+            `${this.baseUrl}?${params.toString()}`,
+            {},
+            { timeoutMs: 12000, retries: 2 }
+          );
           const responseTime = Date.now() - startTime;
-          logger.trackAPICall('lastfm', 'track.getSimilar', responseTime, response.ok);
+          logger.trackAPICall(
+            'lastfm',
+            'track.getSimilar',
+            responseTime,
+            response.ok
+          );
 
           if (!response.ok) {
-            const error = errorHandler.createAPIError('Last.fm', 'track.getSimilar', response.status, response.statusText);
+            const error = errorHandler.createAPIError(
+              'Last.fm',
+              'track.getSimilar',
+              response.status,
+              response.statusText
+            );
             errorHandler.handleError(error);
             return [];
           }
@@ -179,32 +218,46 @@ class LastFmService {
             return [];
           }
 
-          const tracks: Track[] = data.similartracks.track.map((track, index) => ({
-            id: `lastfm-similar-${Date.now()}-${index}`,
-            title: track.name,
-            artist: track.artist.name,
-            duration: 180, // Default duration
-            // Add some variety to audio features
-            bpm: Math.floor(Math.random() * 60) + 100,
-            key: ['C', 'D', 'E', 'F', 'G', 'A', 'B'][Math.floor(Math.random() * 7)],
-            energy: Math.random(),
-            danceability: Math.random(),
-            valence: Math.random()
-          }));
+          const tracks: Track[] = data.similartracks.track.map(
+            (track, index) => ({
+              id: `lastfm-similar-${Date.now()}-${index}`,
+              title: track.name,
+              artist: track.artist.name,
+              duration: 180, // Default duration
+              // Add some variety to audio features
+              bpm: Math.floor(Math.random() * 60) + 100,
+              key: ['C', 'D', 'E', 'F', 'G', 'A', 'B'][
+                Math.floor(Math.random() * 7)
+              ],
+              energy: Math.random(),
+              danceability: Math.random(),
+              valence: Math.random(),
+            })
+          );
 
-          logger.info('LastFmService', 'Similar tracks retrieved successfully', {
-            count: tracks.length,
-            seedTrack: `${artist} - ${track}`
-          });
+          logger.info(
+            'LastFmService',
+            'Similar tracks retrieved successfully',
+            {
+              count: tracks.length,
+              seedTrack: `${artist} - ${track}`,
+            }
+          );
 
           return tracks;
-
         } catch (error) {
           const responseTime = Date.now() - startTime;
-          logger.trackAPICall('lastfm', 'track.getSimilar', responseTime, false);
+          logger.trackAPICall(
+            'lastfm',
+            'track.getSimilar',
+            responseTime,
+            false
+          );
 
           if (error instanceof TypeError && error.message.includes('fetch')) {
-            const networkError = errorHandler.createNetworkError('Last.fm similar tracks');
+            const networkError = errorHandler.createNetworkError(
+              'Last.fm similar tracks'
+            );
             errorHandler.handleError(networkError);
             return [];
           }

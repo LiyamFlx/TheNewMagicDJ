@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { 
+import {
   Trash2,
   Plus,
   Search,
@@ -13,7 +13,7 @@ import {
   List,
   Save,
   X,
-  Edit3
+  Edit3,
 } from 'lucide-react';
 import { Playlist } from '../types';
 import { formatTimeClock } from '../utils/format';
@@ -39,7 +39,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
   onTrackReorder,
   onPlaylistUpdate,
   onSendToPlayer,
-  className = ''
+  className = '',
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [editingName, setEditingName] = useState(false);
@@ -48,13 +48,17 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const dragCounter = useRef(0);
 
-  const filteredTracks = playlist.tracks.filter(track =>
-    track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    track.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (track.album?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
+  const filteredTracks = playlist.tracks.filter(
+    track =>
+      track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      track.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (track.album?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
   );
 
-  const totalDuration = playlist.tracks.reduce((sum, track) => sum + (track.duration ?? 0), 0);
+  const totalDuration = playlist.tracks.reduce(
+    (sum, track) => sum + (track.duration ?? 0),
+    0
+  );
   const remainingDuration = playlist.tracks
     .slice(currentTrackIndex + 1)
     .reduce((sum, track) => sum + (track.duration ?? 0), 0);
@@ -95,11 +99,11 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
     dragCounter.current = 0;
-    
+
     if (draggedIndex !== null && draggedIndex !== dropIndex) {
       onTrackReorder(draggedIndex, dropIndex);
     }
-    
+
     setDraggedIndex(null);
     setDragOverIndex(null);
   };
@@ -108,10 +112,10 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
     const currentTrack = playlist.tracks[currentTrackIndex];
     const remainingTracks = playlist.tracks.slice(currentTrackIndex + 1);
     const playedTracks = playlist.tracks.slice(0, currentTrackIndex);
-    
+
     // Shuffle remaining tracks
     const shuffled = [...remainingTracks].sort(() => Math.random() - 0.5);
-    
+
     const newTracks = [...playedTracks, currentTrack, ...shuffled];
     const updatedPlaylist = { ...playlist, tracks: newTracks };
     onPlaylistUpdate(updatedPlaylist);
@@ -129,18 +133,19 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
   };
 
   const getTrackRowClass = (index: number) => {
-    let baseClass = "group flex items-center space-x-4 p-4 rounded-sm border-2 transition-all duration-300 cursor-pointer";
+    let baseClass =
+      'group flex items-center space-x-4 p-4 rounded-sm border-2 transition-all duration-300 cursor-pointer';
 
     if (index === currentTrackIndex) {
-      baseClass += " btn-primary shadow-neon-cyan";
+      baseClass += ' btn-primary shadow-neon-cyan';
     } else if (index < currentTrackIndex) {
-      baseClass += " glass-card opacity-60";
+      baseClass += ' glass-card opacity-60';
     } else {
-      baseClass += " glass-card hover-lift";
+      baseClass += ' glass-card hover-lift';
     }
 
     if (dragOverIndex === index) {
-      baseClass += " border-gradient-primary shadow-neon-pink scale-105";
+      baseClass += ' border-gradient-primary shadow-neon-pink scale-105';
     }
 
     return baseClass;
@@ -160,9 +165,11 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
                 <input
                   type="text"
                   value={playlistName}
-                  onChange={(e) => setPlaylistName(e.target.value)}
+                  onChange={e => setPlaylistName(e.target.value)}
                   className="glass-card px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-secondary-400 text-gradient-accent font-inter"
-                  onKeyPress={(e) => e.key === 'Enter' && handleSavePlaylistName()}
+                  onKeyPress={e =>
+                    e.key === 'Enter' && handleSavePlaylistName()
+                  }
                   autoFocus
                 />
                 <button
@@ -183,7 +190,9 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
               </div>
             ) : (
               <div className="flex items-center space-x-2 group">
-                <h3 className="text-xl font-bold text-gradient-accent tracking-wider font-orbitron">{playlist.name}</h3>
+                <h3 className="text-xl font-bold text-gradient-accent tracking-wider font-orbitron">
+                  {playlist.name}
+                </h3>
                 <button
                   onClick={() => setEditingName(true)}
                   className="w-8 h-8 btn-secondary flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover-lift"
@@ -197,7 +206,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
             </p>
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-3">
           {onSendToPlayer && (
             <button
@@ -221,20 +230,36 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
       {/* Enhanced Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="text-center p-4 glass-card shadow-neon-cyan hover-lift">
-          <div className="text-2xl font-bold text-gradient-accent font-orbitron">{playlist.tracks.length}</div>
-          <div className="text-sm text-gray-400 font-inter tracking-wider">TRACKS</div>
+          <div className="text-2xl font-bold text-gradient-accent font-orbitron">
+            {playlist.tracks.length}
+          </div>
+          <div className="text-sm text-gray-400 font-inter tracking-wider">
+            TRACKS
+          </div>
         </div>
         <div className="text-center p-4 glass-card shadow-neon-pink hover-lift">
-          <div className="text-2xl font-bold text-gradient-primary font-orbitron">{formatTime(totalDuration)}</div>
-          <div className="text-sm text-gray-400 font-inter tracking-wider">TOTAL</div>
+          <div className="text-2xl font-bold text-gradient-primary font-orbitron">
+            {formatTime(totalDuration)}
+          </div>
+          <div className="text-sm text-gray-400 font-inter tracking-wider">
+            TOTAL
+          </div>
         </div>
         <div className="text-center p-4 glass-card shadow-neon-cyan hover-lift">
-          <div className="text-2xl font-bold text-gradient-accent font-orbitron">{formatTime(remainingDuration)}</div>
-          <div className="text-sm text-gray-400 font-inter tracking-wider">REMAINING</div>
+          <div className="text-2xl font-bold text-gradient-accent font-orbitron">
+            {formatTime(remainingDuration)}
+          </div>
+          <div className="text-sm text-gray-400 font-inter tracking-wider">
+            REMAINING
+          </div>
         </div>
         <div className="text-center p-4 glass-card shadow-neon-pink hover-lift">
-          <div className="text-2xl font-bold text-gradient-primary font-orbitron">{currentTrackIndex + 1}</div>
-          <div className="text-sm text-gray-400 font-inter tracking-wider">CURRENT</div>
+          <div className="text-2xl font-bold text-gradient-primary font-orbitron">
+            {currentTrackIndex + 1}
+          </div>
+          <div className="text-sm text-gray-400 font-inter tracking-wider">
+            CURRENT
+          </div>
         </div>
       </div>
 
@@ -245,7 +270,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
           type="text"
           placeholder="SEARCH TRACKS..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={e => setSearchQuery(e.target.value)}
           className="w-full pl-12 pr-4 py-3 glass-card focus:outline-none focus:ring-2 focus:ring-secondary-400 text-gradient-accent placeholder-gray-500 font-inter text-base tracking-wider"
         />
       </div>
@@ -260,17 +285,19 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
             <p className="text-xl font-mono tracking-wider">NO TRACKS FOUND</p>
           </div>
         ) : (
-          filteredTracks.map((track) => {
-            const originalIndex = playlist.tracks.findIndex(t => t.id === track.id);
+          filteredTracks.map(track => {
+            const originalIndex = playlist.tracks.findIndex(
+              t => t.id === track.id
+            );
             return (
               <div
                 key={track.id}
                 draggable
-                onDragStart={(e) => handleDragStart(e, originalIndex)}
-                onDragEnter={(e) => handleDragEnter(e, originalIndex)}
+                onDragStart={e => handleDragStart(e, originalIndex)}
+                onDragEnter={e => handleDragEnter(e, originalIndex)}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, originalIndex)}
+                onDrop={e => handleDrop(e, originalIndex)}
                 className={getTrackRowClass(originalIndex)}
                 onClick={() => onTrackSelect(originalIndex)}
               >
@@ -286,19 +313,33 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
                       <h4 className="font-bold truncate text-white group-hover:text-gradient-accent transition-colors text-lg font-inter">
                         {track.title}
                       </h4>
-                      <p className="text-base text-gradient-accent truncate font-inter">{track.artist}</p>
+                      <p className="text-base text-gradient-accent truncate font-inter">
+                        {track.artist}
+                      </p>
                       {track.album && (
-                        <p className="text-sm text-gray-500 truncate font-inter">{track.album}</p>
+                        <p className="text-sm text-gray-500 truncate font-inter">
+                          {track.album}
+                        </p>
                       )}
                     </div>
 
                     {/* Track Details */}
                     <div className="hidden lg:flex items-center space-x-6 text-sm text-gray-500 font-inter">
-                      {track.bpm && <span className="text-gradient-primary font-bold">{track.bpm} BPM</span>}
-                      {track.key && <span className="text-gradient-accent font-bold">{track.key}</span>}
+                      {track.bpm && (
+                        <span className="text-gradient-primary font-bold">
+                          {track.bpm} BPM
+                        </span>
+                      )}
+                      {track.key && (
+                        <span className="text-gradient-accent font-bold">
+                          {track.key}
+                        </span>
+                      )}
                       <span className="flex items-center space-x-2">
                         <Clock className="w-4 h-4" />
-                        <span className="font-bold">{formatTime(track.duration ?? 0)}</span>
+                        <span className="font-bold">
+                          {formatTime(track.duration ?? 0)}
+                        </span>
                       </span>
                     </div>
                   </div>
@@ -307,7 +348,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
                 {/* Actions */}
                 <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-all">
                   <button
-                    onClick={(e) => {
+                    onClick={e => {
                       e.stopPropagation();
                       onTrackRemove(originalIndex);
                     }}

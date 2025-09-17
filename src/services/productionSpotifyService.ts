@@ -63,32 +63,46 @@ class ProductionSpotifyService {
 
         // If previous authentication failed recently, back off to avoid spamming the API
         if (Date.now() < this.authBackoffUntil) {
-          throw new Error('Spotify authentication temporarily disabled due to recent failures');
+          throw new Error(
+            'Spotify authentication temporarily disabled due to recent failures'
+          );
         }
 
         try {
           // Request token from serverless proxy to avoid exposing secrets in client
-          const response = await fetchWithRetry('/api/spotify-token', { method: 'GET' }, { timeoutMs: 12000, retries: 2 });
+          const response = await fetchWithRetry(
+            '/api/spotify-token',
+            { method: 'GET' },
+            { timeoutMs: 12000, retries: 2 }
+          );
 
           if (!response.ok) {
             const errorText = await response.text();
             const err = await errorFromResponse(response, errorText);
-            logger.error('ProductionSpotifyService', 'Authentication failed', err);
+            logger.error(
+              'ProductionSpotifyService',
+              'Authentication failed',
+              err
+            );
             throw err;
           }
 
           const data: SpotifyAuthResponse = await response.json();
           this.accessToken = data.access_token;
-          this.tokenExpiry = Date.now() + (data.expires_in * 1000) - 60000; // 1 minute buffer
+          this.tokenExpiry = Date.now() + data.expires_in * 1000 - 60000; // 1 minute buffer
 
           logger.info('ProductionSpotifyService', 'Authentication successful', {
             tokenType: data.token_type,
-            expiresIn: data.expires_in
+            expiresIn: data.expires_in,
           });
 
           return this.accessToken;
         } catch (error) {
-          logger.error('ProductionSpotifyService', 'Authentication request failed', error);
+          logger.error(
+            'ProductionSpotifyService',
+            'Authentication request failed',
+            error
+          );
           // Back off for 5 minutes after auth failure
           this.authBackoffUntil = Date.now() + 5 * 60 * 1000;
           throw error;
@@ -97,7 +111,9 @@ class ProductionSpotifyService {
     );
   }
 
-  async getRecommendations(params: SpotifyRecommendationParams): Promise<Track[]> {
+  async getRecommendations(
+    params: SpotifyRecommendationParams
+  ): Promise<Track[]> {
     return logger.trackOperation(
       'ProductionSpotifyService',
       'getRecommendations',
@@ -105,7 +121,10 @@ class ProductionSpotifyService {
         try {
           // In dev, avoid calling serverless API/Spotify and use local fallback
           if ((import.meta as any)?.env?.DEV) {
-            logger.info('ProductionSpotifyService', 'Dev mode: returning fallback tracks');
+            logger.info(
+              'ProductionSpotifyService',
+              'Dev mode: returning fallback tracks'
+            );
             return this.getFallbackTracks(params.limit || 15);
           }
           const token = await this.authenticate();
@@ -118,12 +137,16 @@ class ProductionSpotifyService {
           const cached = this.recsCache.get(cacheKey);
           const now = Date.now();
           if (cached && now < cached.expiry) {
-            logger.debug('ProductionSpotifyService', 'Serving recommendations from cache', { cacheKey });
+            logger.debug(
+              'ProductionSpotifyService',
+              'Serving recommendations from cache',
+              { cacheKey }
+            );
             return cached.data;
           }
-          
+
           const queryParams = new URLSearchParams();
-          
+
           if (params.seed_tracks?.length) {
             queryParams.append('seed_tracks', params.seed_tracks.join(','));
           }
@@ -134,13 +157,22 @@ class ProductionSpotifyService {
             queryParams.append('limit', params.limit.toString());
           }
           if (params.target_energy !== undefined) {
-            queryParams.append('target_energy', params.target_energy.toString());
+            queryParams.append(
+              'target_energy',
+              params.target_energy.toString()
+            );
           }
           if (params.target_danceability !== undefined) {
-            queryParams.append('target_danceability', params.target_danceability.toString());
+            queryParams.append(
+              'target_danceability',
+              params.target_danceability.toString()
+            );
           }
           if (params.target_valence !== undefined) {
-            queryParams.append('target_valence', params.target_valence.toString());
+            queryParams.append(
+              'target_valence',
+              params.target_valence.toString()
+            );
           }
           if (params.min_tempo) {
             queryParams.append('min_tempo', params.min_tempo.toString());
@@ -150,13 +182,18 @@ class ProductionSpotifyService {
           }
 
           const url = `https://api.spotify.com/v1/recommendations?${queryParams.toString()}`;
-          
-          const doFetch = async (bearer: string) => fetchWithRetry(url, {
-            headers: {
-              'Authorization': `Bearer ${bearer}`,
-              'Content-Type': 'application/json',
-            },
-          }, { timeoutMs: 12000, retries: 2 });
+
+          const doFetch = async (bearer: string) =>
+            fetchWithRetry(
+              url,
+              {
+                headers: {
+                  Authorization: `Bearer ${bearer}`,
+                  'Content-Type': 'application/json',
+                },
+              },
+              { timeoutMs: 12000, retries: 2 }
+            );
 
           let response = await doFetch(token);
 
@@ -171,7 +208,11 @@ class ProductionSpotifyService {
           if (!response.ok) {
             const errorText = await response.text();
             const err = await errorFromResponse(response, errorText);
-            logger.error('ProductionSpotifyService', 'Recommendations API failed', { ...err, url, params });
+            logger.error(
+              'ProductionSpotifyService',
+              'Recommendations API failed',
+              { ...err, url, params }
+            );
             throw err;
           }
 
@@ -189,23 +230,47 @@ class ProductionSpotifyService {
             images: track.album.images,
             // Add some mock audio features for DJ functionality
             bpm: Math.floor(Math.random() * 60) + 100, // 100-160 BPM
-            key: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][Math.floor(Math.random() * 12)],
+            key: [
+              'C',
+              'C#',
+              'D',
+              'D#',
+              'E',
+              'F',
+              'F#',
+              'G',
+              'G#',
+              'A',
+              'A#',
+              'B',
+            ][Math.floor(Math.random() * 12)],
             energy: params.target_energy || Math.random(),
             danceability: params.target_danceability || Math.random(),
-            valence: params.target_valence || Math.random()
+            valence: params.target_valence || Math.random(),
           }));
 
-          logger.info('ProductionSpotifyService', 'Recommendations retrieved successfully', {
-            trackCount: tracks.length,
-            hasPreviewUrls: tracks.filter(t => t.preview_url).length
-          });
+          logger.info(
+            'ProductionSpotifyService',
+            'Recommendations retrieved successfully',
+            {
+              trackCount: tracks.length,
+              hasPreviewUrls: tracks.filter(t => t.preview_url).length,
+            }
+          );
 
           // Cache result
-          this.recsCache.set(cacheKey, { data: tracks, expiry: now + this.recsTtlMs });
+          this.recsCache.set(cacheKey, {
+            data: tracks,
+            expiry: now + this.recsTtlMs,
+          });
           return tracks;
         } catch (error) {
-          logger.error('ProductionSpotifyService', 'Recommendations failed, using fallback', error);
-          
+          logger.error(
+            'ProductionSpotifyService',
+            'Recommendations failed, using fallback',
+            error
+          );
+
           // Return fallback tracks with demo audio
           return this.getFallbackTracks(params.limit || 15);
         }
@@ -230,7 +295,7 @@ class ProductionSpotifyService {
         danceability: Math.random(),
         valence: Math.random(),
         // No external preview to avoid CORS; players will generate local fallback audio
-        preview_url: undefined
+        preview_url: undefined,
       });
     }
 

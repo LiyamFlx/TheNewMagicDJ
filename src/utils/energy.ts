@@ -1,6 +1,9 @@
 export type EnergyVariant = 'neon' | 'gradient' | 'default';
 
-export function getEnergyColor(value: number, variant: EnergyVariant = 'default'): string {
+export function getEnergyColor(
+  value: number,
+  variant: EnergyVariant = 'default'
+): string {
   const v = typeof value === 'number' ? value : 0;
   if (v >= 80) {
     if (variant === 'neon') return 'neon-text-green';
@@ -11,4 +14,3 @@ export function getEnergyColor(value: number, variant: EnergyVariant = 'default'
   if (v >= 40) return 'text-orange-400';
   return 'text-red-400';
 }
-

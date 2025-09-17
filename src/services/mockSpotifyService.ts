@@ -28,7 +28,7 @@ class MockSpotifyService {
       energy: 0.8,
       danceability: 0.7,
       valence: 0.6,
-      preview_url: undefined // Use local audio fallback
+      preview_url: undefined, // Use local audio fallback
     },
     {
       id: 'mock-2',
@@ -41,7 +41,7 @@ class MockSpotifyService {
       energy: 0.9,
       danceability: 0.8,
       valence: 0.7,
-      preview_url: undefined // Use local audio fallback1]
+      preview_url: undefined, // Use local audio fallback1]
     },
     {
       id: 'mock-3',
@@ -54,7 +54,7 @@ class MockSpotifyService {
       energy: 0.6,
       danceability: 0.9,
       valence: 0.8,
-      preview_url: undefined // Use local audio fallback2]
+      preview_url: undefined, // Use local audio fallback2]
     },
     {
       id: 'mock-4',
@@ -67,7 +67,7 @@ class MockSpotifyService {
       energy: 0.85,
       danceability: 0.75,
       valence: 0.9,
-      preview_url: undefined // Use local audio fallback3]
+      preview_url: undefined, // Use local audio fallback3]
     },
     {
       id: 'mock-5',
@@ -80,11 +80,13 @@ class MockSpotifyService {
       energy: 0.3,
       danceability: 0.4,
       valence: 0.5,
-      preview_url: undefined // Use local audio fallback4]
-    }
+      preview_url: undefined, // Use local audio fallback4]
+    },
   ];
 
-  async getRecommendations(params: SpotifyRecommendationParams): Promise<Track[]> {
+  async getRecommendations(
+    params: SpotifyRecommendationParams
+  ): Promise<Track[]> {
     return logger.trackOperation(
       'MockSpotifyService',
       'getRecommendations',
@@ -106,14 +108,14 @@ class MockSpotifyService {
             bpm: this.adjustBpmForParams(baseTrack.bpm ?? 120, params),
             energy: params.target_energy || baseTrack.energy,
             danceability: params.target_danceability || baseTrack.danceability,
-            valence: params.target_valence || baseTrack.valence
+            valence: params.target_valence || baseTrack.valence,
           };
           tracks.push(track);
         }
 
         logger.info('MockSpotifyService', 'Mock recommendations generated', {
           trackCount: tracks.length,
-          params
+          params,
         });
 
         return tracks;
@@ -122,9 +124,15 @@ class MockSpotifyService {
     );
   }
 
-  private adjustBpmForParams(baseBpm: number, params: SpotifyRecommendationParams): number {
+  private adjustBpmForParams(
+    baseBpm: number,
+    params: SpotifyRecommendationParams
+  ): number {
     if (params.min_tempo && params.max_tempo) {
-      return Math.floor(Math.random() * (params.max_tempo - params.min_tempo)) + params.min_tempo;
+      return (
+        Math.floor(Math.random() * (params.max_tempo - params.min_tempo)) +
+        params.min_tempo
+      );
     }
     return baseBpm + Math.floor(Math.random() * 20) - 10; // ±10 BPM variation
   }

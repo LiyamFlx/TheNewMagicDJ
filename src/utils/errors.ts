@@ -7,7 +7,9 @@ export type AppErrorCode =
   | 'TIMEOUT'
   | 'NETWORK_ERROR'
   | 'UPSTREAM_ERROR'
-  | 'INTERNAL_ERROR';
+  | 'INTERNAL_ERROR'
+  | 'INVALID_CREDENTIALS'
+  | 'SPOTIFY_API_ERROR';
 
 export interface NormalizedError {
   code: AppErrorCode;
@@ -26,7 +28,12 @@ export class AppError extends Error implements NormalizedError {
   constructor(
     code: AppErrorCode,
     message: string,
-    options?: { httpStatus?: number; retriable?: boolean; details?: any; cause?: any }
+    options?: {
+      httpStatus?: number;
+      retriable?: boolean;
+      details?: any;
+      cause?: any;
+    }
   ) {
     super(message);
     this.name = 'AppError';
@@ -50,7 +57,10 @@ export class AppError extends Error implements NormalizedError {
   }
 }
 
-export function normalizeError(err: unknown, fallback: Partial<NormalizedError> = {}): NormalizedError {
+export function normalizeError(
+  err: unknown,
+  fallback: Partial<NormalizedError> = {}
+): NormalizedError {
   if (err instanceof AppError) return err.toJSON();
   if (err instanceof Error) {
     return {
@@ -70,7 +80,10 @@ export function normalizeError(err: unknown, fallback: Partial<NormalizedError> 
   };
 }
 
-export async function errorFromResponse(resp: Response, bodyText?: string): Promise<AppError> {
+export async function errorFromResponse(
+  resp: Response,
+  bodyText?: string
+): Promise<AppError> {
   const status = resp.status;
   const message = `${status} ${resp.statusText}`;
   let code: AppErrorCode = 'UPSTREAM_ERROR';
@@ -88,4 +101,3 @@ export async function errorFromResponse(resp: Response, bodyText?: string): Prom
     details: { body: bodyText?.slice(0, 200) },
   });
 }
-

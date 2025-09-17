@@ -1,16 +1,76 @@
 {
   "version": 2,
+  "name": "the-new-magic-dj",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "@vercel/node@3.2.14",
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "VITA_SPOTIFY_CLIENT_ID": "@vita-spotify-client-id",
+    "VITA_SPOTIFY_CLIENT_SECRET": "@vita-spotify-client-secret"
+  },
   "rewrites": [
     {
       "source": "/((?!api/.*).*)",
       "destination": "/index.html"
     }
   ],
+  "redirects": [
+    {
+      "source": "/api",
+      "destination": "/api/spotify-token?health=true",
+      "permanent": false
+    }
+  ],
   "public": true,
   "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization, Idempotency-Key"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate"
+        }
+      ]
+    },
     {
       "source": "/manifest.json",
       "headers": [
@@ -29,7 +89,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; manifest-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://*.vercel.live https://vercel.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live https://*.vercel.live; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' wss: ws: https: blob: data: https://vercel.live https://*.vercel.live https://www.googleapis.com https://api.audd.io https://api.acoustid.org https://accounts.spotify.com https://api.spotify.com https://ws.audioscrobbler.com https://fonts.googleapis.com https://fonts.gstatic.com https://www.soundhelix.com https://www.soundjay.com; img-src 'self' data: https: blob:; media-src 'self' data: blob: https:; frame-src 'self' https://vercel.live https://*.vercel.live https://www.youtube.com https://player.vimeo.com; frame-ancestors 'none'; worker-src 'self' blob: data:;"
+          "value": "default-src 'self'; manifest-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://*.vercel.live https://vercel.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live https://*.vercel.live; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' wss: ws: https: blob: data: https://vercel.live https://*.vercel.live https://www.googleapis.com https://api.audd.io https://api.acoustid.org https://accounts.spotify.com https://api.spotify.com https://ws.audioscrobbler.com https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: https: blob:; media-src 'self' data: blob: https:; frame-src 'self' https://vercel.live https://*.vercel.live https://www.youtube.com https://player.vimeo.com; frame-ancestors 'none'; worker-src 'self' blob: data:;"
         },
         {
           "key": "X-Frame-Options",

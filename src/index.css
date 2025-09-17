@@ -52,8 +52,17 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-800) 50%, var(--primary-700) 100%);
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  background: linear-gradient(
+    135deg,
+    var(--primary-900) 0%,
+    var(--primary-800) 50%,
+    var(--primary-700) 100%
+  );
   background-attachment: fixed;
   color: white;
   -webkit-font-smoothing: antialiased;
@@ -74,14 +83,22 @@ body {
 }
 
 .text-gradient-primary {
-  background: linear-gradient(135deg, var(--secondary-400), var(--accent-blue-400));
+  background: linear-gradient(
+    135deg,
+    var(--secondary-400),
+    var(--accent-blue-400)
+  );
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .text-gradient-accent {
-  background: linear-gradient(135deg, var(--accent-cyan-400), var(--accent-green-400));
+  background: linear-gradient(
+    135deg,
+    var(--accent-cyan-400),
+    var(--accent-green-400)
+  );
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -129,7 +146,12 @@ body {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
   transition: left 0.5s;
 }
 
@@ -149,7 +171,11 @@ body {
 ======================================== */
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--secondary-600), var(--secondary-500));
+  background: linear-gradient(
+    135deg,
+    var(--secondary-600),
+    var(--secondary-500)
+  );
   border: 1px solid var(--secondary-400);
   border-radius: 12px;
   padding: 12px 24px;
@@ -162,13 +188,21 @@ body {
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--secondary-500), var(--secondary-400));
+  background: linear-gradient(
+    135deg,
+    var(--secondary-500),
+    var(--secondary-400)
+  );
   box-shadow: 0 0 30px rgba(212, 70, 239, 0.8);
   transform: translateY(-2px);
 }
 
 .btn-secondary {
-  background: linear-gradient(135deg, var(--accent-blue-500), var(--accent-cyan-500));
+  background: linear-gradient(
+    135deg,
+    var(--accent-blue-500),
+    var(--accent-cyan-500)
+  );
   border: 1px solid var(--accent-cyan-400);
   border-radius: 12px;
   padding: 12px 24px;
@@ -181,13 +215,21 @@ body {
 }
 
 .btn-secondary:hover {
-  background: linear-gradient(135deg, var(--accent-cyan-500), var(--accent-cyan-400));
+  background: linear-gradient(
+    135deg,
+    var(--accent-cyan-500),
+    var(--accent-cyan-400)
+  );
   box-shadow: 0 0 30px rgba(14, 165, 233, 0.8);
   transform: translateY(-2px);
 }
 
 .btn-accent {
-  background: linear-gradient(135deg, var(--accent-green-500), var(--accent-cyan-500));
+  background: linear-gradient(
+    135deg,
+    var(--accent-green-500),
+    var(--accent-cyan-500)
+  );
   border: 1px solid var(--accent-green-400);
   border-radius: 12px;
   padding: 12px 24px;
@@ -200,7 +242,11 @@ body {
 }
 
 .btn-accent:hover {
-  background: linear-gradient(135deg, var(--accent-cyan-500), var(--accent-green-400));
+  background: linear-gradient(
+    135deg,
+    var(--accent-cyan-500),
+    var(--accent-green-400)
+  );
   box-shadow: 0 0 30px rgba(34, 211, 238, 0.8);
   transform: translateY(-2px);
 }
@@ -234,7 +280,11 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, var(--secondary-600), var(--accent-blue-500));
+  background: linear-gradient(
+    135deg,
+    var(--secondary-600),
+    var(--accent-blue-500)
+  );
   border-radius: 10px;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -256,23 +306,42 @@ body {
 ======================================== */
 
 @keyframes waveform {
-  0%, 100% { height: 20%; }
-  50% { height: 100%; }
+  0%,
+  100% {
+    height: 20%;
+  }
+  50% {
+    height: 100%;
+  }
 }
 
 @keyframes waveform-delay-1 {
-  0%, 100% { height: 40%; }
-  50% { height: 80%; }
+  0%,
+  100% {
+    height: 40%;
+  }
+  50% {
+    height: 80%;
+  }
 }
 
 @keyframes waveform-delay-2 {
-  0%, 100% { height: 60%; }
-  50% { height: 90%; }
+  0%,
+  100% {
+    height: 60%;
+  }
+  50% {
+    height: 90%;
+  }
 }
 
 .waveform-bar {
   width: 3px;
-  background: linear-gradient(to top, var(--accent-cyan-500), var(--secondary-400));
+  background: linear-gradient(
+    to top,
+    var(--accent-cyan-500),
+    var(--secondary-400)
+  );
   margin: 0 1px;
   border-radius: 2px;
   animation: waveform 1.5s ease-in-out infinite;
@@ -292,7 +361,8 @@ body {
 ======================================== */
 
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(212, 70, 239, 0.5);
   }
   50% {
@@ -301,8 +371,13 @@ body {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 .animate-pulse-glow {
@@ -314,7 +389,9 @@ body {
 }
 
 .hover-lift {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .hover-lift:hover {
@@ -346,7 +423,11 @@ body {
   appearance: none;
   width: 20px;
   height: 20px;
-  background: linear-gradient(135deg, var(--secondary-400), var(--accent-cyan-400));
+  background: linear-gradient(
+    135deg,
+    var(--secondary-400),
+    var(--accent-cyan-400)
+  );
   border-radius: 50%;
   cursor: pointer;
   box-shadow: 0 0 15px rgba(212, 70, 239, 0.6);
@@ -361,7 +442,11 @@ body {
 .slider-futuristic::-moz-range-thumb {
   width: 20px;
   height: 20px;
-  background: linear-gradient(135deg, var(--secondary-400), var(--accent-cyan-400));
+  background: linear-gradient(
+    135deg,
+    var(--secondary-400),
+    var(--accent-cyan-400)
+  );
   border-radius: 50%;
   cursor: pointer;
   border: none;
@@ -384,13 +469,21 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, var(--secondary-500), var(--accent-cyan-500));
+  background: linear-gradient(
+    135deg,
+    var(--secondary-500),
+    var(--accent-cyan-500)
+  );
   border-radius: 4px;
   box-shadow: 0 0 10px rgba(212, 70, 239, 0.3);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, var(--secondary-400), var(--accent-cyan-400));
+  background: linear-gradient(
+    135deg,
+    var(--secondary-400),
+    var(--accent-cyan-400)
+  );
   box-shadow: 0 0 15px rgba(212, 70, 239, 0.5);
 }
 
@@ -457,13 +550,26 @@ body {
 }
 
 .gradient-bg-primary {
-  background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-800) 50%, var(--primary-700) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-900) 0%,
+    var(--primary-800) 50%,
+    var(--primary-700) 100%
+  );
 }
 
 .gradient-bg-secondary {
-  background: linear-gradient(135deg, var(--secondary-600), var(--secondary-500));
+  background: linear-gradient(
+    135deg,
+    var(--secondary-600),
+    var(--secondary-500)
+  );
 }
 
 .gradient-bg-accent {
-  background: linear-gradient(135deg, var(--accent-blue-500), var(--accent-cyan-500));
+  background: linear-gradient(
+    135deg,
+    var(--accent-blue-500),
+    var(--accent-cyan-500)
+  );
 }

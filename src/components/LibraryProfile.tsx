@@ -1,5 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Search, Grid, List, ArrowLeft, Trash2, Edit3, Play, Save, Music } from 'lucide-react';
+import {
+  Search,
+  Grid,
+  List,
+  ArrowLeft,
+  Trash2,
+  Edit3,
+  Play,
+  Save,
+  Music,
+} from 'lucide-react';
 import { User, Playlist } from '../types';
 import { formatDurationHuman } from '../utils/format';
 import { getEnergyColor } from '../utils/energy';
@@ -28,13 +38,17 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
   onBack,
   onPlaylistSelect,
   onCreateNew,
-  savedPlaylists = []
+  savedPlaylists = [],
 }) => {
   const [library, setLibrary] = useState<LibraryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'magic_match' | 'magic_set'>('all');
+  const [filterType, setFilterType] = useState<
+    'all' | 'magic_match' | 'magic_set'
+  >('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [sortBy, setSortBy] = useState<'recent' | 'name' | 'duration'>('recent');
+  const [sortBy, setSortBy] = useState<'recent' | 'name' | 'duration'>(
+    'recent'
+  );
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -46,16 +60,26 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
       tracks: playlist.tracks.length,
       duration: playlist.total_duration ?? 0,
       created_at: playlist.created_at ?? new Date().toISOString(),
-      energy: Math.round((playlist.tracks.reduce((sum, track) => sum + (track.energy || 0.5), 0) / Math.max(1, playlist.tracks.length)) * 100) || 75
+      energy:
+        Math.round(
+          (playlist.tracks.reduce(
+            (sum, track) => sum + (track.energy || 0.5),
+            0
+          ) /
+            Math.max(1, playlist.tracks.length)) *
+            100
+        ) || 75,
     }));
-    
+
     setLibrary(libraryItems);
     setIsLoading(false);
   }, [savedPlaylists]);
 
   const filteredLibrary = library
     .filter(item => {
-      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = item.name
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
       const matchesFilter = filterType === 'all' || item.type === filterType;
       return matchesSearch && matchesFilter;
     })
@@ -67,7 +91,9 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
           return b.duration - a.duration;
         case 'recent':
         default:
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          return (
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
       }
     });
 
@@ -81,7 +107,7 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
     // Find the corresponding playlist from savedPlaylists
     const playlist = savedPlaylists.find(p => p.id === item.id);
     if (!playlist) return;
-    
+
     onPlaylistSelect(playlist);
   };
 
@@ -118,12 +144,14 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                 <Save className="w-6 h-6 neon-text-purple" />
               </div>
               <div>
-                <h1 className="text-xl lg:text-2xl font-bold text-cyber-white">Library & Profile</h1>
+                <h1 className="text-xl lg:text-2xl font-bold text-cyber-white">
+                  Library & Profile
+                </h1>
                 <p className="text-sm text-cyber-gray">{user?.email}</p>
               </div>
             </div>
           </div>
-          
+
           <button
             onClick={onCreateNew}
             className="cyber-button px-4 py-2 rounded-none flex items-center space-x-2"
@@ -138,7 +166,9 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
       <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="cyber-card rounded-none p-4 text-center">
-            <div className="text-2xl font-bold neon-text-green mb-2">{library.length}</div>
+            <div className="text-2xl font-bold neon-text-green mb-2">
+              {library.length}
+            </div>
             <div className="text-sm text-cyber-gray">Total Sets</div>
           </div>
           <div className="cyber-card rounded-none p-4 text-center">
@@ -149,13 +179,19 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
           </div>
           <div className="cyber-card rounded-none p-4 text-center">
             <div className="text-2xl font-bold neon-text-green mb-2">
-              {formatTime(library.reduce((sum, item) => sum + item.duration, 0))}
+              {formatTime(
+                library.reduce((sum, item) => sum + item.duration, 0)
+              )}
             </div>
             <div className="text-sm text-cyber-gray">Total Time</div>
           </div>
           <div className="cyber-card rounded-none p-4 text-center">
             <div className="text-2xl font-bold neon-text-purple mb-2">
-              {Math.round(library.reduce((sum, item) => sum + item.energy, 0) / library.length || 0)}%
+              {Math.round(
+                library.reduce((sum, item) => sum + item.energy, 0) /
+                  library.length || 0
+              )}
+              %
             </div>
             <div className="text-sm text-cyber-gray">Avg Energy</div>
           </div>
@@ -171,7 +207,7 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                 type="text"
                 placeholder="Search your library..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={e => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-cyber-dark border border-cyber-light rounded-none focus:outline-none focus:border-neon-green text-cyber-white placeholder-cyber-dim"
               />
             </div>
@@ -180,7 +216,7 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
             <div className="flex items-center space-x-4">
               <select
                 value={filterType}
-                onChange={(e) => setFilterType(e.target.value as any)}
+                onChange={e => setFilterType(e.target.value as any)}
                 className="bg-cyber-dark border border-neon-green rounded-none px-3 py-2 text-cyber-white focus:outline-none focus:border-neon-purple"
               >
                 <option value="all">All Types</option>
@@ -190,7 +226,7 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
 
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={e => setSortBy(e.target.value as any)}
                 className="bg-cyber-dark border border-neon-purple rounded-none px-3 py-2 text-cyber-white focus:outline-none focus:border-neon-green"
               >
                 <option value="recent">Most Recent</option>
@@ -220,9 +256,13 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
         {filteredLibrary.length === 0 ? (
           <div className="cyber-card rounded-none p-12 text-center">
             <Music className="w-16 h-16 text-cyber-dim mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-cyber-white mb-2">No sets found</h3>
+            <h3 className="text-xl font-semibold text-cyber-white mb-2">
+              No sets found
+            </h3>
             <p className="text-cyber-gray mb-6">
-              {searchQuery ? 'Try adjusting your search or filters' : 'Create your first DJ set to get started'}
+              {searchQuery
+                ? 'Try adjusting your search or filters'
+                : 'Create your first DJ set to get started'}
             </p>
             <button
               onClick={onCreateNew}
@@ -232,8 +272,14 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
             </button>
           </div>
         ) : (
-          <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6' : 'space-y-4'}>
-            {filteredLibrary.map((item) => (
+          <div
+            className={
+              viewMode === 'grid'
+                ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+                : 'space-y-4'
+            }
+          >
+            {filteredLibrary.map(item => (
               <div
                 key={item.id}
                 className={`cyber-card rounded-none p-4 hover:neon-glow-green cursor-pointer transition-all group ${
@@ -247,7 +293,7 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                       <span className="text-2xl">{getTypeIcon(item.type)}</span>
                       <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
-                          onClick={(e) => {
+                          onClick={e => {
                             e.stopPropagation();
                             // Handle edit
                           }}
@@ -256,7 +302,7 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                           <Edit3 className="w-3 h-3 neon-text-purple" />
                         </button>
                         <button
-                          onClick={(e) => {
+                          onClick={e => {
                             e.stopPropagation();
                             handleDelete(item.id);
                           }}
@@ -266,11 +312,11 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                         </button>
                       </div>
                     </div>
-                    
+
                     <h3 className="font-semibold text-cyber-white mb-2 truncate group-hover:neon-text-green transition-colors">
                       {item.name}
                     </h3>
-                    
+
                     <div className="space-y-2 text-sm text-cyber-gray">
                       <div className="flex items-center justify-between">
                         <span>{item.tracks} tracks</span>
@@ -278,7 +324,9 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                       </div>
                       <div className="flex items-center justify-between">
                         <span>Energy</span>
-                        <span className={getEnergyColor(item.energy)}>{item.energy}%</span>
+                        <span className={getEnergyColor(item.energy)}>
+                          {item.energy}%
+                        </span>
                       </div>
                       <div className="text-xs text-cyber-dim">
                         {new Date(item.created_at).toLocaleDateString()}
@@ -294,14 +342,18 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                           {item.name}
                         </h3>
                         <p className="text-sm text-cyber-gray">
-                          {item.tracks} tracks • {formatTime(item.duration)} • Energy: <span className={getEnergyColor(item.energy)}>{item.energy}%</span>
+                          {item.tracks} tracks • {formatTime(item.duration)} •
+                          Energy:{' '}
+                          <span className={getEnergyColor(item.energy)}>
+                            {item.energy}%
+                          </span>
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={(e) => {
+                        onClick={e => {
                           e.stopPropagation();
                           handlePlaylistClick(item);
                         }}
@@ -310,10 +362,10 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                         <Play className="w-3 h-3 neon-text-green" />
                         <span>Play</span>
                       </button>
-                      
+
                       <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
-                          onClick={(e) => {
+                          onClick={e => {
                             e.stopPropagation();
                             // Handle edit
                           }}
@@ -322,7 +374,7 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                           <Edit3 className="w-3 h-3 neon-text-purple" />
                         </button>
                         <button
-                          onClick={(e) => {
+                          onClick={e => {
                             e.stopPropagation();
                             handleDelete(item.id);
                           }}

@@ -109,15 +109,41 @@ const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 100; // Conservative limit per minute
 
 const DEMO_AUDIO_URLS = (() => {
-  const freqs = [220, 246.94, 261.63, 293.66, 329.63, 349.23, 392.0, 440, 493.88, 523.25];
+  const freqs = [
+    220, 246.94, 261.63, 293.66, 329.63, 349.23, 392.0, 440, 493.88, 523.25,
+  ];
   return freqs.map(f => generateWavDataUrl(f, 12));
 })();
 
 const GENRE_TRACK_TITLES = {
-  house: ['House Anthem', 'Deep Groove', 'Progressive Beat', 'Club Banger', 'Underground Mix'],
-  electronic: ['Synth Wave', 'Digital Dreams', 'Cyber Beats', 'Electronic Symphony', 'Tech Fusion'],
-  techno: ['Industrial Pulse', 'Berlin Nights', 'Minimal Tech', 'Dark Energy', 'Warehouse Vibe'],
-  'hip-hop': ['Urban Flow', 'Street Beats', 'Boom Bap', 'Trap Anthem', 'Old School']
+  house: [
+    'House Anthem',
+    'Deep Groove',
+    'Progressive Beat',
+    'Club Banger',
+    'Underground Mix',
+  ],
+  electronic: [
+    'Synth Wave',
+    'Digital Dreams',
+    'Cyber Beats',
+    'Electronic Symphony',
+    'Tech Fusion',
+  ],
+  techno: [
+    'Industrial Pulse',
+    'Berlin Nights',
+    'Minimal Tech',
+    'Dark Energy',
+    'Warehouse Vibe',
+  ],
+  'hip-hop': [
+    'Urban Flow',
+    'Street Beats',
+    'Boom Bap',
+    'Trap Anthem',
+    'Old School',
+  ],
 } as const;
 
 // =============================================================================
@@ -149,7 +175,7 @@ function stringHash(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32-bit integer
   }
   return Math.abs(hash);
@@ -181,7 +207,10 @@ function detectGenre(seed: string): keyof typeof GENRE_TRACK_TITLES {
 export class YouTubeService {
   private readonly apiKey: string;
   private readonly cache = new Map<string, CacheEntry<any>>();
-  private rateLimitState: RateLimitState = { requestCount: 0, windowStart: Date.now() };
+  private rateLimitState: RateLimitState = {
+    requestCount: 0,
+    windowStart: Date.now(),
+  };
 
   constructor() {
     this.apiKey = import.meta.env.VITE_YOUTUBE_API_KEY || '';
@@ -204,7 +233,9 @@ export class YouTubeService {
    * @param params - Search parameters
    * @returns Promise resolving to array of Track objects or null if error
    */
-  public async searchTracks(params: YouTubeSearchParams): Promise<Track[] | null> {
+  public async searchTracks(
+    params: YouTubeSearchParams
+  ): Promise<Track[] | null> {
     try {
       // Input validation
       if (!params.query || params.query.trim().length === 0) {
@@ -245,11 +276,10 @@ export class YouTubeService {
 
       logger.info('YouTubeService', 'Search completed successfully', {
         query: params.query,
-        resultCount: tracks.length
+        resultCount: tracks.length,
       });
 
       return tracks;
-
     } catch (error) {
       logger.error('YouTubeService', 'Search operation failed', error);
       return null;
@@ -261,20 +291,23 @@ export class YouTubeService {
    * @param params - Recommendation parameters
    * @returns Promise resolving to array of Track objects or null if error
    */
-  public async getRecommendations(params: YouTubeRecommendationParams): Promise<Track[] | null> {
+  public async getRecommendations(
+    params: YouTubeRecommendationParams
+  ): Promise<Track[] | null> {
     const searchTerms = [
       ...(params.seed_genres || []),
       params.vibe || '',
       params.energy || '',
-      'music mix'
+      'music mix',
     ].filter(Boolean);
 
-    const query = searchTerms.length > 0 ? searchTerms.join(' ') : 'electronic music mix';
+    const query =
+      searchTerms.length > 0 ? searchTerms.join(' ') : 'electronic music mix';
 
     return this.searchTracks({
       query,
       maxResults: params.limit || 15,
-      videoDuration: 'medium' // Prefer medium-length tracks for DJ sets
+      videoDuration: 'medium', // Prefer medium-length tracks for DJ sets
     });
   }
 
@@ -284,8 +317,14 @@ export class YouTubeService {
    * @param count - Number of tracks to generate
    * @returns Promise resolving to array of fallback Track objects
    */
-  public async getFallbackTracks(seed: string, count: number): Promise<Track[]> {
-    logger.info('YouTubeService', 'Generating fallback tracks', { seed, count });
+  public async getFallbackTracks(
+    seed: string,
+    count: number
+  ): Promise<Track[]> {
+    logger.info('YouTubeService', 'Generating fallback tracks', {
+      seed,
+      count,
+    });
 
     const genre = detectGenre(seed);
     const titles = GENRE_TRACK_TITLES[genre];
@@ -304,10 +343,12 @@ export class YouTubeService {
         duration: 180 + Math.floor(Math.random() * 120), // 3-5 minutes
         preview_url: DEMO_AUDIO_URLS[i % DEMO_AUDIO_URLS.length],
         bpm: Math.floor(Math.random() * 60) + 100, // 100-160 BPM
-        key: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][Math.floor(Math.random() * 12)],
+        key: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][
+          Math.floor(Math.random() * 12)
+        ],
         energy: Math.random(),
         danceability: Math.random(),
-        valence: Math.random()
+        valence: Math.random(),
       });
     }
 
@@ -323,7 +364,9 @@ export class YouTubeService {
    * @param params - Search parameters
    * @returns Search results or null if error
    */
-  private async executeSearch(params: YouTubeSearchParams): Promise<YouTubeSearchResponse | null> {
+  private async executeSearch(
+    params: YouTubeSearchParams
+  ): Promise<YouTubeSearchResponse | null> {
     const searchParams = new URLSearchParams({
       part: 'snippet',
       q: params.query,
@@ -333,16 +376,24 @@ export class YouTubeService {
       videoCategory: '10', // Music category
       ...(params.pageToken && { pageToken: params.pageToken }),
       ...(params.publishedAfter && { publishedAfter: params.publishedAfter }),
-      ...(params.videoCategoryId && { videoCategoryId: params.videoCategoryId }),
-      ...(params.videoDefinition && { videoDefinition: params.videoDefinition }),
-      ...(params.videoDuration && { videoDuration: params.videoDuration })
+      ...(params.videoCategoryId && {
+        videoCategoryId: params.videoCategoryId,
+      }),
+      ...(params.videoDefinition && {
+        videoDefinition: params.videoDefinition,
+      }),
+      ...(params.videoDuration && { videoDuration: params.videoDuration }),
     });
 
     const url = `${YOUTUBE_API_BASE_URL}/search?${searchParams.toString()}`;
 
-    const response = await fetchWithRetry(url, {
-      method: 'GET'
-    }, { timeoutMs: 12000, retries: 2 });
+    const response = await fetchWithRetry(
+      url,
+      {
+        method: 'GET',
+      },
+      { timeoutMs: 12000, retries: 2 }
+    );
 
     if (!response.ok) {
       const errorInfo = await this.handleApiError(response);
@@ -358,14 +409,18 @@ export class YouTubeService {
    * @param searchResults - Raw search results from YouTube
    * @returns Array of enriched Track objects
    */
-  private async enrichWithVideoDetails(searchResults: YouTubeSearchResponse): Promise<Track[]> {
+  private async enrichWithVideoDetails(
+    searchResults: YouTubeSearchResponse
+  ): Promise<Track[]> {
     const videoIds = searchResults.items.map(item => item.id.videoId);
 
     // Batch request for video details
     const videoDetails = await this.getVideoDetails(videoIds);
 
-    return searchResults.items.map((item) => {
-      const details = videoDetails?.items.find(detail => detail.id === item.id.videoId);
+    return searchResults.items.map(item => {
+      const details = videoDetails?.items.find(
+        detail => detail.id === item.id.videoId
+      );
       const duration = details?.contentDetails.duration
         ? parseDuration(details.contentDetails.duration)
         : 180 + Math.floor(Math.random() * 120);
@@ -378,10 +433,12 @@ export class YouTubeService {
         duration,
         preview_url: this.getStreamableUrl(item.id.videoId),
         bpm: Math.floor(Math.random() * 60) + 100, // 100-160 BPM
-        key: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][Math.floor(Math.random() * 12)],
+        key: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][
+          Math.floor(Math.random() * 12)
+        ],
         energy: 0.5 + Math.random() * 0.5, // 0.5-1.0 for music
         danceability: 0.4 + Math.random() * 0.6, // 0.4-1.0 for music
-        valence: Math.random()
+        valence: Math.random(),
       };
     });
   }
@@ -391,26 +448,32 @@ export class YouTubeService {
    * @param videoIds - Array of video IDs
    * @returns Video details or null if error
    */
-  private async getVideoDetails(videoIds: string[]): Promise<YouTubeVideoResponse | null> {
+  private async getVideoDetails(
+    videoIds: string[]
+  ): Promise<YouTubeVideoResponse | null> {
     if (videoIds.length === 0) return null;
 
     const detailsParams = new URLSearchParams({
       part: 'contentDetails,snippet',
       id: videoIds.join(','),
-      key: this.apiKey
+      key: this.apiKey,
     });
 
     const url = `${YOUTUBE_API_BASE_URL}/videos?${detailsParams.toString()}`;
 
     try {
-      const response = await fetchWithRetry(url, {
-        method: 'GET'
-      }, { timeoutMs: 12000, retries: 2 });
+      const response = await fetchWithRetry(
+        url,
+        {
+          method: 'GET',
+        },
+        { timeoutMs: 12000, retries: 2 }
+      );
 
       if (!response.ok) {
         logger.warn('YouTubeService', 'Video details request failed', {
           status: response.status,
-          statusText: response.statusText
+          statusText: response.statusText,
         });
         return null;
       }
@@ -438,7 +501,9 @@ export class YouTubeService {
    * @param response - Failed API response
    * @returns Structured error information
    */
-  private async handleApiError(response: Response): Promise<YouTubeServiceError> {
+  private async handleApiError(
+    response: Response
+  ): Promise<YouTubeServiceError> {
     let errorDetails: string = '';
 
     try {
@@ -454,7 +519,7 @@ export class YouTubeService {
           code: 'INVALID_REQUEST',
           message: 'The request was invalid or malformed',
           details: errorDetails,
-          retryable: false
+          retryable: false,
         };
 
       case 403:
@@ -462,7 +527,7 @@ export class YouTubeService {
           code: 'QUOTA_EXCEEDED_OR_FORBIDDEN',
           message: 'API quota exceeded or access forbidden',
           details: errorDetails,
-          retryable: true // Might work later
+          retryable: true, // Might work later
         };
 
       case 404:
@@ -470,7 +535,7 @@ export class YouTubeService {
           code: 'NOT_FOUND',
           message: 'The requested resource was not found',
           details: errorDetails,
-          retryable: false
+          retryable: false,
         };
 
       case 429:
@@ -478,7 +543,7 @@ export class YouTubeService {
           code: 'RATE_LIMITED',
           message: 'Too many requests, please try again later',
           details: errorDetails,
-          retryable: true
+          retryable: true,
         };
 
       default:
@@ -486,7 +551,7 @@ export class YouTubeService {
           code: 'UNKNOWN_ERROR',
           message: `HTTP ${response.status}: ${response.statusText}`,
           details: errorDetails,
-          retryable: true
+          retryable: true,
         };
     }
   }
@@ -538,7 +603,7 @@ export class YouTubeService {
   private setCached<T>(key: string, data: T): void {
     this.cache.set(key, {
       data,
-      expiry: Date.now() + CACHE_TTL_MS
+      expiry: Date.now() + CACHE_TTL_MS,
     });
 
     // Periodic cleanup of expired entries

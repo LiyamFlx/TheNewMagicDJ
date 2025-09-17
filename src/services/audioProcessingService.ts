@@ -14,15 +14,16 @@ class AudioProcessingService {
       'startMicrophoneCapture',
       async () => {
         try {
-          this.audioStream = await navigator.mediaDevices.getUserMedia({ 
+          this.audioStream = await navigator.mediaDevices.getUserMedia({
             audio: {
               echoCancellation: false,
               noiseSuppression: false,
-              autoGainControl: false
-            } 
+              autoGainControl: false,
+            },
           });
-          
-          this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+          this.audioContext = new (window.AudioContext ||
+            (window as any).webkitAudioContext)();
 
           // Resume AudioContext if suspended (required for some browsers)
           if (this.audioContext.state === 'suspended') {
@@ -30,22 +31,33 @@ class AudioProcessingService {
           }
 
           // Set up audio analysis
-          const source = this.audioContext.createMediaStreamSource(this.audioStream);
+          const source = this.audioContext.createMediaStreamSource(
+            this.audioStream
+          );
           this.analyser = this.audioContext.createAnalyser();
           this.analyser.fftSize = 2048;
           this.analyser.smoothingTimeConstant = 0.8;
           source.connect(this.analyser);
-          
-          logger.info('AudioProcessingService', 'Microphone capture started successfully');
+
+          logger.info(
+            'AudioProcessingService',
+            'Microphone capture started successfully'
+          );
         } catch (error) {
-          logger.error('AudioProcessingService', 'Failed to start microphone capture', error);
+          logger.error(
+            'AudioProcessingService',
+            'Failed to start microphone capture',
+            error
+          );
           throw new Error('Microphone access denied or not available');
         }
       }
     );
   }
 
-  async processAudioFromMicrophone(durationMs: number = 10000): Promise<AudioFingerprint> {
+  async processAudioFromMicrophone(
+    durationMs: number = 10000
+  ): Promise<AudioFingerprint> {
     return logger.trackOperation(
       'AudioProcessingService',
       'processAudioFromMicrophone',
@@ -56,48 +68,69 @@ class AudioProcessingService {
 
         // Capture audio data
         const audioData = await this.captureAudioData(durationMs);
-        
+
         // Try multiple recognition services
         let recognitionResult = null;
-        
+
         // Try AudD first (better for real-time audio)
         if (auddService.isConfigured()) {
           try {
             recognitionResult = await auddService.recognizeAudio(audioData);
             if (recognitionResult) {
-              logger.info('AudioProcessingService', 'Track recognized via AudD');
+              logger.info(
+                'AudioProcessingService',
+                'Track recognized via AudD'
+              );
             }
           } catch (error) {
-            logger.warn('AudioProcessingService', 'AudD recognition failed', error);
+            logger.warn(
+              'AudioProcessingService',
+              'AudD recognition failed',
+              error
+            );
           }
         }
-        
+
         // Fallback to AcoustID if AudD failed
         if (!recognitionResult && acoustidService.isConfigured()) {
           try {
             const fingerprintData = this.generateFingerprint(audioData);
             recognitionResult = await acoustidService.recognizeFingerprint(
-              fingerprintData, 
+              fingerprintData,
               durationMs / 1000
             );
             if (recognitionResult) {
-              logger.info('AudioProcessingService', 'Track recognized via AcoustID');
+              logger.info(
+                'AudioProcessingService',
+                'Track recognized via AcoustID'
+              );
             }
           } catch (error) {
-            logger.warn('AudioProcessingService', 'AcoustID recognition failed', error);
+            logger.warn(
+              'AudioProcessingService',
+              'AcoustID recognition failed',
+              error
+            );
           }
         }
 
         const fingerprint: AudioFingerprint = {
-          fingerprint: recognitionResult ? 'recognized' : this.generateMockFingerprint(),
-          confidence: recognitionResult?.confidence || (0.75 + Math.random() * 0.2),
-          duration: durationMs / 1000
+          fingerprint: recognitionResult
+            ? 'recognized'
+            : this.generateMockFingerprint(),
+          confidence:
+            recognitionResult?.confidence || 0.75 + Math.random() * 0.2,
+          duration: durationMs / 1000,
         };
 
-        logger.info('AudioProcessingService', 'Audio processed from microphone', {
-          confidence: fingerprint.confidence,
-          duration: fingerprint.duration
-        });
+        logger.info(
+          'AudioProcessingService',
+          'Audio processed from microphone',
+          {
+            confidence: fingerprint.confidence,
+            duration: fingerprint.duration,
+          }
+        );
 
         return fingerprint;
       },
@@ -112,7 +145,7 @@ class AudioProcessingService {
       async () => {
         // Try direct recognition first
         let recognitionResult = null;
-        
+
         if (auddService.isConfigured()) {
           try {
             recognitionResult = await auddService.recognizeAudio(file);
@@ -120,37 +153,52 @@ class AudioProcessingService {
               logger.info('AudioProcessingService', 'File recognized via AudD');
             }
           } catch (error) {
-            logger.warn('AudioProcessingService', 'AudD file recognition failed', error);
+            logger.warn(
+              'AudioProcessingService',
+              'AudD file recognition failed',
+              error
+            );
           }
         }
-        
+
         // If direct recognition failed, try fingerprinting
         if (!recognitionResult && acoustidService.isConfigured()) {
           try {
             const audioBuffer = await this.processFileToBuffer(file);
-            const fingerprintData = this.generateFingerprintFromBuffer(audioBuffer);
+            const fingerprintData =
+              this.generateFingerprintFromBuffer(audioBuffer);
             recognitionResult = await acoustidService.recognizeFingerprint(
               fingerprintData,
               audioBuffer.duration
             );
             if (recognitionResult) {
-              logger.info('AudioProcessingService', 'File recognized via AcoustID fingerprint');
+              logger.info(
+                'AudioProcessingService',
+                'File recognized via AcoustID fingerprint'
+              );
             }
           } catch (error) {
-            logger.warn('AudioProcessingService', 'AcoustID file recognition failed', error);
+            logger.warn(
+              'AudioProcessingService',
+              'AcoustID file recognition failed',
+              error
+            );
           }
         }
 
         const fingerprint: AudioFingerprint = {
-          fingerprint: recognitionResult ? 'file_recognized' : this.generateMockFingerprint(),
-          confidence: recognitionResult?.confidence || (0.8 + Math.random() * 0.15),
-          duration: 30 // Assume 30 second sample
+          fingerprint: recognitionResult
+            ? 'file_recognized'
+            : this.generateMockFingerprint(),
+          confidence:
+            recognitionResult?.confidence || 0.8 + Math.random() * 0.15,
+          duration: 30, // Assume 30 second sample
         };
 
         logger.info('AudioProcessingService', 'Audio file processed', {
           fileName: file.name,
           fileSize: file.size,
-          confidence: fingerprint.confidence
+          confidence: fingerprint.confidence,
         });
 
         return fingerprint;
@@ -164,17 +212,17 @@ class AudioProcessingService {
       this.audioStream.getTracks().forEach(track => track.stop());
       this.audioStream = null;
     }
-    
+
     if (this.audioContext) {
       this.audioContext.close();
       this.audioContext = null;
     }
-    
+
     logger.info('AudioProcessingService', 'Microphone capture stopped');
   }
 
   private async captureAudioData(durationMs: number): Promise<string> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       if (!this.analyser) {
         resolve('');
         return;
@@ -183,7 +231,7 @@ class AudioProcessingService {
       const bufferLength = this.analyser.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
       const samples: number[][] = [];
-      
+
       const captureInterval = setInterval(() => {
         this.analyser!.getByteFrequencyData(dataArray);
         samples.push(Array.from(dataArray));
@@ -200,7 +248,8 @@ class AudioProcessingService {
 
   private async processFileToBuffer(file: File): Promise<AudioBuffer> {
     const arrayBuffer = await file.arrayBuffer();
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const audioContext = new (window.AudioContext ||
+      (window as any).webkitAudioContext)();
     return await audioContext.decodeAudioData(arrayBuffer);
   }
 
@@ -224,13 +273,13 @@ class AudioProcessingService {
     // Simple feature extraction (in production, use proper audio fingerprinting)
     const features: number[] = [];
     const windowSize = 1024;
-    
+
     for (let i = 0; i < audioData.length - windowSize; i += windowSize) {
       const window = audioData.slice(i, i + windowSize);
       const energy = window.reduce((sum, sample) => sum + sample * sample, 0);
       features.push(energy);
     }
-    
+
     return features;
   }
 
@@ -238,7 +287,7 @@ class AudioProcessingService {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash).toString(16).padStart(8, '0');
@@ -246,7 +295,8 @@ class AudioProcessingService {
 
   private generateMockFingerprint(): string {
     // Generate a mock fingerprint hash
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
     for (let i = 0; i < 32; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));

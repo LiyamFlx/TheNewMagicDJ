@@ -41,7 +41,9 @@ class AudDService {
     }
   }
 
-  async recognizeAudio(audioData: string | File): Promise<RecognitionResult | null> {
+  async recognizeAudio(
+    audioData: string | File
+  ): Promise<RecognitionResult | null> {
     return logger.trackOperation(
       'AudDService',
       'recognizeAudio',
@@ -52,7 +54,10 @@ class AudDService {
         // Check rate limit
         const limitCheck = await rateLimiter.checkLimit('audd');
         if (!limitCheck.allowed) {
-          const error = errorHandler.createRateLimitError('AudD', limitCheck.retryAfter || 12000);
+          const error = errorHandler.createRateLimitError(
+            'AudD',
+            limitCheck.retryAfter || 12000
+          );
           errorHandler.handleError(error);
           throw new Error(error.message);
         }
@@ -72,16 +77,25 @@ class AudDService {
         const startTime = Date.now();
 
         try {
-          const response = await fetchWithRetry(useProxy ? '/api/audd' : this.baseUrl, {
-            method: 'POST',
-            body: formData
-          }, { timeoutMs: 15000, retries: 2 });
+          const response = await fetchWithRetry(
+            useProxy ? '/api/audd' : this.baseUrl,
+            {
+              method: 'POST',
+              body: formData,
+            },
+            { timeoutMs: 15000, retries: 2 }
+          );
 
           const responseTime = Date.now() - startTime;
           logger.trackAPICall('audd', 'recognize', responseTime, response.ok);
 
           if (!response.ok) {
-            const error = errorHandler.createAPIError('AudD', 'recognize', response.status, response.statusText);
+            const error = errorHandler.createAPIError(
+              'AudD',
+              'recognize',
+              response.status,
+              response.statusText
+            );
             errorHandler.handleError(error);
             throw new Error(error.message);
           }
@@ -99,24 +113,26 @@ class AudDService {
             artist: result.artist || 'Unknown Artist',
             album: result.album,
             confidence: 0.8, // AudD doesn't provide confidence scores
-            preview_url: result.spotify?.preview_url || result.apple_music?.previews?.[0]?.url,
-            spotify_id: result.spotify?.id
+            preview_url:
+              result.spotify?.preview_url ||
+              result.apple_music?.previews?.[0]?.url,
+            spotify_id: result.spotify?.id,
           };
 
           logger.info('AudDService', 'Track recognized successfully', {
             title: recognition.title,
             artist: recognition.artist,
-            hasPreview: !!recognition.preview_url
+            hasPreview: !!recognition.preview_url,
           });
 
           return recognition;
-
         } catch (error) {
           const responseTime = Date.now() - startTime;
           logger.trackAPICall('audd', 'recognize', responseTime, false);
 
           if (error instanceof TypeError && error.message.includes('fetch')) {
-            const networkError = errorHandler.createNetworkError('AudD recognition');
+            const networkError =
+              errorHandler.createNetworkError('AudD recognition');
             errorHandler.handleError(networkError);
             throw new Error(networkError.message);
           }
@@ -124,9 +140,10 @@ class AudDService {
           throw error;
         }
       },
-      { 
+      {
         audioType: typeof audioData === 'string' ? 'base64' : 'file',
-        audioSize: typeof audioData === 'string' ? audioData.length : audioData.size
+        audioSize:
+          typeof audioData === 'string' ? audioData.length : audioData.size,
       }
     );
   }

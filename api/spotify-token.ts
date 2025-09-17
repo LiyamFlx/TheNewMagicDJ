@@ -1,6 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { withIdempotency } from "../utils/idempotency";
-import { AppError, errorFromResponse, normalizeError } from '../src/utils/errors';
+import { withIdempotency } from '../utils/idempotency';
+import {
+  AppError,
+  errorFromResponse,
+  normalizeError,
+} from '../src/utils/errors';
 
 type TokenCache = {
   access_token: string;
@@ -56,11 +60,15 @@ async function fetchWithTimeout(
 
 async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: { code: 'BAD_REQUEST', message: 'Method not allowed' } });
+    return res
+      .status(405)
+      .json({ error: { code: 'BAD_REQUEST', message: 'Method not allowed' } });
   }
 
-  const clientId = process.env.SPOTIFY_CLIENT_ID || process.env.VITA_SPOTIFY_CLIENT_ID;
-  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET || process.env.VITA_SPOTIFY_CLIENT_SECRET;
+  const clientId =
+    process.env.SPOTIFY_CLIENT_ID || process.env.VITA_SPOTIFY_CLIENT_ID;
+  const clientSecret =
+    process.env.SPOTIFY_CLIENT_SECRET || process.env.VITA_SPOTIFY_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
     // Don't spam logs in production, return graceful error
@@ -69,18 +77,27 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
         code: 'MISSING_CREDENTIALS',
         message: 'Spotify service temporarily unavailable',
         httpStatus: 503,
-        retryable: true
-      }
+        retryable: true,
+      },
     });
   }
 
-  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString(
+    'base64'
+  );
 
   try {
     const bucket = checkBucket(req);
     if (!bucket.allowed) {
-      res.setHeader('Retry-After', Math.ceil((bucket.retryAfter || 1000) / 1000).toString());
-      return res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many requests' } });
+      res.setHeader(
+        'Retry-After',
+        Math.ceil((bucket.retryAfter || 1000) / 1000).toString()
+      );
+      return res
+        .status(429)
+        .json({
+          error: { code: 'RATE_LIMITED', message: 'Too many requests' },
+        });
     }
 
     const now = Date.now();
@@ -89,7 +106,10 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({
         access_token: tokenCache.access_token,
         token_type: tokenCache.token_type,
-        expires_in: Math.max(0, Math.floor((tokenCache.expires_at - now) / 1000)),
+        expires_in: Math.max(
+          0,
+          Math.floor((tokenCache.expires_at - now) / 1000)
+        ),
       });
     }
 
@@ -119,7 +139,11 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
         const err = await errorFromResponse(resp, body);
 
         if (resp.status === 401 || resp.status === 400) {
-          throw new AppError('INVALID_CREDENTIALS', 'Spotify rejected credentials', { httpStatus: 502 });
+          throw new AppError(
+            'INVALID_CREDENTIALS',
+            'Spotify rejected credentials',
+            { httpStatus: 502 }
+          );
         }
 
         throw err;
@@ -133,7 +157,10 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       access_token: token.access_token,
       token_type: token.token_type,
-      expires_in: Math.max(0, Math.floor((token.expires_at - Date.now()) / 1000)),
+      expires_in: Math.max(
+        0,
+        Math.floor((token.expires_at - Date.now()) / 1000)
+      ),
     });
   } catch (e: any) {
     const normalized = normalizeError(e, {
@@ -145,8 +172,8 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
       error: {
         ...normalized,
         httpStatus: 503,
-        retryable: true
-      }
+        retryable: true,
+      },
     });
   }
 }

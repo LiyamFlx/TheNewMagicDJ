@@ -1,5 +1,24 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Volume2, Headphones, Settings, ArrowLeft, Square, Menu, X, List, Activity, Music, Zap, Radio, Crosshair, RotateCcw } from 'lucide-react';
+import {
+  Play,
+  Pause,
+  SkipForward,
+  SkipBack,
+  Volume2,
+  Headphones,
+  Settings,
+  ArrowLeft,
+  Square,
+  Menu,
+  X,
+  List,
+  Activity,
+  Music,
+  Zap,
+  Radio,
+  Crosshair,
+  RotateCcw,
+} from 'lucide-react';
 import { Playlist, Session, Track } from '../types';
 import MagicDancer from './MagicDancer';
 import PlaylistEditor from './PlaylistEditor';
@@ -7,7 +26,6 @@ import { logger } from '../utils/logger';
 import { throttle } from '../utils/debounce';
 import { formatTimeClock } from '../utils/format';
 import { generateWavDataUrl } from '../utils/audioFallback';
-
 
 interface ProfessionalMagicPlayerProps {
   playlist: Playlist | null;
@@ -24,7 +42,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   isPlaying,
   onPlayPause,
   onSessionEnd,
-  onBack
+  onBack,
 }) => {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [deckAVolume, setDeckAVolume] = useState(85);
@@ -41,7 +59,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const audioARef = useRef<HTMLAudioElement | null>(null);
   const audioBRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  
+
   // Audio state
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -52,7 +70,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const [showUnmuteOverlay, setShowUnmuteOverlay] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDegraded, setIsDegraded] = useState(false);
-  
+
   const waveformCanvasA = useRef<HTMLCanvasElement>(null);
   const waveformCanvasB = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
@@ -86,7 +104,9 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
   // Touch session to avoid TS unused var warning and provide traceability
   useEffect(() => {
-    logger.info('ProfessionalMagicPlayer', 'Session active', { sessionId: session?.id });
+    logger.info('ProfessionalMagicPlayer', 'Session active', {
+      sessionId: session?.id,
+    });
   }, [session]);
 
   // Memoized waveform data for performance
@@ -109,13 +129,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const generateWaveformData = (width: number): number[] => {
     const bars = Math.floor(width / 3);
     const data: number[] = [];
-    
+
     for (let i = 0; i < bars; i++) {
       const frequency = (i / bars) * 10 + 1;
       const baseAmplitude = Math.sin(frequency * 0.5) * 0.3 + 0.7;
       data.push(baseAmplitude);
     }
-    
+
     return data;
   };
 
@@ -138,9 +158,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       const listeners = audioAListenersRef.current;
 
       audio.pause();
-      if (listeners.loadedmetadata) audio.removeEventListener('loadedmetadata', listeners.loadedmetadata);
-      if (listeners.canplaythrough) audio.removeEventListener('canplaythrough', listeners.canplaythrough);
-      if (listeners.timeupdate) audio.removeEventListener('timeupdate', listeners.timeupdate);
+      if (listeners.loadedmetadata)
+        audio.removeEventListener('loadedmetadata', listeners.loadedmetadata);
+      if (listeners.canplaythrough)
+        audio.removeEventListener('canplaythrough', listeners.canplaythrough);
+      if (listeners.timeupdate)
+        audio.removeEventListener('timeupdate', listeners.timeupdate);
       if (listeners.ended) audio.removeEventListener('ended', listeners.ended);
       if (listeners.error) audio.removeEventListener('error', listeners.error);
     }
@@ -149,14 +172,14 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     audio.preload = 'auto';
     audio.crossOrigin = 'anonymous';
     audio.volume = deckAVolume / 100;
-    
+
     // Create listener functions
     const onLoadedMetadata = () => {
       setDuration(audio.duration || 180);
       logger.info('ProfessionalMagicPlayer', 'Audio A metadata loaded', {
         duration: audio.duration,
         readyState: audio.readyState,
-        src: audio.src.substring(0, 50) + '...'
+        src: audio.src.substring(0, 50) + '...',
       });
     };
 
@@ -165,16 +188,17 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       logger.info('ProfessionalMagicPlayer', 'Audio A can play through', {
         duration: audio.duration,
         readyState: audio.readyState,
-        src: audio.src.substring(0, 50) + '...'
+        src: audio.src.substring(0, 50) + '...',
       });
     };
-    
+
     const onTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
-      const progress = audio.duration > 0 ? (audio.currentTime / audio.duration) * 100 : 0;
+      const progress =
+        audio.duration > 0 ? (audio.currentTime / audio.duration) * 100 : 0;
       setDeckAProgress(progress);
     };
-    
+
     const onError = (e: Event) => {
       const target = e.target as HTMLAudioElement;
       const error = target.error;
@@ -197,24 +221,32 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         src: target.src,
         networkState: target.networkState,
         readyState: target.readyState,
-        errorCount: errorThrottleRef.current.errorCount
+        errorCount: errorThrottleRef.current.errorCount,
       });
 
       setIsLoading(false);
       setDuration(currentTrack.duration ?? 180);
 
       // Only show error message on first few errors, not repeatedly
-      if (errorThrottleRef.current.errorCount <= 2 && target.src && !target.src.startsWith('data:audio/wav')) {
+      if (
+        errorThrottleRef.current.errorCount <= 2 &&
+        target.src &&
+        !target.src.startsWith('data:audio/wav')
+      ) {
         setErrorMessage('Audio failed, using demo audio');
         setIsDegraded(true);
         setTimeout(() => setErrorMessage(null), 3000);
       }
 
       // Auto-skip to next track if current track fails to load (but not repeatedly)
-      if (error && error.code !== 1 && errorThrottleRef.current.errorCount === 1) {
+      if (
+        error &&
+        error.code !== 1 &&
+        errorThrottleRef.current.errorCount === 1
+      ) {
         logger.info('ProfessionalMagicPlayer', 'Auto-skipping failed track', {
           currentIndex: currentTrackIndex,
-          totalTracks: playlist?.tracks.length
+          totalTracks: playlist?.tracks.length,
         });
         setTimeout(() => {
           if (currentTrackIndex < (playlist?.tracks.length ?? 0) - 1) {
@@ -223,14 +255,14 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         }, 1000);
       }
     };
-    
+
     // Store listeners for cleanup
     audioAListenersRef.current = {
       loadedmetadata: onLoadedMetadata,
       canplaythrough: onCanPlayThrough,
       timeupdate: onTimeUpdate,
       ended: handleTrackEnd,
-      error: onError
+      error: onError,
     };
 
     // Add listeners
@@ -239,39 +271,50 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('ended', handleTrackEnd);
     audio.addEventListener('error', onError);
-    
+
     // Set audio source - prioritize track's preview_url
     if (currentTrack.preview_url && currentTrack.preview_url.trim() !== '') {
       audio.src = currentTrack.preview_url;
       setIsDegraded(false);
-      logger.info('ProfessionalMagicPlayer', 'Audio A source set to track preview', {
-        trackTitle: currentTrack.title,
-        audioSrc: currentTrack.preview_url
-      });
+      logger.info(
+        'ProfessionalMagicPlayer',
+        'Audio A source set to track preview',
+        {
+          trackTitle: currentTrack.title,
+          audioSrc: currentTrack.preview_url,
+        }
+      );
     } else {
       // Use track index to vary frequency for local fallback
-      const baseFreq = 440 + (currentTrackIndex * 20); // Vary frequency per track
+      const baseFreq = 440 + currentTrackIndex * 20; // Vary frequency per track
       audio.src = generateWavDataUrl(baseFreq, 12);
       setIsDegraded(true);
 
-      logger.info('ProfessionalMagicPlayer', 'Audio A source set to generated fallback', {
-        trackTitle: currentTrack.title,
-        frequency: baseFreq,
-        reason: 'No preview_url available'
-      });
+      logger.info(
+        'ProfessionalMagicPlayer',
+        'Audio A source set to generated fallback',
+        {
+          trackTitle: currentTrack.title,
+          frequency: baseFreq,
+          reason: 'No preview_url available',
+        }
+      );
     }
-    
+
     // Set volume immediately
     audio.volume = 0.7;
-    
+
     audioARef.current = audio;
     setIsLoading(true);
 
     return () => {
       const listeners = audioAListenersRef.current;
-      if (listeners.loadedmetadata) audio.removeEventListener('loadedmetadata', listeners.loadedmetadata);
-      if (listeners.canplaythrough) audio.removeEventListener('canplaythrough', listeners.canplaythrough);
-      if (listeners.timeupdate) audio.removeEventListener('timeupdate', listeners.timeupdate);
+      if (listeners.loadedmetadata)
+        audio.removeEventListener('loadedmetadata', listeners.loadedmetadata);
+      if (listeners.canplaythrough)
+        audio.removeEventListener('canplaythrough', listeners.canplaythrough);
+      if (listeners.timeupdate)
+        audio.removeEventListener('timeupdate', listeners.timeupdate);
       if (listeners.ended) audio.removeEventListener('ended', listeners.ended);
       if (listeners.error) audio.removeEventListener('error', listeners.error);
       audio.pause();
@@ -284,12 +327,16 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       if (audioBRef.current) {
         const audio = audioBRef.current;
         const listeners = audioBListenersRef.current;
-        
+
         audio.pause();
-        if (listeners.loadedmetadata) audio.removeEventListener('loadedmetadata', listeners.loadedmetadata);
-        if (listeners.timeupdate) audio.removeEventListener('timeupdate', listeners.timeupdate);
-        if (listeners.ended) audio.removeEventListener('ended', listeners.ended);
-        if (listeners.error) audio.removeEventListener('error', listeners.error);
+        if (listeners.loadedmetadata)
+          audio.removeEventListener('loadedmetadata', listeners.loadedmetadata);
+        if (listeners.timeupdate)
+          audio.removeEventListener('timeupdate', listeners.timeupdate);
+        if (listeners.ended)
+          audio.removeEventListener('ended', listeners.ended);
+        if (listeners.error)
+          audio.removeEventListener('error', listeners.error);
         audioBRef.current = null;
       }
       return;
@@ -297,17 +344,18 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
     const audio = new Audio();
     audio.preload = 'metadata';
-    
+
     // Create listener functions for deck B
     const onLoadedMetadata = () => {
       // Deck B metadata loaded
     };
-    
+
     const onTimeUpdate = () => {
-      const progress = audio.duration > 0 ? (audio.currentTime / audio.duration) * 100 : 0;
+      const progress =
+        audio.duration > 0 ? (audio.currentTime / audio.duration) * 100 : 0;
       setDeckBProgress(progress);
     };
-    
+
     const onError = (e: Event) => {
       const target = e.target as HTMLAudioElement;
       const error = target.error;
@@ -328,7 +376,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         code: error?.code,
         message: error?.message,
         src: target.src,
-        errorCount: errorThrottleRef.current.errorCount
+        errorCount: errorThrottleRef.current.errorCount,
       });
 
       // Set degraded mode if errors persist
@@ -336,43 +384,48 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         setIsDegraded(true);
       }
     };
-    
+
     // Store listeners for cleanup
     audioBListenersRef.current = {
       loadedmetadata: onLoadedMetadata,
       timeupdate: onTimeUpdate,
-      error: onError
+      error: onError,
     };
-    
+
     // Add listeners
     audio.addEventListener('loadedmetadata', onLoadedMetadata);
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('error', onError);
-    
+
     // Set audio source - prioritize track's preview_url
     if (nextTrack.preview_url && nextTrack.preview_url.trim() !== '') {
       audio.src = nextTrack.preview_url;
     } else {
       // Use a simple silent audio data URL as fallback
-      audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeBDKJ0fPOgzEHIHjJ+tycRw0UW7zv85xrGw5UqObsu2AcBjSO2OzNeSsFJHPN7tmSPwhGn+J+t2ApDS+5vG0t';
+      audio.src =
+        'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeBDKJ0fPOgzEHIHjJ+tycRw0UW7zv85xrGw5UqObsu2AcBjSO2OzNeSsFJHPN7tmSPwhGn+J+t2ApDS+5vG0t';
     }
-    
-    // Set volume immediately  
+
+    // Set volume immediately
     audio.volume = 0.5;
-    
+
     audioBRef.current = audio;
 
     return () => {
       const listeners = audioBListenersRef.current;
-      if (listeners.loadedmetadata) audio.removeEventListener('loadedmetadata', listeners.loadedmetadata);
-      if (listeners.timeupdate) audio.removeEventListener('timeupdate', listeners.timeupdate);
+      if (listeners.loadedmetadata)
+        audio.removeEventListener('loadedmetadata', listeners.loadedmetadata);
+      if (listeners.timeupdate)
+        audio.removeEventListener('timeupdate', listeners.timeupdate);
       if (listeners.error) audio.removeEventListener('error', listeners.error);
       audio.pause();
     };
   }, [nextTrack]);
 
   // Handle play/pause with state tracking to prevent double triggers
-  const [lastPlayPauseState, setLastPlayPauseState] = useState<boolean | null>(null);
+  const [lastPlayPauseState, setLastPlayPauseState] = useState<boolean | null>(
+    null
+  );
 
   useEffect(() => {
     // Prevent duplicate calls with same state
@@ -389,17 +442,22 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       audioSrc: audio?.src,
       isLoading,
       readyState: audio?.readyState,
-      currentTrack: currentTrack?.title
+      currentTrack: currentTrack?.title,
     });
 
-    if (!audio || isLoading || audio.readyState < 4) { // 4 = HAVE_ENOUGH_DATA
-      logger.warn('ProfessionalMagicPlayer', 'Play/Pause skipped - audio not ready', {
-        hasAudio: !!audio,
-        isLoading,
-        readyState: audio?.readyState,
-        readyStateRequired: 4, // HAVE_ENOUGH_DATA
-        audioSrc: audio?.src
-      });
+    if (!audio || isLoading || audio.readyState < 4) {
+      // 4 = HAVE_ENOUGH_DATA
+      logger.warn(
+        'ProfessionalMagicPlayer',
+        'Play/Pause skipped - audio not ready',
+        {
+          hasAudio: !!audio,
+          isLoading,
+          readyState: audio?.readyState,
+          readyStateRequired: 4, // HAVE_ENOUGH_DATA
+          audioSrc: audio?.src,
+        }
+      );
       return;
     }
 
@@ -407,17 +465,25 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       // Initialize AudioContext if needed
       if (!audioContextRef.current && window.AudioContext) {
         try {
-          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+          audioContextRef.current = new (window.AudioContext ||
+            (window as any).webkitAudioContext)();
 
           // Handle AudioContext state changes
           audioContextRef.current.addEventListener('statechange', () => {
-            logger.info('ProfessionalMagicPlayer', 'AudioContext state changed', {
-              state: audioContextRef.current?.state
-            });
+            logger.info(
+              'ProfessionalMagicPlayer',
+              'AudioContext state changed',
+              {
+                state: audioContextRef.current?.state,
+              }
+            );
           });
-
         } catch (error: any) {
-          logger.warn('ProfessionalMagicPlayer', 'AudioContext creation failed', error);
+          logger.warn(
+            'ProfessionalMagicPlayer',
+            'AudioContext creation failed',
+            error
+          );
           setErrorMessage('Audio device unavailable. Using basic playback.');
           setIsDegraded(true);
           setTimeout(() => setErrorMessage(null), 3000);
@@ -425,12 +491,22 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       }
 
       // Resume AudioContext if suspended (required for autoplay policy)
-      if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+      if (
+        audioContextRef.current &&
+        audioContextRef.current.state === 'suspended'
+      ) {
         audioContextRef.current.resume().catch(error => {
-          logger.warn('ProfessionalMagicPlayer', 'AudioContext resume failed', error);
+          logger.warn(
+            'ProfessionalMagicPlayer',
+            'AudioContext resume failed',
+            error
+          );
 
           // Check if this is a device error
-          if (error.name === 'NotSupportedError' || error.message.includes('audio device')) {
+          if (
+            error.name === 'NotSupportedError' ||
+            error.message.includes('audio device')
+          ) {
             setErrorMessage('Audio device error. Check system audio settings.');
             setIsDegraded(true);
             setTimeout(() => setErrorMessage(null), 5000);
@@ -445,22 +521,29 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         audioSrc: audio.src,
         readyState: audio.readyState,
         networkState: audio.networkState,
-        audioContextState: audioContextRef.current?.state
+        audioContextState: audioContextRef.current?.state,
       });
 
       // Add retry mechanism for playback
       const attemptPlay = async (retries = 3): Promise<void> => {
         try {
           await audio.play();
-          logger.info('ProfessionalMagicPlayer', 'Audio playback started successfully');
+          logger.info(
+            'ProfessionalMagicPlayer',
+            'Audio playback started successfully'
+          );
           setShowUnmuteOverlay(false);
         } catch (error: any) {
-          logger.error('ProfessionalMagicPlayer', `Audio play failed (${retries} retries left)`, {
-            error: error.message,
-            name: error.name,
-            readyState: audio.readyState,
-            networkState: audio.networkState
-          });
+          logger.error(
+            'ProfessionalMagicPlayer',
+            `Audio play failed (${retries} retries left)`,
+            {
+              error: error.message,
+              name: error.name,
+              readyState: audio.readyState,
+              networkState: audio.networkState,
+            }
+          );
 
           if (retries > 0) {
             // Wait and retry
@@ -475,13 +558,20 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       };
 
       attemptPlay().catch(error => {
-        logger.error('ProfessionalMagicPlayer', 'All play attempts failed', error);
+        logger.error(
+          'ProfessionalMagicPlayer',
+          'All play attempts failed',
+          error
+        );
         onPlayPause(false);
 
         // Check if this is an autoplay restriction
         if (error.name === 'NotAllowedError') {
           setShowUnmuteOverlay(true);
-          logger.info('ProfessionalMagicPlayer', 'Autoplay blocked - showing unmute overlay');
+          logger.info(
+            'ProfessionalMagicPlayer',
+            'Autoplay blocked - showing unmute overlay'
+          );
         } else {
           setErrorMessage('Playback failed. Retrying...');
           setTimeout(() => {
@@ -503,13 +593,15 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
     if (audioA) {
       const deckAVol = (deckAVolume / 100) * (masterVolume / 100);
-      const crossfadeA = crossfaderPosition <= 0 ? 1 : Math.max(0, 1 - (crossfaderPosition / 100));
+      const crossfadeA =
+        crossfaderPosition <= 0 ? 1 : Math.max(0, 1 - crossfaderPosition / 100);
       audioA.volume = Math.max(0, Math.min(1, deckAVol * crossfadeA));
     }
-    
+
     if (audioB) {
       const deckBVol = (deckBVolume / 100) * (masterVolume / 100);
-      const crossfadeB = crossfaderPosition >= 0 ? 1 : Math.max(0, 1 + (crossfaderPosition / 100));
+      const crossfadeB =
+        crossfaderPosition >= 0 ? 1 : Math.max(0, 1 + crossfaderPosition / 100);
       audioB.volume = Math.max(0, Math.min(1, deckBVol * crossfadeB));
     }
   }, [deckAVolume, deckBVolume, crossfaderPosition, masterVolume]);
@@ -542,13 +634,25 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   // Animation loop
   useEffect(() => {
     const animate = () => {
-      drawWaveform(waveformCanvasA.current, currentTrack, deckAProgress, 'green', waveformDataA.current);
-      drawWaveform(waveformCanvasB.current, nextTrack, deckBProgress, 'purple', waveformDataB.current);
+      drawWaveform(
+        waveformCanvasA.current,
+        currentTrack,
+        deckAProgress,
+        'green',
+        waveformDataA.current
+      );
+      drawWaveform(
+        waveformCanvasB.current,
+        nextTrack,
+        deckBProgress,
+        'purple',
+        waveformDataB.current
+      );
       animationFrameRef.current = requestAnimationFrame(animate);
     };
-    
+
     animate();
-    
+
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -557,9 +661,9 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   }, [currentTrack, nextTrack, deckAProgress, deckBProgress, isPlaying]);
 
   const drawWaveform = (
-    canvas: HTMLCanvasElement | null, 
-    track: Track | undefined, 
-    progress: number, 
+    canvas: HTMLCanvasElement | null,
+    track: Track | undefined,
+    progress: number,
     color: 'green' | 'purple',
     waveformData: number[]
   ) => {
@@ -587,15 +691,18 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     // Draw waveform using precomputed data
     const time = Date.now() * 0.001;
     const progressWidth = (width * progress) / 100;
-    
+
     for (let i = 0; i < waveformData.length; i++) {
       const x = i * 3;
       const baseAmplitude = waveformData[i];
       const energyMultiplier = isPlaying ? (track.energy ?? 0.5) : 0.3;
-      const animatedAmplitude = baseAmplitude * energyMultiplier * (1 + Math.sin(time * 2 + i * 0.1) * 0.1);
-      
+      const animatedAmplitude =
+        baseAmplitude *
+        energyMultiplier *
+        (1 + Math.sin(time * 2 + i * 0.1) * 0.1);
+
       const barHeight = (height * animatedAmplitude) / 2;
-      
+
       // Determine color based on progress and deck
       let fillColor, shadowColor;
       if (x < progressWidth) {
@@ -615,13 +722,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           shadowColor = 'rgba(34, 211, 238, 0.2)';
         }
       }
-      
+
       // Draw waveform bar with glow effect
       ctx.shadowColor = shadowColor;
       ctx.shadowBlur = 10;
       ctx.fillStyle = fillColor;
       ctx.fillRect(x, centerY - barHeight / 2, 2, barHeight);
-      
+
       // Reset shadow for next iteration
       ctx.shadowBlur = 0;
     }
@@ -630,7 +737,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     const playheadX = progressWidth;
     ctx.strokeStyle = color === 'green' ? '#e879f9' : '#22d3ee';
     ctx.lineWidth = 3;
-    ctx.shadowColor = color === 'green' ? 'rgba(232, 121, 249, 1)' : 'rgba(34, 211, 238, 1)';
+    ctx.shadowColor =
+      color === 'green' ? 'rgba(232, 121, 249, 1)' : 'rgba(34, 211, 238, 1)';
     ctx.shadowBlur = 15;
     ctx.beginPath();
     ctx.moveTo(Math.round(playheadX), 0);
@@ -642,13 +750,14 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     const trackBpm = track.bpm;
     if (trackBpm && trackBpm > 0) {
       const trackDuration = track.duration;
-      const safeDuration = (trackDuration && trackDuration > 0) ? trackDuration : 180;
+      const safeDuration =
+        trackDuration && trackDuration > 0 ? trackDuration : 180;
       const beatInterval = (60 / trackBpm) * (width / safeDuration);
-      
+
       if (beatInterval > 0 && beatInterval < width && !isNaN(beatInterval)) {
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
         ctx.lineWidth = 1;
-        
+
         for (let beat = 0; beat < width; beat += beatInterval) {
           if (beat <= width) {
             ctx.beginPath();
@@ -671,7 +780,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     }
 
     audioB.play().catch(e => console.error('Next track play failed:', e));
-    
+
     fadeIntervalRef.current = window.setInterval(() => {
       setCrossfaderPosition(prev => {
         const newPos = prev + 15;
@@ -696,7 +805,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const addCuePoint = (deckId: string, position: number) => {
     setCuePoints(prev => ({
       ...prev,
-      [deckId]: [...(prev[deckId] || []), position].slice(-5) // Limit to 5 cue points
+      [deckId]: [...(prev[deckId] || []), position].slice(-5), // Limit to 5 cue points
     }));
   };
 
@@ -718,7 +827,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         from: currentTrackIndex,
         to: newIndex,
         currentTrack: currentTrack?.title,
-        nextTrack: playlist?.tracks[newIndex]?.title
+        nextTrack: playlist?.tracks[newIndex]?.title,
       });
       setCurrentTrackIndex(prev => prev + 1);
       setDeckAProgress(0);
@@ -741,13 +850,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
   const handleTrackRemove = (index: number) => {
     if (!playlist) return;
-    
+
     const newTracks = playlist.tracks.filter((_, i) => i !== index);
     const updatedPlaylist = { ...playlist, tracks: newTracks };
-    
+
     // Propagate changes to parent
     handlePlaylistUpdate(updatedPlaylist);
-    
+
     if (index < currentTrackIndex) {
       setCurrentTrackIndex(prev => prev - 1);
     } else if (index === currentTrackIndex && index >= newTracks.length) {
@@ -757,16 +866,16 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
   const handleTrackReorder = (fromIndex: number, toIndex: number) => {
     if (!playlist) return;
-    
+
     const newTracks = [...playlist.tracks];
     const [movedTrack] = newTracks.splice(fromIndex, 1);
     newTracks.splice(toIndex, 0, movedTrack);
-    
+
     const updatedPlaylist = { ...playlist, tracks: newTracks };
-    
+
     // Propagate changes to parent
     handlePlaylistUpdate(updatedPlaylist);
-    
+
     if (fromIndex === currentTrackIndex) {
       setCurrentTrackIndex(toIndex);
     } else if (fromIndex < currentTrackIndex && toIndex >= currentTrackIndex) {
@@ -786,7 +895,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     return () => {
       if (autoMixIntervalRef.current) clearInterval(autoMixIntervalRef.current);
       if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (animationFrameRef.current)
+        cancelAnimationFrame(animationFrameRef.current);
     };
   }, []);
 
@@ -826,37 +936,51 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           >
             <ArrowLeft className="w-5 h-5 lg:w-6 lg:h-6 text-fuchsia-400" />
           </button>
-          
+
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={mobileMenuOpen ? "Close mobile menu" : "Open mobile menu"}
+            aria-label={
+              mobileMenuOpen ? 'Close mobile menu' : 'Open mobile menu'
+            }
             className="lg:hidden glass-button hover-lift flex items-center justify-center w-10 h-10"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5 text-fuchsia-400" /> : <Menu className="w-5 h-5 text-fuchsia-400" />}
+            {mobileMenuOpen ? (
+              <X className="w-5 h-5 text-fuchsia-400" />
+            ) : (
+              <Menu className="w-5 h-5 text-fuchsia-400" />
+            )}
           </button>
-          
+
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 glass-card flex items-center justify-center shadow-neon-pink animate-pulse-glow">
               <Radio className="w-7 h-7 text-fuchsia-400" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h1 className="text-xl lg:text-2xl font-bold text-white tracking-wide font-orbitron">PROFESSIONAL PLAYER</h1>
+                <h1 className="text-xl lg:text-2xl font-bold text-white tracking-wide font-orbitron">
+                  PROFESSIONAL PLAYER
+                </h1>
                 {isDegraded && (
                   <span className="text-xs px-2 py-1 bg-yellow-900/50 border border-yellow-400 text-yellow-400 rounded font-orbitron">
                     DEMO
                   </span>
                 )}
               </div>
-              <p className="text-sm lg:text-base text-fuchsia-400 font-orbitron truncate max-w-48 lg:max-w-none">{playlist.name}</p>
+              <p className="text-sm lg:text-base text-fuchsia-400 font-orbitron truncate max-w-48 lg:max-w-none">
+                {playlist.name}
+              </p>
             </div>
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-3 lg:space-x-4">
           <button
             onClick={() => setShowPlaylistEditor(!showPlaylistEditor)}
-            aria-label={showPlaylistEditor ? "Hide playlist editor" : "Show playlist editor"}
+            aria-label={
+              showPlaylistEditor
+                ? 'Hide playlist editor'
+                : 'Show playlist editor'
+            }
             className={`btn-primary px-3 lg:px-4 py-2 flex items-center space-x-2 text-sm lg:text-base ${showPlaylistEditor ? 'shadow-neon-pink' : ''}`}
           >
             <List className="w-4 h-4 lg:w-5 lg:h-5" />
@@ -864,7 +988,9 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           </button>
           <button
             onClick={() => setShowMagicDancer(!showMagicDancer)}
-            aria-label={showMagicDancer ? "Hide magic dancer" : "Show magic dancer"}
+            aria-label={
+              showMagicDancer ? 'Hide magic dancer' : 'Show magic dancer'
+            }
             className={`btn-secondary px-3 lg:px-4 py-2 flex items-center space-x-2 text-sm lg:text-base ${showMagicDancer ? 'shadow-neon-blue' : ''}`}
           >
             <Activity className="w-4 h-4 lg:w-5 lg:h-5" />
@@ -873,12 +999,16 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           {errorMessage ? (
             <div className="flex items-center space-x-2 px-3 lg:px-4 py-2 glass-card border-yellow-400 shadow-yellow-400/20">
               <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
-              <span className="text-xs lg:text-sm font-bold tracking-wider text-yellow-400">{errorMessage}</span>
+              <span className="text-xs lg:text-sm font-bold tracking-wider text-yellow-400">
+                {errorMessage}
+              </span>
             </div>
           ) : (
             <div className="hidden sm:flex items-center space-x-2 px-3 lg:px-4 py-2 glass-card shadow-neon-cyan">
               <div className="w-3 h-3 bg-cyan-400 rounded-full animate-pulse-glow"></div>
-              <span className="text-xs lg:text-sm font-bold tracking-wider">LIVE</span>
+              <span className="text-xs lg:text-sm font-bold tracking-wider">
+                LIVE
+              </span>
             </div>
           )}
           <button
@@ -900,10 +1030,16 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <Play className="w-7 h-7 text-fuchsia-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold truncate text-white text-lg font-orbitron">{currentTrack.title}</h3>
-              <p className="text-sm text-fuchsia-400 truncate font-orbitron">{currentTrack.artist}</p>
+              <h3 className="font-bold truncate text-white text-lg font-orbitron">
+                {currentTrack.title}
+              </h3>
+              <p className="text-sm text-fuchsia-400 truncate font-orbitron">
+                {currentTrack.artist}
+              </p>
               <div className="flex items-center space-x-3 text-xs text-slate-400 mt-1">
-                <span className="font-orbitron">{currentTrack.bpm ?? 128} BPM</span>
+                <span className="font-orbitron">
+                  {currentTrack.bpm ?? 128} BPM
+                </span>
                 <span className="font-orbitron">{currentTrack.key ?? 'C'}</span>
               </div>
             </div>
@@ -913,11 +1049,14 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           </div>
 
           <div className="mb-4">
-            <div 
+            <div
               className="w-full h-3 bg-glass border border-glass rounded-lg cursor-pointer overflow-hidden"
-              onClick={(e) => {
+              onClick={e => {
                 const rect = e.currentTarget.getBoundingClientRect();
-                const percentage = Math.min(100, Math.max(0, ((e.clientX - rect.left) / rect.width) * 100));
+                const percentage = Math.min(
+                  100,
+                  Math.max(0, ((e.clientX - rect.left) / rect.width) * 100)
+                );
                 handleSeek(percentage);
               }}
               role="slider"
@@ -926,7 +1065,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               aria-valuemin={0}
               aria-valuemax={100}
             >
-              <div 
+              <div
                 className="h-3 bg-gradient-to-r from-fuchsia-600 to-cyan-400 rounded-lg transition-all duration-300"
                 style={{ width: `${deckAProgress}%` }}
               ></div>
@@ -948,7 +1087,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             <button
               onClick={() => throttledOnPlayPause(!isPlaying)}
               disabled={isLoading}
-              aria-label={isPlaying ? "Pause playback" : "Start playback"}
+              aria-label={isPlaying ? 'Pause playback' : 'Start playback'}
               className="w-16 h-16 glass-button hover-lift flex items-center justify-center transition-all duration-300 disabled:opacity-50"
             >
               {isLoading ? (
@@ -971,9 +1110,10 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       </div>
 
       {/* Main Player Interface */}
-      <div className={`flex-1 p-4 lg:p-6 ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
+      <div
+        className={`flex-1 p-4 lg:p-6 ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}
+      >
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8 h-full">
-          
           {/* Enhanced Deck A */}
           <div className="glass-card hover-lift p-6">
             <div className="flex items-center justify-between mb-6">
@@ -981,16 +1121,18 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 <div className="w-8 h-8 bg-fuchsia-400 rounded-lg flex items-center justify-center text-slate-900 font-bold text-lg">
                   A
                 </div>
-                <h2 className="text-xl lg:text-2xl font-bold text-fuchsia-400 tracking-wider font-orbitron">DECK A</h2>
+                <h2 className="text-xl lg:text-2xl font-bold text-fuchsia-400 tracking-wider font-orbitron">
+                  DECK A
+                </h2>
               </div>
               <div className="flex items-center space-x-2">
-                <button 
+                <button
                   aria-label="Play deck A"
                   className="w-10 h-10 glass-button hover-lift flex items-center justify-center transition-all"
                 >
                   <Play className="w-5 h-5 text-fuchsia-400" />
                 </button>
-                <button 
+                <button
                   aria-label="Pause deck A"
                   className="w-10 h-10 glass-button hover-lift flex items-center justify-center transition-all"
                 >
@@ -1001,19 +1143,29 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
             {/* Enhanced Track Info */}
             <div className="mb-6 p-4 bg-glass border border-glass rounded-lg">
-              <h3 className="font-bold text-lg lg:text-xl mb-2 truncate text-white font-orbitron">{currentTrack.title}</h3>
-              <p className="text-fuchsia-400 mb-3 truncate font-orbitron text-base">{currentTrack.artist}</p>
+              <h3 className="font-bold text-lg lg:text-xl mb-2 truncate text-white font-orbitron">
+                {currentTrack.title}
+              </h3>
+              <p className="text-fuchsia-400 mb-3 truncate font-orbitron text-base">
+                {currentTrack.artist}
+              </p>
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div className="text-center">
-                  <div className="text-fuchsia-400 font-bold text-lg">{currentTrack.bpm ?? 128}</div>
+                  <div className="text-fuchsia-400 font-bold text-lg">
+                    {currentTrack.bpm ?? 128}
+                  </div>
                   <div className="text-slate-400 text-xs">BPM</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-fuchsia-400 font-bold text-lg">{currentTrack.key ?? 'C'}</div>
+                  <div className="text-fuchsia-400 font-bold text-lg">
+                    {currentTrack.key ?? 'C'}
+                  </div>
                   <div className="text-slate-400 text-xs">KEY</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-fuchsia-400 font-bold text-lg">{formatTimeClock(currentTrack.duration ?? 180)}</div>
+                  <div className="text-fuchsia-400 font-bold text-lg">
+                    {formatTimeClock(currentTrack.duration ?? 180)}
+                  </div>
                   <div className="text-slate-400 text-xs">TIME</div>
                 </div>
               </div>
@@ -1026,9 +1178,10 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 width={320}
                 height={120}
                 className="w-full h-20 lg:h-28 bg-slate-900 border border-glass rounded-lg cursor-pointer"
-                onClick={(e) => {
+                onClick={e => {
                   const rect = e.currentTarget.getBoundingClientRect();
-                  const percentage = ((e.clientX - rect.left) / rect.width) * 100;
+                  const percentage =
+                    ((e.clientX - rect.left) / rect.width) * 100;
                   handleSeek(percentage);
                 }}
                 role="slider"
@@ -1039,8 +1192,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               />
               <div className="flex justify-between text-xs text-slate-400 mt-2 font-orbitron">
                 <span>{formatTimeClock(currentTime)}</span>
-                <span className="text-fuchsia-400">{Math.round(deckAProgress)}%</span>
-                <span>{formatTimeClock(duration || (currentTrack?.duration ?? 180))}</span>
+                <span className="text-fuchsia-400">
+                  {Math.round(deckAProgress)}%
+                </span>
+                <span>
+                  {formatTimeClock(duration || (currentTrack?.duration ?? 180))}
+                </span>
               </div>
             </div>
 
@@ -1057,7 +1214,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 <button
                   onClick={() => throttledOnPlayPause(!isPlaying)}
                   disabled={isLoading}
-                  aria-label={isPlaying ? "Pause" : "Play"}
+                  aria-label={isPlaying ? 'Pause' : 'Play'}
                   className="w-16 h-16 lg:w-20 lg:h-20 glass-button hover-lift flex items-center justify-center transition-all duration-300 disabled:opacity-50 shadow-neon-pink active:scale-95"
                 >
                   {isLoading ? (
@@ -1082,16 +1239,20 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Volume2 className="w-5 h-5 text-fuchsia-400" />
-                    <span className="text-sm font-bold text-fuchsia-400 font-orbitron">VOLUME</span>
+                    <span className="text-sm font-bold text-fuchsia-400 font-orbitron">
+                      VOLUME
+                    </span>
                   </div>
-                  <span className="text-sm font-orbitron text-white">{deckAVolume}%</span>
+                  <span className="text-sm font-orbitron text-white">
+                    {deckAVolume}%
+                  </span>
                 </div>
                 <input
                   type="range"
                   min="0"
                   max="100"
                   value={deckAVolume}
-                  onChange={(e) => setDeckAVolume(Number(e.target.value))}
+                  onChange={e => setDeckAVolume(Number(e.target.value))}
                   className="slider-futuristic w-full"
                   aria-label="Deck A volume"
                 />
@@ -1126,14 +1287,14 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 <Zap className="w-6 h-6" />
                 <span>CROSSFADER</span>
               </h3>
-              
+
               <div className="relative mb-8">
                 <input
                   type="range"
                   min="-100"
                   max="100"
                   value={crossfaderPosition}
-                  onChange={(e) => handleCrossfaderChange(Number(e.target.value))}
+                  onChange={e => handleCrossfaderChange(Number(e.target.value))}
                   className="slider-futuristic w-full"
                   aria-label="Crossfader position"
                   aria-valuetext={`${crossfaderPosition > 0 ? 'Deck B' : crossfaderPosition < 0 ? 'Deck A' : 'Center'}`}
@@ -1144,7 +1305,10 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   <span className="text-cyan-400">B</span>
                 </div>
                 <div className="text-center mt-2">
-                  <span className="text-sm font-orbitron text-cyan-400">{crossfaderPosition > 0 ? '+' : ''}{crossfaderPosition}</span>
+                  <span className="text-sm font-orbitron text-cyan-400">
+                    {crossfaderPosition > 0 ? '+' : ''}
+                    {crossfaderPosition}
+                  </span>
                 </div>
               </div>
 
@@ -1153,16 +1317,20 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-2">
                     <Headphones className="w-5 h-5 text-cyan-400" />
-                    <span className="text-sm font-bold text-cyan-400 font-orbitron">MASTER</span>
+                    <span className="text-sm font-bold text-cyan-400 font-orbitron">
+                      MASTER
+                    </span>
                   </div>
-                  <span className="text-sm font-orbitron text-white">{masterVolume}%</span>
+                  <span className="text-sm font-orbitron text-white">
+                    {masterVolume}%
+                  </span>
                 </div>
                 <input
                   type="range"
                   min="0"
                   max="100"
                   value={masterVolume}
-                  onChange={(e) => setMasterVolume(Number(e.target.value))}
+                  onChange={e => setMasterVolume(Number(e.target.value))}
                   className="slider-futuristic w-full"
                   aria-label="Master volume"
                 />
@@ -1200,23 +1368,37 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-center p-2 bg-glass rounded-lg">
                   <span className="text-slate-400 font-orbitron">Playing:</span>
-                  <span className="text-white font-bold">{currentTrackIndex + 1} / {playlist.tracks.length}</span>
+                  <span className="text-white font-bold">
+                    {currentTrackIndex + 1} / {playlist.tracks.length}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-2 bg-glass rounded-lg">
-                  <span className="text-slate-400 font-orbitron">Remaining:</span>
-                  <span className="text-white font-bold">{formatTimeClock((playlist.tracks.length - currentTrackIndex - 1) * 180)}</span>
+                  <span className="text-slate-400 font-orbitron">
+                    Remaining:
+                  </span>
+                  <span className="text-white font-bold">
+                    {formatTimeClock(
+                      (playlist.tracks.length - currentTrackIndex - 1) * 180
+                    )}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-2 bg-glass rounded-lg">
                   <span className="text-slate-400 font-orbitron">BPM:</span>
-                  <span className="text-fuchsia-400 font-bold">{currentTrack.bpm ?? 128}</span>
+                  <span className="text-fuchsia-400 font-bold">
+                    {currentTrack.bpm ?? 128}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-2 bg-glass rounded-lg">
                   <span className="text-slate-400 font-orbitron">Key:</span>
-                  <span className="text-fuchsia-400 font-bold">{currentTrack.key ?? 'C'}</span>
+                  <span className="text-fuchsia-400 font-bold">
+                    {currentTrack.key ?? 'C'}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-2 bg-glass rounded-lg">
                   <span className="text-slate-400 font-orbitron">Energy:</span>
-                  <span className="text-cyan-400 font-bold">{Math.round((currentTrack.energy ?? 0.5) * 100)}%</span>
+                  <span className="text-cyan-400 font-bold">
+                    {Math.round((currentTrack.energy ?? 0.5) * 100)}%
+                  </span>
                 </div>
               </div>
             </div>
@@ -1229,16 +1411,18 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 <div className="w-8 h-8 bg-cyan-400 rounded-lg flex items-center justify-center text-slate-900 font-bold text-lg">
                   B
                 </div>
-                <h2 className="text-xl lg:text-2xl font-bold text-cyan-400 tracking-wider font-orbitron">DECK B</h2>
+                <h2 className="text-xl lg:text-2xl font-bold text-cyan-400 tracking-wider font-orbitron">
+                  DECK B
+                </h2>
               </div>
               <div className="flex items-center space-x-2">
-                <button 
+                <button
                   aria-label="Play deck B"
                   className="w-10 h-10 glass-button hover-lift flex items-center justify-center transition-all"
                 >
                   <Play className="w-5 h-5 text-cyan-400" />
                 </button>
-                <button 
+                <button
                   aria-label="Pause deck B"
                   className="w-10 h-10 glass-button hover-lift flex items-center justify-center transition-all"
                 >
@@ -1251,19 +1435,29 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             <div className="mb-6 p-4 bg-glass border border-glass rounded-lg">
               {nextTrack ? (
                 <>
-                  <h3 className="font-bold text-lg lg:text-xl mb-2 truncate text-white font-orbitron">{nextTrack.title}</h3>
-                  <p className="text-cyan-400 mb-3 truncate font-orbitron text-base">{nextTrack.artist}</p>
+                  <h3 className="font-bold text-lg lg:text-xl mb-2 truncate text-white font-orbitron">
+                    {nextTrack.title}
+                  </h3>
+                  <p className="text-cyan-400 mb-3 truncate font-orbitron text-base">
+                    {nextTrack.artist}
+                  </p>
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div className="text-center">
-                      <div className="text-cyan-400 font-bold text-lg">{nextTrack.bpm ?? 128}</div>
+                      <div className="text-cyan-400 font-bold text-lg">
+                        {nextTrack.bpm ?? 128}
+                      </div>
                       <div className="text-slate-400 text-xs">BPM</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-cyan-400 font-bold text-lg">{nextTrack.key ?? 'C'}</div>
+                      <div className="text-cyan-400 font-bold text-lg">
+                        {nextTrack.key ?? 'C'}
+                      </div>
                       <div className="text-slate-400 text-xs">KEY</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-cyan-400 font-bold text-lg">{formatTimeClock(nextTrack.duration ?? 180)}</div>
+                      <div className="text-cyan-400 font-bold text-lg">
+                        {formatTimeClock(nextTrack.duration ?? 180)}
+                      </div>
                       <div className="text-slate-400 text-xs">TIME</div>
                     </div>
                   </div>
@@ -1271,7 +1465,9 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               ) : (
                 <div className="text-center py-8">
                   <Music className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-                  <p className="text-slate-400 font-orbitron">NO TRACK LOADED</p>
+                  <p className="text-slate-400 font-orbitron">
+                    NO TRACK LOADED
+                  </p>
                 </div>
               )}
             </div>
@@ -1287,8 +1483,14 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               />
               <div className="flex justify-between text-xs text-slate-400 mt-2 font-orbitron">
                 <span>0:00</span>
-                <span className="text-cyan-400">{Math.round(deckBProgress)}%</span>
-                <span>{nextTrack ? formatTimeClock(nextTrack.duration ?? 180) : '--:--'}</span>
+                <span className="text-cyan-400">
+                  {Math.round(deckBProgress)}%
+                </span>
+                <span>
+                  {nextTrack
+                    ? formatTimeClock(nextTrack.duration ?? 180)
+                    : '--:--'}
+                </span>
               </div>
             </div>
 
@@ -1320,16 +1522,20 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Volume2 className="w-5 h-5 text-cyan-400" />
-                    <span className="text-sm font-bold text-cyan-400 font-orbitron">VOLUME</span>
+                    <span className="text-sm font-bold text-cyan-400 font-orbitron">
+                      VOLUME
+                    </span>
                   </div>
-                  <span className="text-sm font-orbitron text-white">{deckBVolume}%</span>
+                  <span className="text-sm font-orbitron text-white">
+                    {deckBVolume}%
+                  </span>
                 </div>
                 <input
                   type="range"
                   min="0"
                   max="100"
                   value={deckBVolume}
-                  onChange={(e) => setDeckBVolume(Number(e.target.value))}
+                  onChange={e => setDeckBVolume(Number(e.target.value))}
                   className="slider-futuristic w-full"
                   aria-label="Deck B volume"
                 />
@@ -1361,13 +1567,17 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             {showMagicDancer && (
               <MagicDancer
                 isActive={isPlaying}
-                currentTrack={currentTrack ? {
-                  title: currentTrack.title,
-                  artist: currentTrack.artist,
-                  bpm: currentTrack.bpm ?? 128,
-                  energy: currentTrack.energy ?? 0.7
-                } : undefined}
-                onEnergyChange={(energy) => {
+                currentTrack={
+                  currentTrack
+                    ? {
+                        title: currentTrack.title,
+                        artist: currentTrack.artist,
+                        bpm: currentTrack.bpm ?? 128,
+                        energy: currentTrack.energy ?? 0.7,
+                      }
+                    : undefined
+                }
+                onEnergyChange={energy => {
                   console.log('Crowd energy:', energy);
                 }}
               />
@@ -1385,14 +1595,18 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 className="max-h-96 overflow-hidden"
               />
             )}
-            
+
             {!showMagicDancer && !showPlaylistEditor && (
               <div className="glass-card hover-lift p-6 text-center">
                 <div className="w-16 h-16 glass-card flex items-center justify-center mx-auto mb-4 shadow-neon-pink animate-pulse-glow">
                   <Music className="w-8 h-8 text-fuchsia-400" />
                 </div>
-                <h3 className="text-lg font-bold text-white mb-3 font-orbitron">DJ TOOLS</h3>
-                <p className="text-slate-400 mb-6 font-orbitron text-sm">Select tools from the header to get started</p>
+                <h3 className="text-lg font-bold text-white mb-3 font-orbitron">
+                  DJ TOOLS
+                </h3>
+                <p className="text-slate-400 mb-6 font-orbitron text-sm">
+                  Select tools from the header to get started
+                </p>
                 <div className="flex flex-col space-y-3">
                   <button
                     onClick={() => setShowMagicDancer(true)}
@@ -1422,8 +1636,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             <div className="w-20 h-20 bg-glass border border-fuchsia-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-neon-pink animate-pulse-glow">
               <Volume2 className="w-10 h-10 text-fuchsia-400" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-4 font-orbitron">TAP TO UNMUTE</h2>
-            <p className="text-slate-400 mb-6 font-orbitron">Your browser requires user interaction before playing audio</p>
+            <h2 className="text-2xl font-bold text-white mb-4 font-orbitron">
+              TAP TO UNMUTE
+            </h2>
+            <p className="text-slate-400 mb-6 font-orbitron">
+              Your browser requires user interaction before playing audio
+            </p>
             <button
               onClick={handleUnmute}
               className="btn-primary px-8 py-4 text-lg font-bold shadow-neon-pink"

@@ -11,7 +11,7 @@ import {
   Play,
   ChevronRight,
   User,
-  ArrowLeft
+  ArrowLeft,
 } from 'lucide-react';
 
 interface NavigationItem {
@@ -31,7 +31,7 @@ interface NavigationProps {
 const Navigation: React.FC<NavigationProps> = ({
   user,
   hasPlaylist = false,
-  hasSession = false
+  hasSession = false,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
@@ -62,34 +62,34 @@ const Navigation: React.FC<NavigationProps> = ({
       path: '/',
       label: 'Home',
       icon: Home,
-      description: 'Dashboard & Recent Sessions'
+      description: 'Dashboard & Recent Sessions',
     },
     {
       path: '/create',
       label: 'Create',
       icon: Wand2,
-      description: 'AI Magic Studio'
+      description: 'AI Magic Studio',
     },
     {
       path: '/play',
       label: 'Play',
       icon: Play,
       description: 'DJ Player & Controls',
-      requiresData: true // Requires playlist
+      requiresData: true, // Requires playlist
     },
     {
       path: '/library',
       label: 'Library',
       icon: Save,
-      description: 'Saved Playlists & Profile'
+      description: 'Saved Playlists & Profile',
     },
     {
       path: '/analytics',
       label: 'Analytics',
       icon: BarChart3,
       description: 'Performance Insights',
-      requiresData: true // Requires session data
-    }
+      requiresData: true, // Requires session data
+    },
   ];
 
   const isItemDisabled = (item: NavigationItem) => {
@@ -118,9 +118,10 @@ const Navigation: React.FC<NavigationProps> = ({
       const item = navigationItems.find(nav => nav.path === segmentPath);
 
       return {
-        label: item?.label || segment.charAt(0).toUpperCase() + segment.slice(1),
+        label:
+          item?.label || segment.charAt(0).toUpperCase() + segment.slice(1),
         path: segmentPath,
-        isLast: index === segments.length - 1
+        isLast: index === segments.length - 1,
       };
     });
   };
@@ -145,13 +146,20 @@ const Navigation: React.FC<NavigationProps> = ({
                   <ArrowLeft className="w-5 h-5 text-fuchsia-400" />
                 </button>
               )}
-              <Link to="/" className="flex items-center space-x-3 hover-lift transition-transform">
+              <Link
+                to="/"
+                className="flex items-center space-x-3 hover-lift transition-transform"
+              >
                 <div className="w-12 h-12 glass-card flex items-center justify-center shadow-neon-pink animate-pulse-glow">
                   <Music className="w-7 h-7 text-fuchsia-400" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold font-orbitron text-gradient-primary tracking-wider">MagicDJ</h1>
-                  <p className="text-xs text-slate-400 font-orbitron hidden sm:block">AI-Powered DJ Platform</p>
+                  <h1 className="text-2xl font-bold font-orbitron text-gradient-primary tracking-wider">
+                    MagicDJ
+                  </h1>
+                  <p className="text-xs text-slate-400 font-orbitron hidden sm:block">
+                    AI-Powered DJ Platform
+                  </p>
                 </div>
               </Link>
             </div>
@@ -159,7 +167,7 @@ const Navigation: React.FC<NavigationProps> = ({
             {/* Desktop Navigation */}
             <div className="hidden md:block">
               <div className="flex items-center space-x-2">
-                {navigationItems.map((item) => {
+                {navigationItems.map(item => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.path;
                   const isDisabled = isItemDisabled(item);
@@ -172,7 +180,9 @@ const Navigation: React.FC<NavigationProps> = ({
                         title={`${item.description} (${item.path === '/play' ? 'Requires playlist' : 'Requires session data'})`}
                       >
                         <Icon className="w-4 h-4" />
-                        <span className="text-sm font-semibold font-orbitron">{item.label}</span>
+                        <span className="text-sm font-semibold font-orbitron">
+                          {item.label}
+                        </span>
                       </div>
                     );
                   }
@@ -189,7 +199,9 @@ const Navigation: React.FC<NavigationProps> = ({
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <Icon className="w-4 h-4" />
-                      <span className="text-sm font-semibold">{item.label}</span>
+                      <span className="text-sm font-semibold">
+                        {item.label}
+                      </span>
                     </Link>
                   );
                 })}
@@ -206,7 +218,7 @@ const Navigation: React.FC<NavigationProps> = ({
                   </span>
                 </div>
               )}
-              
+
               {/* Mobile menu button */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -228,14 +240,19 @@ const Navigation: React.FC<NavigationProps> = ({
           <div className="border-t border-glass bg-glass backdrop-blur-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center space-x-2 py-3 text-sm font-orbitron">
-                <Link to="/" className="flex items-center text-slate-400 hover:text-fuchsia-400 transition-colors">
+                <Link
+                  to="/"
+                  className="flex items-center text-slate-400 hover:text-fuchsia-400 transition-colors"
+                >
                   <Home className="w-4 h-4" />
                 </Link>
                 {breadcrumbs.map((crumb, index) => (
                   <React.Fragment key={index}>
                     <ChevronRight className="w-4 h-4 text-slate-500" />
                     {crumb.isLast ? (
-                      <span className="text-white font-semibold">{crumb.label}</span>
+                      <span className="text-white font-semibold">
+                        {crumb.label}
+                      </span>
                     ) : (
                       <Link
                         to={crumb.path}
@@ -263,7 +280,9 @@ const Navigation: React.FC<NavigationProps> = ({
 
           <div className="fixed top-0 right-0 h-full w-80 max-w-sm glass-card border-l border-glass transform transition-transform">
             <div className="flex items-center justify-between p-4 border-b border-glass">
-              <h2 className="text-lg font-bold text-gradient-primary font-orbitron">Navigation</h2>
+              <h2 className="text-lg font-bold text-gradient-primary font-orbitron">
+                Navigation
+              </h2>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="glass-button hover-lift w-8 h-8 flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-fuchsia-400 focus:ring-offset-2 focus:ring-offset-slate-900"
@@ -274,7 +293,7 @@ const Navigation: React.FC<NavigationProps> = ({
             </div>
 
             <div className="p-4 space-y-3">
-              {navigationItems.map((item) => {
+              {navigationItems.map(item => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
                 const isDisabled = isItemDisabled(item);
@@ -287,9 +306,14 @@ const Navigation: React.FC<NavigationProps> = ({
                     >
                       <Icon className="w-5 h-5 flex-shrink-0" />
                       <div>
-                        <div className="font-semibold font-orbitron">{item.label}</div>
+                        <div className="font-semibold font-orbitron">
+                          {item.label}
+                        </div>
                         <div className="text-xs opacity-75">
-                          {item.description} - {item.path === '/play' ? 'Requires playlist' : 'Requires session data'}
+                          {item.description} -{' '}
+                          {item.path === '/play'
+                            ? 'Requires playlist'
+                            : 'Requires session data'}
                         </div>
                       </div>
                     </div>
@@ -303,17 +327,22 @@ const Navigation: React.FC<NavigationProps> = ({
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`
                       w-full p-4 rounded-lg flex items-center space-x-3 transition-all text-left block focus:outline-none focus:ring-2 focus:ring-fuchsia-400 focus:ring-offset-2 focus:ring-offset-slate-900
-                      ${isActive
-                        ? 'btn-primary'
-                        : 'glass-card hover-lift text-white'
+                      ${
+                        isActive
+                          ? 'btn-primary'
+                          : 'glass-card hover-lift text-white'
                       }
                     `}
                     aria-current={isActive ? 'page' : undefined}
                   >
                     <Icon className="w-5 h-5 flex-shrink-0" />
                     <div>
-                      <div className="font-semibold font-orbitron">{item.label}</div>
-                      <div className="text-xs opacity-75">{item.description}</div>
+                      <div className="font-semibold font-orbitron">
+                        {item.label}
+                      </div>
+                      <div className="text-xs opacity-75">
+                        {item.description}
+                      </div>
                     </div>
                   </Link>
                 );
@@ -327,7 +356,9 @@ const Navigation: React.FC<NavigationProps> = ({
                     <User className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <div className="font-medium text-white font-mono">{user.email.split('@')[0]}</div>
+                    <div className="font-medium text-white font-mono">
+                      {user.email.split('@')[0]}
+                    </div>
                     <div className="text-xs text-gray-400">{user.email}</div>
                   </div>
                 </div>
@@ -357,7 +388,9 @@ const Navigation: React.FC<NavigationProps> = ({
               </Link>
             </div>
             <div className="text-xs text-slate-500 font-orbitron">
-              Current: {navigationItems.find(item => item.path === location.pathname)?.description || 'Home'}
+              Current:{' '}
+              {navigationItems.find(item => item.path === location.pathname)
+                ?.description || 'Home'}
             </div>
           </div>
         </div>

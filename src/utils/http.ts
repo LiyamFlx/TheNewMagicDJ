@@ -3,7 +3,7 @@ export interface RetryOptions {
   timeoutMs?: number;
   retryOn?: number[]; // status codes to retry
   backoffBaseMs?: number; // initial delay
-  backoffMaxMs?: number;  // cap
+  backoffMaxMs?: number; // cap
   budget?: number; // max total time to spend on retries
 }
 
@@ -32,7 +32,7 @@ class CircuitBreaker {
       this.states.set(key, {
         failures: 0,
         lastFailureTime: 0,
-        state: 'closed'
+        state: 'closed',
       });
     }
     return this.states.get(key)!;
@@ -137,7 +137,10 @@ export async function fetchWithRetry(
         }
 
         const jitter = Math.random() * 200; // Add jitter
-        const delay = Math.min(backoffBaseMs * Math.pow(2, attempt) + jitter, backoffMaxMs);
+        const delay = Math.min(
+          backoffBaseMs * Math.pow(2, attempt) + jitter,
+          backoffMaxMs
+        );
         await new Promise(r => setTimeout(r, delay));
         attempt++;
         continue;
@@ -155,10 +158,12 @@ export async function fetchWithRetry(
       }
 
       const jitter = Math.random() * 200; // Add jitter
-      const delay = Math.min(backoffBaseMs * Math.pow(2, attempt) + jitter, backoffMaxMs);
+      const delay = Math.min(
+        backoffBaseMs * Math.pow(2, attempt) + jitter,
+        backoffMaxMs
+      );
       await new Promise(r => setTimeout(r, delay));
       attempt++;
     }
   }
 }
-

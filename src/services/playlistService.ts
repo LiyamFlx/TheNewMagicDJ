@@ -127,7 +127,7 @@ function validatePlaylistName(name: string): PlaylistServiceError | null {
     return {
       code: 'INVALID_NAME',
       message: 'Playlist name is required',
-      field: 'name'
+      field: 'name',
     };
   }
 
@@ -136,7 +136,7 @@ function validatePlaylistName(name: string): PlaylistServiceError | null {
     return {
       code: 'EMPTY_NAME',
       message: 'Playlist name cannot be empty',
-      field: 'name'
+      field: 'name',
     };
   }
 
@@ -144,7 +144,7 @@ function validatePlaylistName(name: string): PlaylistServiceError | null {
     return {
       code: 'NAME_TOO_LONG',
       message: `Playlist name cannot exceed ${MAX_PLAYLIST_NAME_LENGTH} characters`,
-      field: 'name'
+      field: 'name',
     };
   }
 
@@ -161,7 +161,7 @@ function validateUserId(userId: string): PlaylistServiceError | null {
     return {
       code: 'INVALID_USER_ID',
       message: 'Valid user ID is required',
-      field: 'userId'
+      field: 'userId',
     };
   }
   return null;
@@ -173,11 +173,15 @@ function validateUserId(userId: string): PlaylistServiceError | null {
  * @returns Validation error or null if valid
  */
 function validatePlaylistId(playlistId: string): PlaylistServiceError | null {
-  if (!playlistId || typeof playlistId !== 'string' || playlistId.trim().length === 0) {
+  if (
+    !playlistId ||
+    typeof playlistId !== 'string' ||
+    playlistId.trim().length === 0
+  ) {
     return {
       code: 'INVALID_PLAYLIST_ID',
       message: 'Valid playlist ID is required',
-      field: 'playlistId'
+      field: 'playlistId',
     };
   }
   return null;
@@ -193,7 +197,7 @@ function validateTrack(track: Track): PlaylistServiceError | null {
     return {
       code: 'INVALID_TRACK',
       message: 'Valid track object is required',
-      field: 'track'
+      field: 'track',
     };
   }
 
@@ -201,7 +205,7 @@ function validateTrack(track: Track): PlaylistServiceError | null {
     return {
       code: 'INVALID_TRACK_ID',
       message: 'Track must have a valid ID',
-      field: 'track.id'
+      field: 'track.id',
     };
   }
 
@@ -209,7 +213,7 @@ function validateTrack(track: Track): PlaylistServiceError | null {
     return {
       code: 'INVALID_TRACK_TITLE',
       message: 'Track must have a valid title',
-      field: 'track.title'
+      field: 'track.title',
     };
   }
 
@@ -237,7 +241,9 @@ class PlaylistService {
    * @param params - Creation parameters
    * @returns Promise resolving to created playlist or null if error
    */
-  public async createPlaylist(params: CreatePlaylistParams): Promise<Playlist | null> {
+  public async createPlaylist(
+    params: CreatePlaylistParams
+  ): Promise<Playlist | null> {
     try {
       // Input validation
       const nameError = validatePlaylistName(params.name);
@@ -252,10 +258,13 @@ class PlaylistService {
         return null;
       }
 
-      if (params.description && params.description.length > MAX_DESCRIPTION_LENGTH) {
+      if (
+        params.description &&
+        params.description.length > MAX_DESCRIPTION_LENGTH
+      ) {
         logger.warn('PlaylistService', 'Description too long', {
           length: params.description.length,
-          maxLength: MAX_DESCRIPTION_LENGTH
+          maxLength: MAX_DESCRIPTION_LENGTH,
         });
         return null;
       }
@@ -263,7 +272,7 @@ class PlaylistService {
       if (params.tracks && params.tracks.length > MAX_TRACKS_PER_PLAYLIST) {
         logger.warn('PlaylistService', 'Too many tracks', {
           trackCount: params.tracks.length,
-          maxTracks: MAX_TRACKS_PER_PLAYLIST
+          maxTracks: MAX_TRACKS_PER_PLAYLIST,
         });
         return null;
       }
@@ -273,7 +282,11 @@ class PlaylistService {
         for (const track of params.tracks) {
           const trackError = validateTrack(track);
           if (trackError) {
-            logger.warn('PlaylistService', 'Invalid track in playlist', trackError);
+            logger.warn(
+              'PlaylistService',
+              'Invalid track in playlist',
+              trackError
+            );
             return null;
           }
         }
@@ -287,12 +300,19 @@ class PlaylistService {
         tracks: params.tracks ? this.validateTracks([...params.tracks]) : [],
         user_id: params.userId,
         created_at: new Date().toISOString(),
-        total_duration: params.tracks?.reduce((sum, track) => sum + (track.duration ?? 0), 0) ?? 0,
-        type: 'user_created'
+        total_duration:
+          params.tracks?.reduce(
+            (sum, track) => sum + (track.duration ?? 0),
+            0
+          ) ?? 0,
+        type: 'user_created',
       };
 
       // Save to database
-      const savedPlaylist = await supabasePlaylistService.savePlaylist(playlist, params.userId);
+      const savedPlaylist = await supabasePlaylistService.savePlaylist(
+        playlist,
+        params.userId
+      );
       if (!savedPlaylist) {
         logger.error('PlaylistService', 'Failed to save playlist to database');
         return null;
@@ -304,11 +324,10 @@ class PlaylistService {
       logger.info('PlaylistService', 'Playlist created successfully', {
         playlistId: playlist.id,
         userId: params.userId,
-        trackCount: playlist.tracks.length
+        trackCount: playlist.tracks.length,
       });
 
       return savedPlaylist;
-
     } catch (error) {
       logger.error('PlaylistService', 'Failed to create playlist', error);
       return null;
@@ -322,7 +341,11 @@ class PlaylistService {
    * @param loadTracks - Whether to load full track data (default: true)
    * @returns Promise resolving to playlist or null if not found
    */
-  public async getPlaylist(playlistId: string, userId: string, loadTracks: boolean = true): Promise<Playlist | null> {
+  public async getPlaylist(
+    playlistId: string,
+    userId: string,
+    loadTracks: boolean = true
+  ): Promise<Playlist | null> {
     try {
       // Input validation
       const playlistError = validatePlaylistId(playlistId);
@@ -352,7 +375,7 @@ class PlaylistService {
       if (!playlist) {
         logger.warn('PlaylistService', 'Playlist not found or access denied', {
           playlistId,
-          userId
+          userId,
         });
         return null;
       }
@@ -373,11 +396,10 @@ class PlaylistService {
 
       logger.info('PlaylistService', 'Playlist retrieved successfully', {
         playlistId,
-        trackCount: playlist.tracks?.length ?? 0
+        trackCount: playlist.tracks?.length ?? 0,
       });
 
       return playlist;
-
     } catch (error) {
       logger.error('PlaylistService', 'Failed to get playlist', error);
       return null;
@@ -389,7 +411,9 @@ class PlaylistService {
    * @param params - Query parameters
    * @returns Promise resolving to array of playlists or null if error
    */
-  public async getUserPlaylists(params: GetPlaylistsParams): Promise<Playlist[] | null> {
+  public async getUserPlaylists(
+    params: GetPlaylistsParams
+  ): Promise<Playlist[] | null> {
     try {
       // Input validation
       const userError = validateUserId(params.userId);
@@ -407,7 +431,9 @@ class PlaylistService {
       }
 
       // Get playlists from database
-      const playlists = await supabasePlaylistService.getUserPlaylists(params.userId);
+      const playlists = await supabasePlaylistService.getUserPlaylists(
+        params.userId
+      );
       if (!playlists) {
         logger.warn('PlaylistService', 'Failed to fetch user playlists');
         return null;
@@ -449,11 +475,10 @@ class PlaylistService {
       logger.info('PlaylistService', 'User playlists retrieved successfully', {
         userId: params.userId,
         totalCount: playlists.length,
-        returnedCount: paginatedPlaylists.length
+        returnedCount: paginatedPlaylists.length,
       });
 
       return paginatedPlaylists;
-
     } catch (error) {
       logger.error('PlaylistService', 'Failed to get user playlists', error);
       return null;
@@ -465,7 +490,9 @@ class PlaylistService {
    * @param params - Update parameters
    * @returns Promise resolving to updated playlist or null if error
    */
-  public async updatePlaylist(params: UpdatePlaylistParams): Promise<Playlist | null> {
+  public async updatePlaylist(
+    params: UpdatePlaylistParams
+  ): Promise<Playlist | null> {
     try {
       // Input validation
       const playlistError = validatePlaylistId(params.playlistId);
@@ -488,13 +515,19 @@ class PlaylistService {
         }
       }
 
-      if (params.description && params.description.length > MAX_DESCRIPTION_LENGTH) {
+      if (
+        params.description &&
+        params.description.length > MAX_DESCRIPTION_LENGTH
+      ) {
         logger.warn('PlaylistService', 'Description too long');
         return null;
       }
 
       // Get existing playlist
-      const existingPlaylist = await this.getPlaylist(params.playlistId, params.userId);
+      const existingPlaylist = await this.getPlaylist(
+        params.playlistId,
+        params.userId
+      );
       if (!existingPlaylist) {
         logger.warn('PlaylistService', 'Playlist not found for update');
         return null;
@@ -504,12 +537,17 @@ class PlaylistService {
       const updatedPlaylist: Playlist = {
         ...existingPlaylist,
         ...(params.name && { name: params.name.trim() }),
-        ...(params.description !== undefined && { description: params.description.trim() })
+        ...(params.description !== undefined && {
+          description: params.description.trim(),
+        }),
         // Updated timestamp and other metadata handled by database
       };
 
       // Save to database
-      const savedPlaylist = await supabasePlaylistService.savePlaylist(updatedPlaylist, params.userId);
+      const savedPlaylist = await supabasePlaylistService.savePlaylist(
+        updatedPlaylist,
+        params.userId
+      );
       if (!savedPlaylist) {
         logger.error('PlaylistService', 'Failed to save updated playlist');
         return null;
@@ -521,11 +559,10 @@ class PlaylistService {
 
       logger.info('PlaylistService', 'Playlist updated successfully', {
         playlistId: params.playlistId,
-        userId: params.userId
+        userId: params.userId,
       });
 
       return savedPlaylist;
-
     } catch (error) {
       logger.error('PlaylistService', 'Failed to update playlist', error);
       return null;
@@ -538,7 +575,10 @@ class PlaylistService {
    * @param userId - User ID for permission checking
    * @returns Promise resolving to true if deleted, false if error
    */
-  public async deletePlaylist(playlistId: string, userId: string): Promise<boolean> {
+  public async deletePlaylist(
+    playlistId: string,
+    userId: string
+  ): Promise<boolean> {
     try {
       // Input validation
       const playlistError = validatePlaylistId(playlistId);
@@ -554,7 +594,11 @@ class PlaylistService {
       }
 
       // Check if playlist exists and user has permission
-      const existingPlaylist = await this.getPlaylist(playlistId, userId, false);
+      const existingPlaylist = await this.getPlaylist(
+        playlistId,
+        userId,
+        false
+      );
       if (!existingPlaylist) {
         logger.warn('PlaylistService', 'Playlist not found for deletion');
         return false;
@@ -563,7 +607,10 @@ class PlaylistService {
       // Delete from database
       const deleted = await supabasePlaylistService.deletePlaylist(playlistId);
       if (!deleted) {
-        logger.error('PlaylistService', 'Failed to delete playlist from database');
+        logger.error(
+          'PlaylistService',
+          'Failed to delete playlist from database'
+        );
         return false;
       }
 
@@ -573,11 +620,10 @@ class PlaylistService {
 
       logger.info('PlaylistService', 'Playlist deleted successfully', {
         playlistId,
-        userId
+        userId,
       });
 
       return true;
-
     } catch (error) {
       logger.error('PlaylistService', 'Failed to delete playlist', error);
       return false;
@@ -593,7 +639,9 @@ class PlaylistService {
    * @param params - Add track parameters
    * @returns Promise resolving to updated playlist or null if error
    */
-  public async addTrackToPlaylist(params: AddTrackParams): Promise<Playlist | null> {
+  public async addTrackToPlaylist(
+    params: AddTrackParams
+  ): Promise<Playlist | null> {
     try {
       // Input validation
       const playlistError = validatePlaylistId(params.playlistId);
@@ -625,7 +673,7 @@ class PlaylistService {
       if (playlist.tracks?.some(t => t.id === params.track.id)) {
         logger.warn('PlaylistService', 'Track already exists in playlist', {
           trackId: params.track.id,
-          playlistId: params.playlistId
+          playlistId: params.playlistId,
         });
         return null;
       }
@@ -644,7 +692,10 @@ class PlaylistService {
       // Add track at specified position or end
       const updatedTracks = [...(playlist.tracks ?? [])];
       const position = params.position ?? updatedTracks.length;
-      const clampedPosition = Math.max(0, Math.min(position, updatedTracks.length));
+      const clampedPosition = Math.max(
+        0,
+        Math.min(position, updatedTracks.length)
+      );
 
       updatedTracks.splice(clampedPosition, 0, trackToAdd);
 
@@ -652,14 +703,23 @@ class PlaylistService {
       const updatedPlaylist: Playlist = {
         ...playlist,
         tracks: updatedTracks,
-        total_duration: updatedTracks.reduce((sum, track) => sum + (track.duration ?? 0), 0)
+        total_duration: updatedTracks.reduce(
+          (sum, track) => sum + (track.duration ?? 0),
+          0
+        ),
         // Updated timestamp handled by database
       };
 
       // Save to database
-      const savedPlaylist = await supabasePlaylistService.savePlaylist(updatedPlaylist, params.userId);
+      const savedPlaylist = await supabasePlaylistService.savePlaylist(
+        updatedPlaylist,
+        params.userId
+      );
       if (!savedPlaylist) {
-        logger.error('PlaylistService', 'Failed to save playlist after adding track');
+        logger.error(
+          'PlaylistService',
+          'Failed to save playlist after adding track'
+        );
         return null;
       }
 
@@ -670,11 +730,10 @@ class PlaylistService {
       logger.info('PlaylistService', 'Track added to playlist successfully', {
         trackId: params.track.id,
         playlistId: params.playlistId,
-        position: clampedPosition
+        position: clampedPosition,
       });
 
       return savedPlaylist;
-
     } catch (error) {
       logger.error('PlaylistService', 'Failed to add track to playlist', error);
       return null;
@@ -686,7 +745,9 @@ class PlaylistService {
    * @param params - Remove track parameters
    * @returns Promise resolving to updated playlist or null if error
    */
-  public async removeTrackFromPlaylist(params: RemoveTrackParams): Promise<Playlist | null> {
+  public async removeTrackFromPlaylist(
+    params: RemoveTrackParams
+  ): Promise<Playlist | null> {
     try {
       // Input validation
       const playlistError = validatePlaylistId(params.playlistId);
@@ -714,11 +775,12 @@ class PlaylistService {
       }
 
       // Check if track exists in playlist
-      const trackIndex = playlist.tracks?.findIndex(t => t.id === params.trackId) ?? -1;
+      const trackIndex =
+        playlist.tracks?.findIndex(t => t.id === params.trackId) ?? -1;
       if (trackIndex === -1) {
         logger.warn('PlaylistService', 'Track not found in playlist', {
           trackId: params.trackId,
-          playlistId: params.playlistId
+          playlistId: params.playlistId,
         });
         return null;
       }
@@ -731,14 +793,23 @@ class PlaylistService {
       const updatedPlaylist: Playlist = {
         ...playlist,
         tracks: updatedTracks,
-        total_duration: updatedTracks.reduce((sum, track) => sum + (track.duration ?? 0), 0)
+        total_duration: updatedTracks.reduce(
+          (sum, track) => sum + (track.duration ?? 0),
+          0
+        ),
         // Updated timestamp handled by database
       };
 
       // Save to database
-      const savedPlaylist = await supabasePlaylistService.savePlaylist(updatedPlaylist, params.userId);
+      const savedPlaylist = await supabasePlaylistService.savePlaylist(
+        updatedPlaylist,
+        params.userId
+      );
       if (!savedPlaylist) {
-        logger.error('PlaylistService', 'Failed to save playlist after removing track');
+        logger.error(
+          'PlaylistService',
+          'Failed to save playlist after removing track'
+        );
         return null;
       }
 
@@ -746,16 +817,23 @@ class PlaylistService {
       this.clearPlaylistCache(params.playlistId);
       this.clearUserPlaylistsCache(params.userId);
 
-      logger.info('PlaylistService', 'Track removed from playlist successfully', {
-        trackId: params.trackId,
-        playlistId: params.playlistId,
-        removedFromPosition: trackIndex
-      });
+      logger.info(
+        'PlaylistService',
+        'Track removed from playlist successfully',
+        {
+          trackId: params.trackId,
+          playlistId: params.playlistId,
+          removedFromPosition: trackIndex,
+        }
+      );
 
       return savedPlaylist;
-
     } catch (error) {
-      logger.error('PlaylistService', 'Failed to remove track from playlist', error);
+      logger.error(
+        'PlaylistService',
+        'Failed to remove track from playlist',
+        error
+      );
       return null;
     }
   }
@@ -765,7 +843,9 @@ class PlaylistService {
    * @param params - Reorder parameters
    * @returns Promise resolving to updated playlist or null if error
    */
-  public async reorderTracksInPlaylist(params: ReorderTracksParams): Promise<Playlist | null> {
+  public async reorderTracksInPlaylist(
+    params: ReorderTracksParams
+  ): Promise<Playlist | null> {
     try {
       // Input validation
       const playlistError = validatePlaylistId(params.playlistId);
@@ -793,29 +873,46 @@ class PlaylistService {
       // Get existing playlist
       const playlist = await this.getPlaylist(params.playlistId, params.userId);
       if (!playlist) {
-        logger.warn('PlaylistService', 'Playlist not found for track reordering');
+        logger.warn(
+          'PlaylistService',
+          'Playlist not found for track reordering'
+        );
         return null;
       }
 
       if (!playlist.tracks || playlist.tracks.length === 0) {
-        logger.warn('PlaylistService', 'Cannot reorder tracks in empty playlist');
+        logger.warn(
+          'PlaylistService',
+          'Cannot reorder tracks in empty playlist'
+        );
         return null;
       }
 
       // Find track to move
-      const currentIndex = playlist.tracks.findIndex(t => t.id === params.trackId);
+      const currentIndex = playlist.tracks.findIndex(
+        t => t.id === params.trackId
+      );
       if (currentIndex === -1) {
-        logger.warn('PlaylistService', 'Track not found in playlist for reordering');
+        logger.warn(
+          'PlaylistService',
+          'Track not found in playlist for reordering'
+        );
         return null;
       }
 
       // Validate new position
       const maxPosition = playlist.tracks.length - 1;
-      const clampedNewPosition = Math.max(0, Math.min(params.newPosition, maxPosition));
+      const clampedNewPosition = Math.max(
+        0,
+        Math.min(params.newPosition, maxPosition)
+      );
 
       // If position hasn't changed, no need to update
       if (currentIndex === clampedNewPosition) {
-        logger.debug('PlaylistService', 'Track position unchanged, skipping reorder');
+        logger.debug(
+          'PlaylistService',
+          'Track position unchanged, skipping reorder'
+        );
         return playlist;
       }
 
@@ -832,9 +929,15 @@ class PlaylistService {
       };
 
       // Save to database
-      const savedPlaylist = await supabasePlaylistService.savePlaylist(updatedPlaylist, params.userId);
+      const savedPlaylist = await supabasePlaylistService.savePlaylist(
+        updatedPlaylist,
+        params.userId
+      );
       if (!savedPlaylist) {
-        logger.error('PlaylistService', 'Failed to save playlist after reordering tracks');
+        logger.error(
+          'PlaylistService',
+          'Failed to save playlist after reordering tracks'
+        );
         return null;
       }
 
@@ -846,13 +949,16 @@ class PlaylistService {
         trackId: params.trackId,
         playlistId: params.playlistId,
         fromPosition: currentIndex,
-        toPosition: clampedNewPosition
+        toPosition: clampedNewPosition,
       });
 
       return savedPlaylist;
-
     } catch (error) {
-      logger.error('PlaylistService', 'Failed to reorder tracks in playlist', error);
+      logger.error(
+        'PlaylistService',
+        'Failed to reorder tracks in playlist',
+        error
+      );
       return null;
     }
   }
@@ -866,7 +972,9 @@ class PlaylistService {
    * @param params - Magic match parameters
    * @returns Promise resolving to generated playlist
    */
-  public async generateMagicMatchPlaylist(params: MagicMatchParams): Promise<Playlist> {
+  public async generateMagicMatchPlaylist(
+    params: MagicMatchParams
+  ): Promise<Playlist> {
     return logger.trackOperation(
       'PlaylistService',
       'generateMagicMatchPlaylist',
@@ -889,11 +997,15 @@ class PlaylistService {
                 album: recognition.album,
                 duration: recognition.duration || 180,
                 preview_url: recognition.preview_url,
-                spotify_id: recognition.spotify_id
+                spotify_id: recognition.spotify_id,
               };
             }
           } catch (error) {
-            logger.warn('PlaylistService', 'Track recognition failed, using seed track', error);
+            logger.warn(
+              'PlaylistService',
+              'Track recognition failed, using seed track',
+              error
+            );
           }
         }
 
@@ -902,14 +1014,20 @@ class PlaylistService {
 
         if (baseTrack) {
           try {
-            const seed_tracks = baseTrack.spotify_id ? [baseTrack.spotify_id] : [];
+            const seed_tracks = baseTrack.spotify_id
+              ? [baseTrack.spotify_id]
+              : [];
             tracks = await this.musicService.getRecommendations({
               seed_tracks,
               seed_genres: ['electronic', 'house', 'techno'],
-              limit: 15
+              limit: 15,
             });
           } catch (error) {
-            logger.warn('PlaylistService', 'Failed to get track-based recommendations, using genre-based', error);
+            logger.warn(
+              'PlaylistService',
+              'Failed to get track-based recommendations, using genre-based',
+              error
+            );
           }
         }
 
@@ -917,32 +1035,43 @@ class PlaylistService {
           try {
             tracks = await this.musicService.getRecommendations({
               seed_genres: ['electronic', 'house', 'techno'],
-              limit: 15
+              limit: 15,
             });
           } catch (error) {
-            logger.warn('PlaylistService', 'Primary recommendation service failed, trying YouTube', error);
+            logger.warn(
+              'PlaylistService',
+              'Primary recommendation service failed, trying YouTube',
+              error
+            );
 
             try {
               if (youtubeService.isConfigured()) {
                 const ytTracks = await youtubeService.getRecommendations({
                   seed_genres: ['electronic', 'house', 'techno'],
-                  limit: 15
+                  limit: 15,
                 });
                 tracks = ytTracks || [];
               } else {
                 throw new Error('YouTube service not configured');
               }
             } catch (youtubeError) {
-              logger.warn('PlaylistService', 'YouTube service failed, using mock data', youtubeError);
+              logger.warn(
+                'PlaylistService',
+                'YouTube service failed, using mock data',
+                youtubeError
+              );
               tracks = await mockSpotifyService.getRecommendations({
                 seed_genres: ['electronic', 'house', 'techno'],
-                limit: 15
+                limit: 15,
               });
             }
           }
         }
 
-        if (recognizedTrack && !tracks.find(t => t.id === recognizedTrack!.id)) {
+        if (
+          recognizedTrack &&
+          !tracks.find(t => t.id === recognizedTrack!.id)
+        ) {
           tracks.unshift(recognizedTrack);
         }
 
@@ -957,14 +1086,17 @@ class PlaylistService {
             ? `AI-curated playlist based on "${recognizedTrack.title}" by ${recognizedTrack.artist}`
             : 'AI-curated playlist based on audio recognition',
           tracks,
-          total_duration: tracks.reduce((sum, track) => sum + (track.duration ?? 0), 0),
+          total_duration: tracks.reduce(
+            (sum, track) => sum + (track.duration ?? 0),
+            0
+          ),
           created_at: new Date().toISOString(),
           user_id: params.userId,
           type: 'magic_match',
           metadata: {
             seed_track: recognizedTrack || undefined,
-            recognition_confidence: params.fingerprint ? 0.85 : undefined
-          }
+            recognition_confidence: params.fingerprint ? 0.85 : undefined,
+          },
         };
 
         return playlist;
@@ -978,7 +1110,9 @@ class PlaylistService {
    * @param params - Magic set parameters
    * @returns Promise resolving to generated playlist
    */
-  public async generateMagicSetPlaylist(params: MagicSetParams): Promise<Playlist> {
+  public async generateMagicSetPlaylist(
+    params: MagicSetParams
+  ): Promise<Playlist> {
     return logger.trackOperation(
       'PlaylistService',
       'generateMagicSetPlaylist',
@@ -986,7 +1120,7 @@ class PlaylistService {
         const energyMap = {
           low: 'low',
           medium: 'medium',
-          high: 'high'
+          high: 'high',
         };
 
         const energy = energyMap[params.energyLevel];
@@ -998,27 +1132,35 @@ class PlaylistService {
           tracks = await this.musicService.getRecommendations({
             seed_genres: genres,
             limit: 20,
-            target_energy: energy as any
+            target_energy: energy as any,
           });
         } catch (error) {
-          logger.warn('PlaylistService', 'Primary service failed, trying YouTube', error);
+          logger.warn(
+            'PlaylistService',
+            'Primary service failed, trying YouTube',
+            error
+          );
 
           try {
             if (youtubeService.isConfigured()) {
               const ytTracks = await youtubeService.getRecommendations({
                 seed_genres: genres,
                 limit: 20,
-                energy: energy as any
+                energy: energy as any,
               });
               tracks = ytTracks || [];
             } else {
               throw new Error('YouTube service not configured');
             }
           } catch (youtubeError) {
-            logger.warn('PlaylistService', 'YouTube service failed, using mock service', youtubeError);
+            logger.warn(
+              'PlaylistService',
+              'YouTube service failed, using mock service',
+              youtubeError
+            );
             tracks = await mockSpotifyService.getRecommendations({
               seed_genres: genres,
-              limit: 20
+              limit: 20,
             });
           }
         }
@@ -1030,14 +1172,17 @@ class PlaylistService {
           name: `Magic Set: ${params.vibe.charAt(0).toUpperCase() + params.vibe.slice(1)} (${params.energyLevel.toUpperCase()})`,
           description: `AI-generated ${params.vibe} playlist with ${params.energyLevel} energy`,
           tracks,
-          total_duration: tracks.reduce((sum, track) => sum + (track.duration ?? 0), 0),
+          total_duration: tracks.reduce(
+            (sum, track) => sum + (track.duration ?? 0),
+            0
+          ),
           created_at: new Date().toISOString(),
           user_id: params.userId,
           type: 'magic_set',
           metadata: {
             vibe: params.vibe,
-            energy_level: params.energyLevel
-          }
+            energy_level: params.energyLevel,
+          },
         };
 
         return playlist;
@@ -1055,26 +1200,33 @@ class PlaylistService {
    * @param fingerprint - Audio fingerprint
    * @returns Promise resolving to recognition result or null
    */
-  public async recognizeTrack(fingerprint: string): Promise<RecognitionResult | null> {
+  public async recognizeTrack(
+    fingerprint: string
+  ): Promise<RecognitionResult | null> {
     return logger.trackOperation(
       'PlaylistService',
       'recognizeTrack',
       async () => {
         const mockResults = [
-          { title: 'Electronic Dreams', artist: 'Synth Master', confidence: 0.85 },
+          {
+            title: 'Electronic Dreams',
+            artist: 'Synth Master',
+            confidence: 0.85,
+          },
           { title: 'Bass Drop', artist: 'DJ Thunder', confidence: 0.78 },
           { title: 'Neon Nights', artist: 'Cyber DJ', confidence: 0.92 },
-          { title: 'Digital Pulse', artist: 'Tech Wizard', confidence: 0.81 }
+          { title: 'Digital Pulse', artist: 'Tech Wizard', confidence: 0.81 },
         ];
 
-        const randomResult = mockResults[Math.floor(Math.random() * mockResults.length)];
+        const randomResult =
+          mockResults[Math.floor(Math.random() * mockResults.length)];
 
         return {
           title: randomResult.title,
           artist: randomResult.artist,
           confidence: randomResult.confidence,
           duration: 180 + Math.floor(Math.random() * 120),
-          preview_url: undefined // Use local audio fallback
+          preview_url: undefined, // Use local audio fallback
         };
       },
       { fingerprint }
@@ -1086,7 +1238,9 @@ class PlaylistService {
    * @param fingerprint - Audio fingerprint
    * @returns Promise resolving to recognition result or null
    */
-  private async enhancedRecognition(fingerprint: string): Promise<RecognitionResult | null> {
+  private async enhancedRecognition(
+    fingerprint: string
+  ): Promise<RecognitionResult | null> {
     return logger.trackOperation(
       'PlaylistService',
       'enhancedRecognition',
@@ -1096,7 +1250,7 @@ class PlaylistService {
           artist: 'AI Recognition',
           confidence: 0.95,
           duration: 240,
-          preview_url: undefined // Use local audio fallback
+          preview_url: undefined, // Use local audio fallback
         };
       },
       { fingerprint }
@@ -1113,7 +1267,7 @@ class PlaylistService {
       'PlaylistService',
       'recognizeFromAudioFile',
       async () => {
-        const fileName = file.name.replace(/\.[^/.]+$/, "");
+        const fileName = file.name.replace(/\.[^/.]+$/, '');
 
         return {
           id: `file-recognized-${Date.now()}`,
@@ -1122,7 +1276,7 @@ class PlaylistService {
           duration: 200,
           bpm: 128,
           energy: 0.8,
-          preview_url: undefined // Use local audio fallback
+          preview_url: undefined, // Use local audio fallback
         };
       },
       { fileName: file.name, fileSize: file.size }
@@ -1141,13 +1295,17 @@ class PlaylistService {
   private validateTracks(tracks: Track[]): Track[] {
     return tracks.map((track, index) => {
       if (!track.preview_url || track.preview_url.trim() === '') {
-        logger.warn('PlaylistService', 'Track missing preview_url, adding fallback', {
-          trackId: track.id,
-          title: track.title
-        });
+        logger.warn(
+          'PlaylistService',
+          'Track missing preview_url, adding fallback',
+          {
+            trackId: track.id,
+            title: track.title,
+          }
+        );
         return {
           ...track,
-          preview_url: FALLBACK_AUDIO_URLS[index % FALLBACK_AUDIO_URLS.length]
+          preview_url: FALLBACK_AUDIO_URLS[index % FALLBACK_AUDIO_URLS.length],
         };
       }
       return track;
@@ -1180,7 +1338,7 @@ class PlaylistService {
   private setCached<T>(key: string, data: T): void {
     this.cache.set(key, {
       data,
-      expiry: Date.now() + CACHE_TTL_MS
+      expiry: Date.now() + CACHE_TTL_MS,
     });
 
     // Periodic cleanup of expired entries
@@ -1220,7 +1378,10 @@ class PlaylistService {
    */
   private clearUserPlaylistsCache(userId: string): void {
     for (const key of this.cache.keys()) {
-      if (key.includes(`user-playlists:${userId}`) || key.includes(`:${userId}:`)) {
+      if (
+        key.includes(`user-playlists:${userId}`) ||
+        key.includes(`:${userId}:`)
+      ) {
         this.cache.delete(key);
       }
     }

@@ -21,19 +21,19 @@ interface MagicDancerProps {
   onEnergyChange?: (energy: number) => void;
 }
 
-const MagicDancer: React.FC<MagicDancerProps> = ({ 
-  isActive, 
-  currentTrack, 
-  onEnergyChange 
+const MagicDancer: React.FC<MagicDancerProps> = ({
+  isActive,
+  currentTrack,
+  onEnergyChange,
 }) => {
   const [crowdMetrics, setCrowdMetrics] = useState<CrowdMetrics>({
     energy: 75,
     engagement: 68,
     danceability: 82,
     excitement: 71,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   });
-  
+
   const [historicalData, setHistoricalData] = useState<CrowdMetrics[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
@@ -44,16 +44,28 @@ const MagicDancer: React.FC<MagicDancerProps> = ({
 
     const interval = setInterval(() => {
       const newMetrics: CrowdMetrics = {
-        energy: Math.max(0, Math.min(100, crowdMetrics.energy + (Math.random() - 0.5) * 10)),
-        engagement: Math.max(0, Math.min(100, crowdMetrics.engagement + (Math.random() - 0.5) * 8)),
-        danceability: Math.max(0, Math.min(100, crowdMetrics.danceability + (Math.random() - 0.5) * 6)),
-        excitement: Math.max(0, Math.min(100, crowdMetrics.excitement + (Math.random() - 0.5) * 12)),
-        timestamp: Date.now()
+        energy: Math.max(
+          0,
+          Math.min(100, crowdMetrics.energy + (Math.random() - 0.5) * 10)
+        ),
+        engagement: Math.max(
+          0,
+          Math.min(100, crowdMetrics.engagement + (Math.random() - 0.5) * 8)
+        ),
+        danceability: Math.max(
+          0,
+          Math.min(100, crowdMetrics.danceability + (Math.random() - 0.5) * 6)
+        ),
+        excitement: Math.max(
+          0,
+          Math.min(100, crowdMetrics.excitement + (Math.random() - 0.5) * 12)
+        ),
+        timestamp: Date.now(),
       };
 
       setCrowdMetrics(newMetrics);
       setHistoricalData(prev => [...prev.slice(-50), newMetrics]);
-      
+
       if (onEnergyChange) {
         onEnergyChange(newMetrics.energy);
       }
@@ -73,44 +85,48 @@ const MagicDancer: React.FC<MagicDancerProps> = ({
     const animate = () => {
       const width = canvas.width;
       const height = canvas.height;
-      
+
       ctx.clearRect(0, 0, width, height);
-      
+
       // Draw energy waves
       const time = Date.now() * 0.001;
       const centerX = width / 2;
       const centerY = height / 2;
-      
+
       // Multiple energy rings
       for (let i = 0; i < 5; i++) {
-        const radius = (crowdMetrics.energy / 100) * 80 + Math.sin(time + i) * 20;
-        const alpha = 0.3 - (i * 0.05);
-        
+        const radius =
+          (crowdMetrics.energy / 100) * 80 + Math.sin(time + i) * 20;
+        const alpha = 0.3 - i * 0.05;
+
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius + i * 15, 0, Math.PI * 2);
-        ctx.strokeStyle = i % 2 === 0 ? `rgba(57, 255, 19, ${alpha})` : `rgba(138, 0, 255, ${alpha})`;
+        ctx.strokeStyle =
+          i % 2 === 0
+            ? `rgba(57, 255, 19, ${alpha})`
+            : `rgba(138, 0, 255, ${alpha})`;
         ctx.lineWidth = 3;
         ctx.stroke();
       }
-      
+
       // Draw crowd energy particles
       for (let i = 0; i < 20; i++) {
         const angle = (i / 20) * Math.PI * 2 + time;
         const distance = 40 + Math.sin(time + i) * 20;
         const x = centerX + Math.cos(angle) * distance;
         const y = centerY + Math.sin(angle) * distance;
-        
+
         ctx.beginPath();
         ctx.arc(x, y, 2 + Math.sin(time * 2 + i) * 1, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(57, 255, 19, ${0.6 + Math.sin(time + i) * 0.4})`;
         ctx.fill();
       }
-      
+
       animationRef.current = requestAnimationFrame(animate);
     };
-    
+
     animate();
-    
+
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
@@ -131,7 +147,9 @@ const MagicDancer: React.FC<MagicDancerProps> = ({
     return (
       <div className="cyber-card rounded-none p-6 text-center">
         <Users className="w-12 h-12 text-cyber-dim mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-cyber-gray mb-2">Magic Dancer</h3>
+        <h3 className="text-lg font-semibold text-cyber-gray mb-2">
+          Magic Dancer
+        </h3>
         <p className="text-cyber-dim">Start playing to analyze crowd energy</p>
       </div>
     );
@@ -173,7 +191,9 @@ const MagicDancer: React.FC<MagicDancerProps> = ({
             <span className="text-sm font-medium">Now Playing</span>
           </div>
           <h4 className="font-semibold truncate">{currentTrack.title}</h4>
-          <p className="text-sm text-cyber-gray truncate">{currentTrack.artist}</p>
+          <p className="text-sm text-cyber-gray truncate">
+            {currentTrack.artist}
+          </p>
           <div className="flex items-center space-x-4 mt-2 text-xs text-cyber-dim">
             <span>{currentTrack.bpm} BPM</span>
             <span>Energy: {Math.round(currentTrack.energy * 100)}%</span>
@@ -184,41 +204,57 @@ const MagicDancer: React.FC<MagicDancerProps> = ({
       {/* Crowd Metrics */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="text-center">
-          <div className={`text-2xl font-bold mb-1 ${getEnergyColor(crowdMetrics.energy)}`}>
+          <div
+            className={`text-2xl font-bold mb-1 ${getEnergyColor(crowdMetrics.energy)}`}
+          >
             {Math.round(crowdMetrics.energy)}%
           </div>
           <div className="text-xs text-cyber-gray mb-1">ENERGY</div>
-          <div className={`text-xs font-bold ${getEnergyColor(crowdMetrics.energy)}`}>
+          <div
+            className={`text-xs font-bold ${getEnergyColor(crowdMetrics.energy)}`}
+          >
             {getEnergyLevel(crowdMetrics.energy)}
           </div>
         </div>
-        
+
         <div className="text-center">
-          <div className={`text-2xl font-bold mb-1 ${getEnergyColor(crowdMetrics.engagement)}`}>
+          <div
+            className={`text-2xl font-bold mb-1 ${getEnergyColor(crowdMetrics.engagement)}`}
+          >
             {Math.round(crowdMetrics.engagement)}%
           </div>
           <div className="text-xs text-cyber-gray mb-1">ENGAGEMENT</div>
-          <div className={`text-xs font-bold ${getEnergyColor(crowdMetrics.engagement)}`}>
+          <div
+            className={`text-xs font-bold ${getEnergyColor(crowdMetrics.engagement)}`}
+          >
             {getEnergyLevel(crowdMetrics.engagement)}
           </div>
         </div>
-        
+
         <div className="text-center">
-          <div className={`text-2xl font-bold mb-1 ${getEnergyColor(crowdMetrics.danceability)}`}>
+          <div
+            className={`text-2xl font-bold mb-1 ${getEnergyColor(crowdMetrics.danceability)}`}
+          >
             {Math.round(crowdMetrics.danceability)}%
           </div>
           <div className="text-xs text-cyber-gray mb-1">DANCE</div>
-          <div className={`text-xs font-bold ${getEnergyColor(crowdMetrics.danceability)}`}>
+          <div
+            className={`text-xs font-bold ${getEnergyColor(crowdMetrics.danceability)}`}
+          >
             {getEnergyLevel(crowdMetrics.danceability)}
           </div>
         </div>
-        
+
         <div className="text-center">
-          <div className={`text-2xl font-bold mb-1 ${getEnergyColor(crowdMetrics.excitement)}`}>
+          <div
+            className={`text-2xl font-bold mb-1 ${getEnergyColor(crowdMetrics.excitement)}`}
+          >
             {Math.round(crowdMetrics.excitement)}%
           </div>
           <div className="text-xs text-cyber-gray mb-1">EXCITEMENT</div>
-          <div className={`text-xs font-bold ${getEnergyColor(crowdMetrics.excitement)}`}>
+          <div
+            className={`text-xs font-bold ${getEnergyColor(crowdMetrics.excitement)}`}
+          >
             {getEnergyLevel(crowdMetrics.excitement)}
           </div>
         </div>
@@ -249,30 +285,36 @@ const MagicDancer: React.FC<MagicDancerProps> = ({
           <Zap className="w-4 h-4 neon-text-purple" />
           <span className="text-sm font-medium">AI Recommendations</span>
         </div>
-        
+
         {crowdMetrics.energy > 80 && (
           <div className="p-3 bg-green-900/20 border border-green-500/50 rounded-none">
             <div className="flex items-center space-x-2">
               <Heart className="w-4 h-4 text-green-400" />
-              <span className="text-sm text-green-300">Crowd is loving it! Keep the energy high!</span>
+              <span className="text-sm text-green-300">
+                Crowd is loving it! Keep the energy high!
+              </span>
             </div>
           </div>
         )}
-        
+
         {crowdMetrics.energy < 40 && (
           <div className="p-3 bg-orange-900/20 border border-orange-500/50 rounded-none">
             <div className="flex items-center space-x-2">
               <TrendingUp className="w-4 h-4 text-orange-400" />
-              <span className="text-sm text-orange-300">Consider switching to higher energy tracks</span>
+              <span className="text-sm text-orange-300">
+                Consider switching to higher energy tracks
+              </span>
             </div>
           </div>
         )}
-        
+
         {crowdMetrics.danceability > 85 && (
           <div className="p-3 bg-purple-900/20 border border-purple-500/50 rounded-none">
             <div className="flex items-center space-x-2">
               <Users className="w-4 h-4 text-purple-400" />
-              <span className="text-sm text-purple-300">Perfect danceability! Crowd is moving!</span>
+              <span className="text-sm text-purple-300">
+                Perfect danceability! Crowd is moving!
+              </span>
             </div>
           </div>
         )}

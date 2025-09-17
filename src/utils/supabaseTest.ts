@@ -1,5 +1,5 @@
-import { supabase } from "../lib/supabase";
-import { logger } from "../utils/logger";
+import { supabase } from '../lib/supabase';
+import { logger } from '../utils/logger';
 
 export async function testSupabaseConnection() {
   try {
@@ -13,23 +13,26 @@ export async function testSupabaseConnection() {
 
     if (error) {
       // If profiles table doesn't exist, provide helpful message
-      logger.warn('SupabaseTest', 'Database tables not found - migration needed');
+      logger.warn(
+        'SupabaseTest',
+        'Database tables not found - migration needed'
+      );
 
       return {
         success: false,
-        error: 'Database tables not found. Please run the migration to create the required tables.',
-        needsMigration: true
+        error:
+          'Database tables not found. Please run the migration to create the required tables.',
+        needsMigration: true,
       };
     }
 
     logger.info('SupabaseTest', 'Supabase connection successful');
     return { success: true, data };
-
   } catch (error) {
     logger.error('SupabaseTest', 'Supabase connection test failed', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -42,20 +45,20 @@ export async function testSupabaseAuth() {
     if (error) throw error;
 
     logger.info('SupabaseTest', 'Supabase auth test completed', {
-      authenticated: !!data.session
+      authenticated: !!data.session,
     });
 
     return {
       success: true,
       authenticated: !!data.session,
-      session: data.session
+      session: data.session,
     };
   } catch (error) {
     logger.error('SupabaseTest', 'Supabase auth test failed', error);
     return {
       success: false,
       authenticated: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }

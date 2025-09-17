@@ -1,11 +1,15 @@
-export function generateWavDataUrl(frequency: number = 440, durationSeconds: number = 12): string {
+export function generateWavDataUrl(
+  frequency: number = 440,
+  durationSeconds: number = 12
+): string {
   const sampleRate = 22050;
   const samples = sampleRate * durationSeconds;
   const buffer = new ArrayBuffer(44 + samples * 2);
   const view = new DataView(buffer);
 
   const writeString = (offset: number, str: string) => {
-    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+    for (let i = 0; i < str.length; i++)
+      view.setUint8(offset + i, str.charCodeAt(i));
   };
 
   writeString(0, 'RIFF');
@@ -35,7 +39,7 @@ export function generateWavDataUrl(frequency: number = 440, durationSeconds: num
 
   const bytes = new Uint8Array(buffer);
   let binary = '';
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  for (let i = 0; i < bytes.length; i++)
+    binary += String.fromCharCode(bytes[i]);
   return `data:audio/wav;base64,${btoa(binary)}`;
 }
-

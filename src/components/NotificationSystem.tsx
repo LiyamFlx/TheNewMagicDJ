@@ -15,8 +15,8 @@ interface NotificationSystemProps {
   maxNotifications?: number;
 }
 
-const NotificationSystem: React.FC<NotificationSystemProps> = ({ 
-  maxNotifications = 5 
+const NotificationSystem: React.FC<NotificationSystemProps> = ({
+  maxNotifications = 5,
 }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
@@ -24,26 +24,26 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
     // Listen for app errors
     const handleAppError = (event: CustomEvent<AppError>) => {
       const error = event.detail;
-      
+
       if (error.severity === 'high' || error.severity === 'critical') {
         addNotification({
           type: 'error',
           title: 'Error',
           message: error.userMessage,
-          persistent: error.severity === 'critical'
+          persistent: error.severity === 'critical',
         });
       } else if (error.severity === 'medium') {
         addNotification({
           type: 'warning',
           title: 'Warning',
           message: error.userMessage,
-          duration: 8000
+          duration: 8000,
         });
       }
     };
 
     window.addEventListener('app-error', handleAppError as EventListener);
-    
+
     return () => {
       window.removeEventListener('app-error', handleAppError as EventListener);
     };
@@ -54,7 +54,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
     const newNotification: Notification = {
       id,
       duration: 5000,
-      ...notification
+      ...notification,
     };
 
     setNotifications(prev => {
@@ -106,7 +106,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
 
   return (
     <div className="fixed top-4 right-4 z-50 space-y-3 max-w-sm w-full">
-      {notifications.map((notification) => (
+      {notifications.map(notification => (
         <div
           key={notification.id}
           className={`${getStyles(notification.type)} backdrop-blur-sm rounded-lg border p-4 shadow-lg animate-slide-in-right`}
@@ -115,7 +115,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
             <div className="flex-shrink-0 mt-0.5">
               {getIcon(notification.type)}
             </div>
-            
+
             <div className="flex-1 min-w-0">
               <h4 className="text-sm font-medium text-white mb-1">
                 {notification.title}
@@ -124,7 +124,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
                 {notification.message}
               </p>
             </div>
-            
+
             <button
               onClick={() => removeNotification(notification.id)}
               className="flex-shrink-0 text-gray-400 hover:text-white transition-colors"
@@ -141,9 +141,11 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
 // Export function to add notifications programmatically
 export const useNotifications = () => {
   const addNotification = (notification: Omit<Notification, 'id'>) => {
-    window.dispatchEvent(new CustomEvent('add-notification', { 
-      detail: notification 
-    }));
+    window.dispatchEvent(
+      new CustomEvent('add-notification', {
+        detail: notification,
+      })
+    );
   };
 
   return { addNotification };

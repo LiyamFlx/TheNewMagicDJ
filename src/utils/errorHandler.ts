@@ -25,7 +25,10 @@ export class ErrorHandler {
   private constructor() {
     // Global error handlers
     window.addEventListener('error', this.handleGlobalError.bind(this));
-    window.addEventListener('unhandledrejection', this.handleUnhandledRejection.bind(this));
+    window.addEventListener(
+      'unhandledrejection',
+      this.handleUnhandledRejection.bind(this)
+    );
   }
 
   private handleGlobalError(event: ErrorEvent): void {
@@ -39,9 +42,9 @@ export class ErrorHandler {
         filename: event.filename,
         lineno: event.lineno,
         colno: event.colno,
-        stack: event.error?.stack
+        stack: event.error?.stack,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -49,14 +52,15 @@ export class ErrorHandler {
     this.handleError({
       code: 'UNHANDLED_PROMISE_REJECTION',
       message: String(event.reason),
-      userMessage: 'A background operation failed. Some features may not work correctly.',
+      userMessage:
+        'A background operation failed. Some features may not work correctly.',
       severity: 'medium',
       recoverable: true,
       context: {
         reason: event.reason,
-        stack: event.reason?.stack
+        stack: event.reason?.stack,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -72,7 +76,7 @@ export class ErrorHandler {
       code: error.code,
       severity: error.severity,
       recoverable: error.recoverable,
-      context: error.context
+      context: error.context,
     });
 
     // Track error analytics
@@ -80,7 +84,7 @@ export class ErrorHandler {
       code: error.code,
       severity: error.severity,
       recoverable: error.recoverable,
-      userMessage: error.userMessage
+      userMessage: error.userMessage,
     });
 
     // Notify user if appropriate
@@ -92,15 +96,22 @@ export class ErrorHandler {
   private notifyUser(error: AppError): void {
     // This would integrate with your notification system
     console.warn('User notification:', error.userMessage);
-    
+
     // You could dispatch a custom event here for UI components to listen to
-    window.dispatchEvent(new CustomEvent('app-error', { 
-      detail: error 
-    }));
+    window.dispatchEvent(
+      new CustomEvent('app-error', {
+        detail: error,
+      })
+    );
   }
 
   // Specific error creators
-  createAPIError(service: string, endpoint: string, status: number, message: string): AppError {
+  createAPIError(
+    service: string,
+    endpoint: string,
+    status: number,
+    message: string
+  ): AppError {
     return {
       code: `API_ERROR_${service.toUpperCase()}`,
       message: `${service} API error: ${message}`,
@@ -111,9 +122,9 @@ export class ErrorHandler {
         service,
         endpoint,
         status,
-        originalMessage: message
+        originalMessage: message,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -125,7 +136,7 @@ export class ErrorHandler {
       severity: 'high',
       recoverable: false,
       context: { service },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -137,7 +148,7 @@ export class ErrorHandler {
       severity: 'medium',
       recoverable: true,
       context: { service, retryAfter },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -149,7 +160,7 @@ export class ErrorHandler {
       severity: 'low',
       recoverable: true,
       context: { field, value, rule },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -157,11 +168,12 @@ export class ErrorHandler {
     return {
       code: 'NETWORK_ERROR',
       message: `Network error during ${operation}`,
-      userMessage: 'Network connection failed. Please check your internet connection and try again.',
+      userMessage:
+        'Network connection failed. Please check your internet connection and try again.',
       severity: 'medium',
       recoverable: true,
       context: { operation },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 

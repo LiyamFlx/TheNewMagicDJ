@@ -1,6 +1,17 @@
-import { logger } from "../utils/logger";
+import { logger } from '../utils/logger';
 import { useState, useEffect } from 'react';
-import { BarChart3, Download, Share2, TrendingUp, Clock, Users, Zap, Music, Save, ArrowLeft } from 'lucide-react';
+import {
+  BarChart3,
+  Download,
+  Share2,
+  TrendingUp,
+  Clock,
+  Users,
+  Zap,
+  Music,
+  Save,
+  ArrowLeft,
+} from 'lucide-react';
 import { formatTimeClock } from '../utils/format';
 import { getEnergyColor as energyColorUtil } from '../utils/energy';
 import { Playlist, Session } from '../types';
@@ -8,7 +19,11 @@ import { Playlist, Session } from '../types';
 interface AnalyticsData {
   energyCurve: number[];
   peakMoments: { time: number; energy: number; track: string }[];
-  crowdFeedback: { engagement: number; danceability: number; excitement: number };
+  crowdFeedback: {
+    engagement: number;
+    danceability: number;
+    excitement: number;
+  };
   totalDuration: number;
   tracksPlayed: number;
   averageEnergy: number;
@@ -28,18 +43,22 @@ const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
   session,
   onBack,
   onSaveToLibrary,
-  onEditAgain
+  onEditAgain,
 }) => {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [isExporting, setIsExporting] = useState(false);
-  const [exportFormat, setExportFormat] = useState<'json' | 'csv' | 'pdf'>('json');
+  const [exportFormat, setExportFormat] = useState<'json' | 'csv' | 'pdf'>(
+    'json'
+  );
   const [showFlyerPreview, setShowFlyerPreview] = useState(false);
-  const [flyerCanvas, setFlyerCanvas] = useState<HTMLCanvasElement | null>(null);
+  const [flyerCanvas, setFlyerCanvas] = useState<HTMLCanvasElement | null>(
+    null
+  );
 
   useEffect(() => {
     // Generate analytics data
     const generateAnalytics = () => {
-      const energyCurve = playlist.tracks.map((track) => {
+      const energyCurve = playlist.tracks.map(track => {
         return (track.energy || 0.5) * 100 + Math.random() * 20 - 10;
       });
 
@@ -47,7 +66,7 @@ const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
         .map((track, index) => ({
           time: index * 3, // Approximate time
           energy: (track.energy || 0.5) * 100,
-          track: `${track.artist} - ${track.title}`
+          track: `${track.artist} - ${track.title}`,
         }))
         .filter(moment => moment.energy > 80)
         .slice(0, 5);
@@ -55,7 +74,7 @@ const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
       const crowdFeedback = {
         engagement: 75 + Math.random() * 20,
         danceability: 80 + Math.random() * 15,
-        excitement: 70 + Math.random() * 25
+        excitement: 70 + Math.random() * 25,
       };
 
       const analyticsData: AnalyticsData = {
@@ -64,13 +83,14 @@ const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
         crowdFeedback,
         totalDuration: playlist.total_duration ?? 0,
         tracksPlayed: playlist.tracks.length,
-        averageEnergy: energyCurve.reduce((sum, val) => sum + val, 0) / energyCurve.length,
+        averageEnergy:
+          energyCurve.reduce((sum, val) => sum + val, 0) / energyCurve.length,
         bestMoments: [
           'Perfect energy transition at 15:30',
           'Crowd peak during track 8',
           'Seamless genre blend at 28:45',
-          'Energy recovery at 35:20'
-        ]
+          'Energy recovery at 35:20',
+        ],
       };
 
       setAnalytics(analyticsData);
@@ -81,7 +101,7 @@ const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
 
   const handleExport = async () => {
     setIsExporting(true);
-    
+
     try {
       const exportData = {
         playlist: {
@@ -91,20 +111,22 @@ const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
             artist: track.artist,
             duration: track.duration ?? 0,
             bpm: track.bpm,
-            energy: track.energy
-          }))
+            energy: track.energy,
+          })),
         },
         analytics,
         session: {
           id: session.id,
           started_at: session.started_at,
           ended_at: session.ended_at || new Date().toISOString(),
-          status: session.status
-        }
+          status: session.status,
+        },
       };
 
       if (exportFormat === 'json') {
-        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+          type: 'application/json',
+        });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -115,11 +137,12 @@ const AnalyticsExport: React.FC<AnalyticsExportProps> = ({
         // Generate CSV format
         const csvContent = [
           'Track,Artist,Duration,BPM,Energy',
-          ...exportData.playlist.tracks.map(track =>
-            `"${track.title}","${track.artist}",${track.duration ?? 0},${track.bpm || 'N/A'},${track.energy || 'N/A'}`
-          )
+          ...exportData.playlist.tracks.map(
+            track =>
+              `"${track.title}","${track.artist}",${track.duration ?? 0},${track.bpm || 'N/A'},${track.energy || 'N/A'}`
+          ),
         ].join('\n');
-        
+
         const blob = new Blob([csvContent], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -138,16 +161,19 @@ Session ID: ${exportData.session.id}
 Date: ${new Date(exportData.session.started_at).toLocaleDateString()}
 
 Tracks:
-${exportData.playlist.tracks.map((track, i) =>
-  `${i + 1}. ${track.title} - ${track.artist} (${Math.floor((track.duration ?? 0) / 60)}:${(((track.duration ?? 0) % 60)).toString().padStart(2, '0')})`
-).join('\n')}
+${exportData.playlist.tracks
+  .map(
+    (track, i) =>
+      `${i + 1}. ${track.title} - ${track.artist} (${Math.floor((track.duration ?? 0) / 60)}:${((track.duration ?? 0) % 60).toString().padStart(2, '0')})`
+  )
+  .join('\n')}
 
 Analytics:
 - Average Energy: ${analytics?.averageEnergy.toFixed(1)}%
 - Peak Moments: ${analytics?.peakMoments.length}
 - Total Duration: ${Math.floor(exportData.playlist.tracks.reduce((sum, t) => sum + (t.duration ?? 0), 0) / 60)} minutes
         `;
-        
+
         const blob = new Blob([pdfContent], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -156,9 +182,10 @@ Analytics:
         a.click();
         URL.revokeObjectURL(url);
       }
-      
-      logger.info('AnalyticsExport', 'Export completed successfully', { format: exportFormat });
-      
+
+      logger.info('AnalyticsExport', 'Export completed successfully', {
+        format: exportFormat,
+      });
     } catch (error) {
       logger.error('AnalyticsExport', 'Export failed', error);
     } finally {
@@ -202,20 +229,30 @@ Analytics:
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 40px monospace';
     ctx.fillText(`${analytics?.tracksPlayed} TRACKS`, canvas.width / 2, 400);
-    ctx.fillText(`${analytics?.averageEnergy.toFixed(1)}% AVG ENERGY`, canvas.width / 2, 470);
-    ctx.fillText(`${analytics?.peakMoments.length} PEAK MOMENTS`, canvas.width / 2, 540);
+    ctx.fillText(
+      `${analytics?.averageEnergy.toFixed(1)}% AVG ENERGY`,
+      canvas.width / 2,
+      470
+    );
+    ctx.fillText(
+      `${analytics?.peakMoments.length} PEAK MOMENTS`,
+      canvas.width / 2,
+      540
+    );
 
     // Energy visualization
     const barWidth = 40;
     const barSpacing = 50;
-    const startX = (canvas.width - (analytics?.energyCurve.length || 0) * barSpacing) / 2;
+    const startX =
+      (canvas.width - (analytics?.energyCurve.length || 0) * barSpacing) / 2;
 
     analytics?.energyCurve.forEach((energy, index) => {
       const barHeight = (energy / 100) * 300;
       const x = startX + index * barSpacing;
       const y = 850 - barHeight;
 
-      ctx.fillStyle = energy > 80 ? '#00ff41' : energy > 60 ? '#ffff00' : '#9d00ff';
+      ctx.fillStyle =
+        energy > 80 ? '#00ff41' : energy > 60 ? '#ffff00' : '#9d00ff';
       ctx.fillRect(x, y, barWidth, barHeight);
     });
 
@@ -232,17 +269,21 @@ Analytics:
     const canvas = generateFlyer();
     if (!canvas) return;
 
-    canvas.toBlob(async (blob) => {
+    canvas.toBlob(async blob => {
       if (!blob) return;
 
-      const file = new File([blob], `${playlist.name.replace(/\s+/g, '_')}_flyer.png`, { type: 'image/png' });
+      const file = new File(
+        [blob],
+        `${playlist.name.replace(/\s+/g, '_')}_flyer.png`,
+        { type: 'image/png' }
+      );
 
       if (navigator.share && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
             title: `${playlist.name} - DJ Set Analytics`,
             text: `Check out my DJ set analytics: ${analytics?.averageEnergy.toFixed(1)}% average energy, ${analytics?.peakMoments.length} peak moments!`,
-            files: [file]
+            files: [file],
           });
         } catch (error) {
           console.error('Share failed:', error);
@@ -301,12 +342,14 @@ Analytics:
                 <BarChart3 className="w-6 h-6 neon-text-purple" />
               </div>
               <div>
-                <h1 className="text-xl lg:text-2xl font-bold text-cyber-white">Set Analytics</h1>
+                <h1 className="text-xl lg:text-2xl font-bold text-cyber-white">
+                  Set Analytics
+                </h1>
                 <p className="text-sm text-cyber-gray">{playlist.name}</p>
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-2 lg:space-x-4">
             <button
               onClick={() => onSaveToLibrary(playlist)}
@@ -331,26 +374,28 @@ Analytics:
         {/* Overview Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
           <div className="cyber-card rounded-none p-4 lg:p-6 text-center">
-            <div className={`text-2xl lg:text-3xl font-bold mb-2 ${getEnergyColor(analytics.averageEnergy)}`}>
+            <div
+              className={`text-2xl lg:text-3xl font-bold mb-2 ${getEnergyColor(analytics.averageEnergy)}`}
+            >
               {analytics.averageEnergy.toFixed(1)}%
             </div>
             <div className="text-sm text-cyber-gray">Average Energy</div>
           </div>
-          
+
           <div className="cyber-card rounded-none p-4 lg:p-6 text-center">
             <div className="text-2xl lg:text-3xl font-bold neon-text-green mb-2">
               {analytics.peakMoments.length}
             </div>
             <div className="text-sm text-cyber-gray">Peak Moments</div>
           </div>
-          
+
           <div className="cyber-card rounded-none p-4 lg:p-6 text-center">
             <div className="text-2xl lg:text-3xl font-bold neon-text-purple mb-2">
               {formatTime(analytics.totalDuration)}
             </div>
             <div className="text-sm text-cyber-gray">Total Duration</div>
           </div>
-          
+
           <div className="cyber-card rounded-none p-4 lg:p-6 text-center">
             <div className="text-2xl lg:text-3xl font-bold neon-text-green mb-2">
               {analytics.tracksPlayed}
@@ -389,42 +434,56 @@ Analytics:
               <div>
                 <div className="flex justify-between mb-2">
                   <span className="text-cyber-gray">Engagement</span>
-                  <span className={getEnergyColor(analytics.crowdFeedback.engagement)}>
+                  <span
+                    className={getEnergyColor(
+                      analytics.crowdFeedback.engagement
+                    )}
+                  >
                     {analytics.crowdFeedback.engagement.toFixed(1)}%
                   </span>
                 </div>
                 <div className="w-full bg-cyber-dark border border-neon-green rounded-none h-2">
-                  <div 
+                  <div
                     className="h-2 progress-green rounded-none"
                     style={{ width: `${analytics.crowdFeedback.engagement}%` }}
                   />
                 </div>
               </div>
-              
+
               <div>
                 <div className="flex justify-between mb-2">
                   <span className="text-cyber-gray">Danceability</span>
-                  <span className={getEnergyColor(analytics.crowdFeedback.danceability)}>
+                  <span
+                    className={getEnergyColor(
+                      analytics.crowdFeedback.danceability
+                    )}
+                  >
                     {analytics.crowdFeedback.danceability.toFixed(1)}%
                   </span>
                 </div>
                 <div className="w-full bg-cyber-dark border border-neon-purple rounded-none h-2">
-                  <div 
+                  <div
                     className="h-2 progress-purple rounded-none"
-                    style={{ width: `${analytics.crowdFeedback.danceability}%` }}
+                    style={{
+                      width: `${analytics.crowdFeedback.danceability}%`,
+                    }}
                   />
                 </div>
               </div>
-              
+
               <div>
                 <div className="flex justify-between mb-2">
                   <span className="text-cyber-gray">Excitement</span>
-                  <span className={getEnergyColor(analytics.crowdFeedback.excitement)}>
+                  <span
+                    className={getEnergyColor(
+                      analytics.crowdFeedback.excitement
+                    )}
+                  >
                     {analytics.crowdFeedback.excitement.toFixed(1)}%
                   </span>
                 </div>
                 <div className="w-full bg-cyber-dark border border-neon-green rounded-none h-2">
-                  <div 
+                  <div
                     className="h-2 progress-green rounded-none"
                     style={{ width: `${analytics.crowdFeedback.excitement}%` }}
                   />
@@ -441,12 +500,22 @@ Analytics:
             </h3>
             <div className="space-y-3">
               {analytics.peakMoments.map((moment, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-cyber-dark border border-neon-green rounded-none">
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-cyber-dark border border-neon-green rounded-none"
+                >
                   <div>
-                    <p className="font-medium text-cyber-white truncate">{moment.track}</p>
-                    <p className="text-sm text-cyber-gray">Time: {Math.floor(moment.time / 60)}:{(moment.time % 60).toString().padStart(2, '0')}</p>
+                    <p className="font-medium text-cyber-white truncate">
+                      {moment.track}
+                    </p>
+                    <p className="text-sm text-cyber-gray">
+                      Time: {Math.floor(moment.time / 60)}:
+                      {(moment.time % 60).toString().padStart(2, '0')}
+                    </p>
                   </div>
-                  <div className={`text-lg font-bold ${getEnergyColor(moment.energy)}`}>
+                  <div
+                    className={`text-lg font-bold ${getEnergyColor(moment.energy)}`}
+                  >
                     {moment.energy.toFixed(0)}%
                   </div>
                 </div>
@@ -462,7 +531,10 @@ Analytics:
             </h3>
             <div className="space-y-3">
               {analytics.bestMoments.map((moment, index) => (
-                <div key={index} className="p-3 bg-cyber-dark border border-neon-purple rounded-none">
+                <div
+                  key={index}
+                  className="p-3 bg-cyber-dark border border-neon-purple rounded-none"
+                >
                   <p className="text-cyber-white">{moment}</p>
                 </div>
               ))}
@@ -479,7 +551,9 @@ Analytics:
 
           {/* Flyer Section */}
           <div className="mb-8 p-4 bg-cyber-dark border-2 border-neon-purple rounded-sm neon-glow-purple">
-            <h4 className="text-lg font-bold neon-text-purple mb-4 font-mono">SOCIAL MEDIA FLYER</h4>
+            <h4 className="text-lg font-bold neon-text-purple mb-4 font-mono">
+              SOCIAL MEDIA FLYER
+            </h4>
             <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4">
               <button
                 onClick={handlePreviewFlyer}
@@ -500,12 +574,16 @@ Analytics:
 
           {/* Data Export Section */}
           <div className="p-4 bg-cyber-dark border-2 border-neon-green rounded-sm neon-glow-green">
-            <h4 className="text-lg font-bold neon-text-green mb-4 font-mono">DATA EXPORT</h4>
+            <h4 className="text-lg font-bold neon-text-green mb-4 font-mono">
+              DATA EXPORT
+            </h4>
             <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 sm:space-x-4">
               <div className="flex items-center space-x-4">
                 <select
                   value={exportFormat}
-                  onChange={(e) => setExportFormat(e.target.value as 'json' | 'csv' | 'pdf')}
+                  onChange={e =>
+                    setExportFormat(e.target.value as 'json' | 'csv' | 'pdf')
+                  }
                   className="bg-cyber-darker border-2 border-neon-green rounded-sm px-4 py-3 text-cyber-white focus:outline-none focus:border-neon-purple font-mono text-base"
                 >
                   <option value="json">JSON FORMAT</option>
@@ -528,10 +606,18 @@ Analytics:
 
         {/* Flyer Preview Modal */}
         {showFlyerPreview && flyerCanvas && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowFlyerPreview(false)}>
-            <div className="bg-cyber-dark border-4 border-neon-green rounded-sm p-6 max-w-lg mx-4 neon-glow-green" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50"
+            onClick={() => setShowFlyerPreview(false)}
+          >
+            <div
+              className="bg-cyber-dark border-4 border-neon-green rounded-sm p-6 max-w-lg mx-4 neon-glow-green"
+              onClick={e => e.stopPropagation()}
+            >
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold neon-text-green font-mono">FLYER PREVIEW</h3>
+                <h3 className="text-xl font-bold neon-text-green font-mono">
+                  FLYER PREVIEW
+                </h3>
                 <button
                   onClick={() => setShowFlyerPreview(false)}
                   className="w-8 h-8 bg-cyber-darker border-2 border-red-500 rounded-sm flex items-center justify-center hover:bg-red-900/20"

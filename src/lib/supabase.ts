@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -8,11 +8,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
     hasUrl: !!supabaseUrl,
     hasKey: !!supabaseAnonKey,
     url: supabaseUrl || 'MISSING',
-    keyLength: supabaseAnonKey?.length || 0
+    keyLength: supabaseAnonKey?.length || 0,
   });
 
   // Provide fallback to prevent app from crashing
-  console.warn('Using placeholder Supabase client. Update .env file with real credentials.');
+  console.warn(
+    'Using placeholder Supabase client. Update .env file with real credentials.'
+  );
 }
 
 // Use placeholder values if environment variables are missing to prevent crash
@@ -29,7 +31,7 @@ export const auth: any = supabase.auth;
 
 // auth.signIn(email, password) or auth.signIn({ email, password })
 (auth as any).signIn = (...args: any[]) => {
-  if (args.length === 1 && typeof args[0] === "object") {
+  if (args.length === 1 && typeof args[0] === 'object') {
     const { email, password } = args[0] || {};
     return supabase.auth.signInWithPassword({ email, password });
   }
@@ -39,7 +41,7 @@ export const auth: any = supabase.auth;
 
 // auth.signUp(email, password, displayName?) or auth.signUp({ email, password, data })
 (auth as any).signUp = (...args: any[]) => {
-  if (args.length === 1 && typeof args[0] === "object") {
+  if (args.length === 1 && typeof args[0] === 'object') {
     const { email, password, data } = args[0] || {};
     return supabase.auth.signUp({ email, password, options: { data } });
   }
@@ -58,16 +60,16 @@ export const auth: any = supabase.auth;
 
 (db as any).getSessions = (userId: string) => {
   return supabase
-    .from("sessions")
-    .select("*")
-    .eq("user_id", userId)
-    .order("started_at", { ascending: false });
+    .from('sessions')
+    .select('*')
+    .eq('user_id', userId)
+    .order('started_at', { ascending: false });
 };
 
 (db as any).createSession = (payload: any) => {
-  return supabase.from("sessions").insert([payload]).select().single();
+  return supabase.from('sessions').insert([payload]).select().single();
 };
 
 (db as any).updateSession = (id: string, patch: any) => {
-  return supabase.from("sessions").update(patch).eq("id", id).select().single();
+  return supabase.from('sessions').update(patch).eq('id', id).select().single();
 };

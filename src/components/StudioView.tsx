@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Mic, Upload, Wand2, Zap, Music, Headphones } from 'lucide-react';
+import {
+  ArrowLeft,
+  Mic,
+  Upload,
+  Wand2,
+  Zap,
+  Music,
+  Headphones,
+} from 'lucide-react';
 import { Playlist, Track } from '../types';
 
 interface StudioViewProps {
@@ -7,9 +15,14 @@ interface StudioViewProps {
   onBack: () => void;
 }
 
-const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) => {
+const StudioView: React.FC<StudioViewProps> = ({
+  onPlaylistGenerated,
+  onBack,
+}) => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processingMode, setProcessingMode] = useState<'match' | 'generate' | null>(null);
+  const [processingMode, setProcessingMode] = useState<
+    'match' | 'generate' | null
+  >(null);
   const [progress, setProgress] = useState(0);
   const [selectedGenre, setSelectedGenre] = useState<string>('Electronic');
   const [selectedEnergy, setSelectedEnergy] = useState<string>('Groove');
@@ -18,54 +31,59 @@ const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) 
   const generateMockPlaylist = (type: 'match' | 'generate'): Playlist => {
     // Generate tracks based on selected preferences for Magic Generate
     const genreTrackData = {
-      'Electronic': [
+      Electronic: [
         { title: 'Electric Dreams', artist: 'Synthwave Pro', bpm: 128 },
         { title: 'Digital Pulse', artist: 'Cyber DJ', bpm: 126 },
         { title: 'Neon Circuits', artist: 'Tech Master', bpm: 130 },
         { title: 'Binary Waves', artist: 'Data Flow', bpm: 132 },
-        { title: 'Voltage Rise', artist: 'Circuit Breaker', bpm: 134 }
+        { title: 'Voltage Rise', artist: 'Circuit Breaker', bpm: 134 },
       ],
       'Hip-Hop': [
         { title: 'Urban Legends', artist: 'Street Poet', bpm: 90 },
         { title: 'City Nights', artist: 'Metro Beats', bpm: 94 },
         { title: 'Flow State', artist: 'Rhythm King', bpm: 88 },
         { title: 'Block Party', artist: 'Hood Classic', bpm: 92 },
-        { title: 'Beat Drop', artist: 'Bass Heavy', bpm: 96 }
+        { title: 'Beat Drop', artist: 'Bass Heavy', bpm: 96 },
       ],
-      'House': [
+      House: [
         { title: 'Bassline Thunder', artist: 'Deep House Master', bpm: 124 },
         { title: 'Groove Machine', artist: 'House Legend', bpm: 126 },
         { title: 'Disco Fever', artist: 'Funk Master', bpm: 122 },
         { title: 'Dance Floor', artist: 'Club King', bpm: 128 },
-        { title: 'Midnight Groove', artist: 'Studio 54', bpm: 125 }
+        { title: 'Midnight Groove', artist: 'Studio 54', bpm: 125 },
       ],
-      'Techno': [
+      Techno: [
         { title: 'Industrial Mind', artist: 'Techno Viking', bpm: 140 },
         { title: 'Machine Soul', artist: 'Steel Beats', bpm: 138 },
         { title: 'Dark Factory', artist: 'Underground', bpm: 142 },
         { title: 'Cyber Punk', artist: 'Future Sound', bpm: 136 },
-        { title: 'Metal Heart', artist: 'Robot Dance', bpm: 144 }
-      ]
+        { title: 'Metal Heart', artist: 'Robot Dance', bpm: 144 },
+      ],
     };
 
     const energyLevels = {
-      'Chill': { min: 0.3, max: 0.5 },
-      'Groove': { min: 0.6, max: 0.8 },
-      'Peak': { min: 0.8, max: 1.0 }
+      Chill: { min: 0.3, max: 0.5 },
+      Groove: { min: 0.6, max: 0.8 },
+      Peak: { min: 0.8, max: 1.0 },
     };
 
     // For Magic Generate, use selected genre. For Magic Match, mix genres for variety
-    const tracks = type === 'generate'
-      ? genreTrackData[selectedGenre as keyof typeof genreTrackData]
-      : [
-          ...genreTrackData['Electronic'].slice(0, 2),
-          ...genreTrackData['House'].slice(0, 2),
-          ...genreTrackData['Techno'].slice(0, 1)
-        ];
-    const energyRange = type === 'generate' ? energyLevels[selectedEnergy as keyof typeof energyLevels] : { min: 0.6, max: 0.9 };
+    const tracks =
+      type === 'generate'
+        ? genreTrackData[selectedGenre as keyof typeof genreTrackData]
+        : [
+            ...genreTrackData['Electronic'].slice(0, 2),
+            ...genreTrackData['House'].slice(0, 2),
+            ...genreTrackData['Techno'].slice(0, 1),
+          ];
+    const energyRange =
+      type === 'generate'
+        ? energyLevels[selectedEnergy as keyof typeof energyLevels]
+        : { min: 0.6, max: 0.9 };
 
     // Shuffle tracks for variety (except for specific genre selection in Generate mode)
-    const shuffledTracks = type === 'match' ? [...tracks].sort(() => Math.random() - 0.5) : tracks;
+    const shuffledTracks =
+      type === 'match' ? [...tracks].sort(() => Math.random() - 0.5) : tracks;
 
     const mockTracks: Track[] = shuffledTracks.map((track, index) => ({
       id: `${type}-${Date.now()}-${index}`,
@@ -73,23 +91,34 @@ const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) 
       artist: track.artist,
       duration: 180 + Math.floor(Math.random() * 180), // 3-6 minutes
       bpm: track.bpm,
-      energy: energyRange.min + Math.random() * (energyRange.max - energyRange.min),
+      energy:
+        energyRange.min + Math.random() * (energyRange.max - energyRange.min),
       // Leave preview_url undefined to avoid cross-origin audio CORS issues; players will generate safe fallback audio
-      preview_url: undefined
+      preview_url: undefined,
     }));
 
     return {
       id: `playlist-${Date.now()}`,
       name: type === 'match' ? 'AI Recognition Set' : 'Generated Mix',
       tracks: mockTracks,
-      total_duration: mockTracks.reduce((sum, track) => sum + (track.duration ?? 0), 0),
+      total_duration: mockTracks.reduce(
+        (sum, track) => sum + (track.duration ?? 0),
+        0
+      ),
       type: type === 'match' ? 'magic_match' : 'magic_set',
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
   };
 
   const validateAudioFile = (file: File): string | null => {
-    const validTypes = ['audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/aac'];
+    const validTypes = [
+      'audio/mp3',
+      'audio/mpeg',
+      'audio/wav',
+      'audio/ogg',
+      'audio/m4a',
+      'audio/aac',
+    ];
     const maxSize = 50 * 1024 * 1024; // 50MB
 
     if (!validTypes.includes(file.type)) {
@@ -126,7 +155,12 @@ const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) 
     setProgress(0);
 
     // Simulate processing steps
-    const steps = ['Listening...', 'Analyzing audio...', 'Matching tracks...', 'Building playlist...'];
+    const steps = [
+      'Listening...',
+      'Analyzing audio...',
+      'Matching tracks...',
+      'Building playlist...',
+    ];
 
     for (let i = 0; i < steps.length; i++) {
       setProgress((i / steps.length) * 100);
@@ -145,8 +179,13 @@ const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) 
     setProcessingMode('generate');
     setProgress(0);
 
-    const steps = ['Analyzing preferences...', 'Selecting tracks...', 'Optimizing flow...', 'Finalizing set...'];
-    
+    const steps = [
+      'Analyzing preferences...',
+      'Selecting tracks...',
+      'Optimizing flow...',
+      'Finalizing set...',
+    ];
+
     for (let i = 0; i < steps.length; i++) {
       setProgress((i / steps.length) * 100);
       await new Promise(resolve => setTimeout(resolve, 800));
@@ -154,7 +193,7 @@ const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) 
 
     const playlist = generateMockPlaylist('generate');
     onPlaylistGenerated(playlist);
-    
+
     setIsProcessing(false);
     setProcessingMode(null);
   };
@@ -164,24 +203,29 @@ const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) 
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
           <div className="w-24 h-24 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-8 animate-pulse">
-            {processingMode === 'match' ? 
-              <Zap className="w-12 h-12 text-white" /> : 
+            {processingMode === 'match' ? (
+              <Zap className="w-12 h-12 text-white" />
+            ) : (
               <Wand2 className="w-12 h-12 text-white" />
-            }
+            )}
           </div>
-          
+
           <div className="w-full bg-white/10 rounded-full h-3 mb-8">
-            <div 
+            <div
               className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500"
               style={{ width: `${progress}%` }}
             />
           </div>
-          
+
           <h2 className="text-3xl font-bold text-white mb-4">
             {processingMode === 'match' ? 'AI Recognition' : 'Generating Mix'}
           </h2>
-          <p className="text-gray-300 text-lg">Creating your perfect playlist...</p>
-          <p className="text-purple-400 text-sm mt-2">{Math.round(progress)}% Complete</p>
+          <p className="text-gray-300 text-lg">
+            Creating your perfect playlist...
+          </p>
+          <p className="text-purple-400 text-sm mt-2">
+            {Math.round(progress)}% Complete
+          </p>
         </div>
       </div>
     );
@@ -228,10 +272,13 @@ const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) 
               <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center mb-8 mx-auto group-hover:scale-110 transition-transform">
                 <Zap className="w-10 h-10 text-white" />
               </div>
-              
-              <h2 className="text-3xl font-bold text-white text-center mb-4">Magic Match</h2>
+
+              <h2 className="text-3xl font-bold text-white text-center mb-4">
+                Magic Match
+              </h2>
               <p className="text-gray-400 text-center mb-8 text-lg leading-relaxed">
-                Play or upload a song and let AI create the perfect continuation playlist
+                Play or upload a song and let AI create the perfect continuation
+                playlist
               </p>
 
               <div className="space-y-4">
@@ -277,17 +324,22 @@ const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) 
               <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-8 mx-auto group-hover:scale-110 transition-transform">
                 <Wand2 className="w-10 h-10 text-white" />
               </div>
-              
-              <h2 className="text-3xl font-bold text-white text-center mb-4">Magic Generate</h2>
+
+              <h2 className="text-3xl font-bold text-white text-center mb-4">
+                Magic Generate
+              </h2>
               <p className="text-gray-400 text-center mb-8 text-lg leading-relaxed">
-                Generate fresh AI-curated playlists from scratch based on your preferences
+                Generate fresh AI-curated playlists from scratch based on your
+                preferences
               </p>
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-white font-semibold mb-4">Choose Genre</label>
+                  <label className="block text-white font-semibold mb-4">
+                    Choose Genre
+                  </label>
                   <div className="grid grid-cols-2 gap-3">
-                    {['Electronic', 'Hip-Hop', 'House', 'Techno'].map((genre) => (
+                    {['Electronic', 'Hip-Hop', 'House', 'Techno'].map(genre => (
                       <button
                         key={genre}
                         onClick={() => setSelectedGenre(genre)}
@@ -304,9 +356,11 @@ const StudioView: React.FC<StudioViewProps> = ({ onPlaylistGenerated, onBack }) 
                 </div>
 
                 <div>
-                  <label className="block text-white font-semibold mb-4">Energy Level</label>
+                  <label className="block text-white font-semibold mb-4">
+                    Energy Level
+                  </label>
                   <div className="grid grid-cols-3 gap-3">
-                    {['Chill', 'Groove', 'Peak'].map((energy) => (
+                    {['Chill', 'Groove', 'Peak'].map(energy => (
                       <button
                         key={energy}
                         onClick={() => setSelectedEnergy(energy)}

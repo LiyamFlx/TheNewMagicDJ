@@ -1,5 +1,18 @@
 import { useState, useRef } from 'react';
-import { Zap, Music, Mic, Upload, ArrowLeft, Sparkles, Wand2, Radio, BarChart3, Save, History, Disc } from 'lucide-react';
+import {
+  Zap,
+  Music,
+  Mic,
+  Upload,
+  ArrowLeft,
+  Sparkles,
+  Wand2,
+  Radio,
+  BarChart3,
+  Save,
+  History,
+  Disc,
+} from 'lucide-react';
 import { User, Playlist } from '../types';
 import { playlistService } from '../services/playlistService';
 import { audioProcessingService } from '../services/audioProcessingService';
@@ -13,12 +26,12 @@ interface MagicStudioProps {
   recentSessions?: any[];
 }
 
-const MagicStudio: React.FC<MagicStudioProps> = ({ 
-  user, 
-  onPlaylistGenerated, 
-  onBack, 
+const MagicStudio: React.FC<MagicStudioProps> = ({
+  user,
+  onPlaylistGenerated,
+  onBack,
   onLibraryAccess,
-  recentSessions = []
+  recentSessions = [],
 }) => {
   const [activeMode, setActiveMode] = useState<'match' | 'set' | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -26,20 +39,57 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
   const [statusMessage, setStatusMessage] = useState('');
   const [showRecentSessions, setShowRecentSessions] = useState(false);
   const [selectedVibe, setSelectedVibe] = useState<string>('');
-  const [selectedEnergy, setSelectedEnergy] = useState<'low' | 'medium' | 'high' | ''>('');
+  const [selectedEnergy, setSelectedEnergy] = useState<
+    'low' | 'medium' | 'high' | ''
+  >('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const vibes = [
-    { name: 'Electronic', icon: Zap, color: 'neon-green', description: 'Synth-heavy electronic beats' },
-    { name: 'Hip-Hop', icon: Mic, color: 'neon-purple', description: 'Urban rhythms and rap flows' },
-    { name: 'House', icon: Disc, color: 'neon-blue', description: 'Four-on-the-floor dance music' },
-    { name: 'Techno', icon: Radio, color: 'neon-orange', description: 'Industrial electronic sounds' }
+    {
+      name: 'Electronic',
+      icon: Zap,
+      color: 'neon-green',
+      description: 'Synth-heavy electronic beats',
+    },
+    {
+      name: 'Hip-Hop',
+      icon: Mic,
+      color: 'neon-purple',
+      description: 'Urban rhythms and rap flows',
+    },
+    {
+      name: 'House',
+      icon: Disc,
+      color: 'neon-blue',
+      description: 'Four-on-the-floor dance music',
+    },
+    {
+      name: 'Techno',
+      icon: Radio,
+      color: 'neon-orange',
+      description: 'Industrial electronic sounds',
+    },
   ];
 
   const energyLevels = [
-    { level: 'low', label: 'Chill', color: 'neon-blue', description: 'Relaxed and ambient' },
-    { level: 'medium', label: 'Groove', color: 'neon-green', description: 'Steady and rhythmic' },
-    { level: 'high', label: 'Peak', color: 'neon-purple', description: 'High energy and intense' }
+    {
+      level: 'low',
+      label: 'Chill',
+      color: 'neon-blue',
+      description: 'Relaxed and ambient',
+    },
+    {
+      level: 'medium',
+      label: 'Groove',
+      color: 'neon-green',
+      description: 'Steady and rhythmic',
+    },
+    {
+      level: 'high',
+      label: 'Peak',
+      color: 'neon-purple',
+      description: 'High energy and intense',
+    },
   ];
 
   const handleMagicMatch = async (source: 'mic' | 'file' | 'stream') => {
@@ -51,18 +101,25 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
 
     try {
       let fingerprint = '';
-      
+
       if (source === 'mic') {
         setStatusMessage('Listening via microphone...');
         setProgress(20);
-        
+
         try {
           await audioProcessingService.startMicrophoneCapture();
-          const result = await audioProcessingService.processAudioFromMicrophone(8000);
+          const result =
+            await audioProcessingService.processAudioFromMicrophone(8000);
           fingerprint = result.fingerprint;
-          setStatusMessage(`Audio captured (${Math.round(result.confidence * 100)}% confidence)`);
+          setStatusMessage(
+            `Audio captured (${Math.round(result.confidence * 100)}% confidence)`
+          );
         } catch (error) {
-          logger.warn('MagicStudio', 'Microphone access failed, using mock data', error);
+          logger.warn(
+            'MagicStudio',
+            'Microphone access failed, using mock data',
+            error
+          );
           fingerprint = 'mock_mic_' + Date.now().toString(16);
           setStatusMessage('Audio captured (simulated)');
         }
@@ -72,38 +129,50 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
       } else if (source === 'stream') {
         setStatusMessage('Capturing from audio stream...');
         setProgress(20);
-        
+
         await new Promise(resolve => setTimeout(resolve, 2000));
         fingerprint = 'stream_' + Date.now().toString(16);
-        
+
         setStatusMessage('Stream audio captured');
         setProgress(40);
       }
-      
+
       const steps = [
         'Analyzing frequency patterns...',
         'Generating audio fingerprint...',
         'Querying music database...',
         'Searching recognition services...',
-        'Creating AI-curated playlist...'
+        'Creating AI-curated playlist...',
       ];
 
       for (let i = 0; i < steps.length; i++) {
         setStatusMessage(steps[i]);
-        setProgress(40 + ((i + 1) / steps.length * 60));
+        setProgress(40 + ((i + 1) / steps.length) * 60);
         await new Promise(resolve => setTimeout(resolve, 800));
       }
 
       try {
-        const playlist = await playlistService.generateMagicMatchPlaylist({ fingerprint });
-        logger.info('MagicStudio', 'MagicMatch playlist generated successfully', {
-          trackCount: playlist.tracks.length,
-          duration: playlist.total_duration
+        const playlist = await playlistService.generateMagicMatchPlaylist({
+          fingerprint,
         });
+        logger.info(
+          'MagicStudio',
+          'MagicMatch playlist generated successfully',
+          {
+            trackCount: playlist.tracks.length,
+            duration: playlist.total_duration,
+          }
+        );
         onPlaylistGenerated(playlist);
       } catch (error) {
-        logger.error('MagicStudio', 'Failed to generate MagicMatch playlist', error);
-        setStatusMessage('Failed to generate playlist. Please check your API configuration.');
+        logger.error(
+          'MagicStudio',
+          'Failed to generate MagicMatch playlist',
+          error
+        );
+        setStatusMessage(
+          'Failed to generate playlist. Please check your API configuration.'
+        );
         setTimeout(() => {
           setIsProcessing(false);
           setActiveMode(null);
@@ -112,9 +181,11 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
       }
     } catch (error) {
       logger.error('MagicStudio', 'MagicMatch recognition failed', error);
-      setStatusMessage('Recognition failed. Please try again or check your microphone permissions.');
+      setStatusMessage(
+        'Recognition failed. Please try again or check your microphone permissions.'
+      );
       setProgress(80);
-      
+
       setTimeout(() => {
         setIsProcessing(false);
         setActiveMode(null);
@@ -127,8 +198,14 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
     }
   };
 
-  const handleMagicSet = async (vibe: string, energy: 'low' | 'medium' | 'high') => {
-    logger.info('MagicStudio', `Starting MagicSet generation`, { vibe, energy });
+  const handleMagicSet = async (
+    vibe: string,
+    energy: 'low' | 'medium' | 'high'
+  ) => {
+    logger.info('MagicStudio', `Starting MagicSet generation`, {
+      vibe,
+      energy,
+    });
     setActiveMode('set');
     setIsProcessing(true);
     setProgress(0);
@@ -140,27 +217,37 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
         'Selecting base tracks...',
         'Applying harmonic matching...',
         'Optimizing energy flow...',
-        'Finalizing your set...'
+        'Finalizing your set...',
       ];
 
       for (let i = 0; i < steps.length; i++) {
         setStatusMessage(steps[i]);
-        setProgress((i + 1) / steps.length * 100);
+        setProgress(((i + 1) / steps.length) * 100);
         await new Promise(resolve => setTimeout(resolve, 800));
       }
 
       try {
-        const playlist = await playlistService.generateMagicSetPlaylist({ vibe, energyLevel: energy, userId: user?.id });
+        const playlist = await playlistService.generateMagicSetPlaylist({
+          vibe,
+          energyLevel: energy,
+          userId: user?.id,
+        });
         logger.info('MagicStudio', 'MagicSet playlist generated successfully', {
           vibe,
           energy,
           trackCount: playlist.tracks.length,
-          duration: playlist.total_duration
+          duration: playlist.total_duration,
         });
         onPlaylistGenerated(playlist);
       } catch (error) {
-        logger.error('MagicStudio', 'Failed to generate MagicSet playlist', error);
-        setStatusMessage('Failed to generate playlist. Please check your API configuration.');
+        logger.error(
+          'MagicStudio',
+          'Failed to generate MagicSet playlist',
+          error
+        );
+        setStatusMessage(
+          'Failed to generate playlist. Please check your API configuration.'
+        );
         setTimeout(() => {
           setIsProcessing(false);
           setActiveMode(null);
@@ -169,7 +256,9 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
       }
     } catch (error) {
       logger.error('MagicStudio', 'MagicSet generation failed', error);
-      setStatusMessage('Generation failed. Please check your API configuration and try again.');
+      setStatusMessage(
+        'Generation failed. Please check your API configuration and try again.'
+      );
       setTimeout(() => {
         setIsProcessing(false);
         setActiveMode(null);
@@ -187,54 +276,67 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
       logger.info('MagicStudio', 'Processing uploaded file', {
         fileName: file.name,
         fileSize: file.size,
-        fileType: file.type
+        fileType: file.type,
       });
-      
+
       setActiveMode('match');
       setIsProcessing(true);
       setProgress(0);
       setStatusMessage('Processing uploaded file...');
-      
-      playlistService.recognizeFromAudioFile(file)
-        .then(async (result) => {
+
+      playlistService
+        .recognizeFromAudioFile(file)
+        .then(async result => {
           if (result) {
             logger.info('MagicStudio', 'Track recognized from file', {
-              track: `${result.title} - ${result.artist}`
+              track: `${result.title} - ${result.artist}`,
             });
             setStatusMessage('Track recognized from file!');
             setProgress(60);
-            
-            const playlist = await playlistService.generateMagicMatchPlaylist({});
+
+            const playlist = await playlistService.generateMagicMatchPlaylist(
+              {}
+            );
             playlist.tracks.unshift(result);
             onPlaylistGenerated(playlist);
             return;
           }
-          
-          logger.warn('MagicStudio', 'Direct recognition failed, trying fingerprint approach');
-          const fingerprintResult = await audioProcessingService.processAudioFile(file);
-          setStatusMessage(`File processed (${Math.round(fingerprintResult.confidence * 100)}% confidence)`);
+
+          logger.warn(
+            'MagicStudio',
+            'Direct recognition failed, trying fingerprint approach'
+          );
+          const fingerprintResult =
+            await audioProcessingService.processAudioFile(file);
+          setStatusMessage(
+            `File processed (${Math.round(fingerprintResult.confidence * 100)}% confidence)`
+          );
           setProgress(40);
-          
+
           const steps = [
             'Analyzing audio fingerprint...',
             'Querying recognition services...',
-            'Generating AI playlist...'
+            'Generating AI playlist...',
           ];
-          
+
           for (let i = 0; i < steps.length; i++) {
             setStatusMessage(steps[i]);
-            setProgress(40 + ((i + 1) / steps.length * 60));
+            setProgress(40 + ((i + 1) / steps.length) * 60);
             await new Promise(resolve => setTimeout(resolve, 600));
           }
-          
-          const playlist = await playlistService.generateMagicMatchPlaylist({ fingerprint: fingerprintResult.fingerprint });
+
+          const playlist = await playlistService.generateMagicMatchPlaylist({
+            fingerprint: fingerprintResult.fingerprint,
+          });
           onPlaylistGenerated(playlist);
         })
-        .catch(async (error) => {
+        .catch(async error => {
           logger.error('MagicStudio', 'File processing failed', error);
-          setStatusMessage('File processing failed. Please try a different audio file.');
+          setStatusMessage(
+            'File processing failed. Please try a different audio file.'
+          );
           setProgress(80);
-          
+
           setTimeout(() => {
             setIsProcessing(false);
             setActiveMode(null);
@@ -253,16 +355,22 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
         {/* Animated Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-float"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full blur-3xl animate-float" style={{animationDelay: '1s'}}></div>
+          <div
+            className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full blur-3xl animate-float"
+            style={{ animationDelay: '1s' }}
+          ></div>
         </div>
 
         <div className="relative z-10 text-center max-w-lg mx-auto p-8">
           {/* Futuristic Animated Logo */}
-          <div className={`w-32 h-32 glass-card flex items-center justify-center mx-auto mb-8 animate-pulse-glow ${activeMode === 'match' ? 'shadow-neon-cyan' : 'shadow-neon-pink'}`}>
-            {activeMode === 'match' ?
-              <Zap className="w-16 h-16 text-gradient-accent" /> :
+          <div
+            className={`w-32 h-32 glass-card flex items-center justify-center mx-auto mb-8 animate-pulse-glow ${activeMode === 'match' ? 'shadow-neon-cyan' : 'shadow-neon-pink'}`}
+          >
+            {activeMode === 'match' ? (
+              <Zap className="w-16 h-16 text-gradient-accent" />
+            ) : (
               <Wand2 className="w-16 h-16 text-gradient-primary" />
-            }
+            )}
           </div>
 
           {/* Glass Progress Bar */}
@@ -274,11 +382,17 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
           </div>
 
           {/* Futuristic Status Message */}
-          <h2 className={`text-3xl font-bold mb-4 font-orbitron tracking-wide ${activeMode === 'match' ? 'text-gradient-accent' : 'text-gradient-primary'}`}>
+          <h2
+            className={`text-3xl font-bold mb-4 font-orbitron tracking-wide ${activeMode === 'match' ? 'text-gradient-accent' : 'text-gradient-primary'}`}
+          >
             {activeMode === 'match' ? 'MAGICMATCH' : 'MAGICSET'} PROCESSING
           </h2>
-          <p className="text-gray-300 text-xl font-inter mb-2">{statusMessage}</p>
-          <p className="text-gray-500 text-sm font-mono">{Math.round(progress)}% COMPLETE</p>
+          <p className="text-gray-300 text-xl font-inter mb-2">
+            {statusMessage}
+          </p>
+          <p className="text-gray-500 text-sm font-mono">
+            {Math.round(progress)}% COMPLETE
+          </p>
 
           {/* Animated Waveform Visualization */}
           <div className="flex justify-center mt-12">
@@ -302,8 +416,14 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full blur-3xl animate-float"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-full blur-3xl animate-float" style={{animationDelay: '2s'}}></div>
-        <div className="absolute top-3/4 left-1/2 w-48 h-48 bg-gradient-to-r from-green-500/10 to-cyan-500/10 rounded-full blur-3xl animate-float" style={{animationDelay: '4s'}}></div>
+        <div
+          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-full blur-3xl animate-float"
+          style={{ animationDelay: '2s' }}
+        ></div>
+        <div
+          className="absolute top-3/4 left-1/2 w-48 h-48 bg-gradient-to-r from-green-500/10 to-cyan-500/10 rounded-full blur-3xl animate-float"
+          style={{ animationDelay: '4s' }}
+        ></div>
       </div>
 
       {/* Glass Header */}
@@ -321,8 +441,12 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
                 <Sparkles className="w-6 h-6 lg:w-7 lg:h-7 text-gradient-primary" />
               </div>
               <div>
-                <h1 className="text-xl lg:text-2xl font-bold text-gradient-primary tracking-wide font-orbitron">MAGIC STUDIO</h1>
-                <p className="text-sm text-gradient-accent font-mono">AI-POWERED CREATION SUITE</p>
+                <h1 className="text-xl lg:text-2xl font-bold text-gradient-primary tracking-wide font-orbitron">
+                  MAGIC STUDIO
+                </h1>
+                <p className="text-sm text-gradient-accent font-mono">
+                  AI-POWERED CREATION SUITE
+                </p>
               </div>
             </div>
           </div>
@@ -346,16 +470,19 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
             <div className="hidden sm:flex items-center text-right">
               <div>
                 <p className="text-sm text-gray-400 font-mono">WELCOME BACK,</p>
-                <p className="font-bold truncate max-w-32 lg:max-w-none text-gradient-accent font-mono">{user?.email}</p>
+                <p className="font-bold truncate max-w-32 lg:max-w-none text-gradient-accent font-mono">
+                  {user?.email}
+                </p>
               </div>
               <div className="w-10 h-10 lg:w-12 lg:h-12 glass-card flex items-center justify-center shadow-neon-pink ml-3">
-                <span className="font-bold text-gradient-primary text-lg">{user?.email?.[0]?.toUpperCase()}</span>
+                <span className="font-bold text-gradient-primary text-lg">
+                  {user?.email?.[0]?.toUpperCase()}
+                </span>
               </div>
             </div>
           </div>
         </div>
       </div>
-
 
       {/* Glass Recent Sessions Panel */}
       {showRecentSessions && (
@@ -368,22 +495,35 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
             {recentSessions.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {recentSessions.slice(0, 6).map((session, index) => (
-                  <div key={index} className="glass-card p-4 hover-lift cursor-pointer group">
+                  <div
+                    key={index}
+                    className="glass-card p-4 hover-lift cursor-pointer group"
+                  >
                     <div className="flex items-center space-x-3 mb-2">
                       <div className="w-8 h-8 gradient-bg-accent rounded-full flex items-center justify-center shadow-neon-cyan">
                         <Music className="w-4 h-4 text-white" />
                       </div>
-                      <h4 className="font-bold text-white truncate group-hover:text-gradient-accent transition-colors font-inter">{session.name || `Session ${index + 1}`}</h4>
+                      <h4 className="font-bold text-white truncate group-hover:text-gradient-accent transition-colors font-inter">
+                        {session.name || `Session ${index + 1}`}
+                      </h4>
                     </div>
-                    <p className="text-sm text-gray-400 font-mono">{session.tracks?.length || 0} tracks</p>
-                    <p className="text-xs text-gray-500 font-mono">{new Date(session.created_at || Date.now()).toLocaleDateString()}</p>
+                    <p className="text-sm text-gray-400 font-mono">
+                      {session.tracks?.length || 0} tracks
+                    </p>
+                    <p className="text-xs text-gray-500 font-mono">
+                      {new Date(
+                        session.created_at || Date.now()
+                      ).toLocaleDateString()}
+                    </p>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-8">
                 <BarChart3 className="w-12 h-12 text-gray-500 mx-auto mb-3" />
-                <p className="text-gray-400 font-inter">No recent sessions found</p>
+                <p className="text-gray-400 font-inter">
+                  No recent sessions found
+                </p>
               </div>
             )}
           </div>
@@ -400,7 +540,8 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
             </span>
           </h1>
           <p className="text-lg lg:text-xl text-gray-300 max-w-3xl mx-auto px-4 font-inter leading-relaxed">
-            AI-assisted creation, playback, and analysis of DJ sets with real-time crowd sensing
+            AI-assisted creation, playback, and analysis of DJ sets with
+            real-time crowd sensing
           </p>
         </div>
 
@@ -413,9 +554,12 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
                 <Zap className="w-12 h-12 lg:w-14 lg:h-14 text-white" />
               </div>
 
-              <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-center text-gradient-accent tracking-wider font-orbitron">MAGICMATCH</h2>
+              <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-center text-gradient-accent tracking-wider font-orbitron">
+                MAGICMATCH
+              </h2>
               <p className="text-base lg:text-lg text-gray-300 text-center mb-8 leading-relaxed font-inter">
-                Recognize what's playing and let AI create the perfect continuation playlist
+                Recognize what's playing and let AI create the perfect
+                continuation playlist
               </p>
 
               <div className="space-y-4">
@@ -453,26 +597,35 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
                 <Wand2 className="w-12 h-12 lg:w-14 lg:h-14 text-white" />
               </div>
 
-              <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-center text-gradient-primary tracking-wider font-orbitron">MAGICSET</h2>
+              <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-center text-gradient-primary tracking-wider font-orbitron">
+                MAGICSET
+              </h2>
               <p className="text-base lg:text-lg text-gray-300 text-center mb-8 leading-relaxed font-inter">
-                Generate an AI-curated playlist from scratch based on your vibe and energy preferences
+                Generate an AI-curated playlist from scratch based on your vibe
+                and energy preferences
               </p>
 
               <div className="space-y-6">
                 {/* Glass Vibe Selection */}
                 <div>
-                  <label className="block text-sm lg:text-base font-bold text-gray-300 mb-4 tracking-wide font-orbitron">CHOOSE YOUR VIBE</label>
+                  <label className="block text-sm lg:text-base font-bold text-gray-300 mb-4 tracking-wide font-orbitron">
+                    CHOOSE YOUR VIBE
+                  </label>
                   <div className="grid grid-cols-2 gap-3">
-                    {vibes.map((vibe) => {
+                    {vibes.map(vibe => {
                       const Icon = vibe.icon;
-                      const isSelected = selectedVibe === vibe.name.toLowerCase();
+                      const isSelected =
+                        selectedVibe === vibe.name.toLowerCase();
                       return (
                         <button
                           key={vibe.name}
                           onClick={() => {
                             setSelectedVibe(vibe.name.toLowerCase());
                             if (selectedEnergy) {
-                              handleMagicSet(vibe.name.toLowerCase(), selectedEnergy);
+                              handleMagicSet(
+                                vibe.name.toLowerCase(),
+                                selectedEnergy
+                              );
                             }
                           }}
                           className={`py-3 lg:py-4 px-4 text-sm lg:text-base font-bold flex items-center justify-center space-x-2 transition-all hover-lift ${
@@ -489,7 +642,9 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
 
                 {/* Glass Energy Level */}
                 <div>
-                  <label className="block text-sm lg:text-base font-bold text-gray-300 mb-4 tracking-wide font-orbitron">ENERGY LEVEL</label>
+                  <label className="block text-sm lg:text-base font-bold text-gray-300 mb-4 tracking-wide font-orbitron">
+                    ENERGY LEVEL
+                  </label>
                   <div className="grid grid-cols-3 gap-2">
                     {energyLevels.map(({ level, label }) => {
                       const isSelected = selectedEnergy === level;
@@ -497,9 +652,14 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
                         <button
                           key={level}
                           onClick={() => {
-                            setSelectedEnergy(level as 'low' | 'medium' | 'high');
+                            setSelectedEnergy(
+                              level as 'low' | 'medium' | 'high'
+                            );
                             if (selectedVibe) {
-                              handleMagicSet(selectedVibe, level as 'low' | 'medium' | 'high');
+                              handleMagicSet(
+                                selectedVibe,
+                                level as 'low' | 'medium' | 'high'
+                              );
                             }
                           }}
                           className={`py-3 lg:py-4 px-3 text-sm lg:text-base font-bold transition-all hover-lift ${
@@ -530,18 +690,30 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
         {/* Glass Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
           <div className="text-center p-6 lg:p-8 glass-card hover-lift group">
-            <div className="text-3xl lg:text-4xl font-bold text-gradient-accent mb-3 font-orbitron group-hover:scale-110 transition-transform">99.8%</div>
-            <div className="text-sm lg:text-base text-gray-400 font-inter tracking-wide">RECOGNITION ACCURACY</div>
+            <div className="text-3xl lg:text-4xl font-bold text-gradient-accent mb-3 font-orbitron group-hover:scale-110 transition-transform">
+              99.8%
+            </div>
+            <div className="text-sm lg:text-base text-gray-400 font-inter tracking-wide">
+              RECOGNITION ACCURACY
+            </div>
             <div className="w-12 h-1 gradient-bg-accent mx-auto mt-2 rounded-full"></div>
           </div>
           <div className="text-center p-6 lg:p-8 glass-card hover-lift group">
-            <div className="text-3xl lg:text-4xl font-bold text-gradient-primary mb-3 font-orbitron group-hover:scale-110 transition-transform">&lt;3s</div>
-            <div className="text-sm lg:text-base text-gray-400 font-inter tracking-wide">AVERAGE PROCESSING TIME</div>
+            <div className="text-3xl lg:text-4xl font-bold text-gradient-primary mb-3 font-orbitron group-hover:scale-110 transition-transform">
+              &lt;3s
+            </div>
+            <div className="text-sm lg:text-base text-gray-400 font-inter tracking-wide">
+              AVERAGE PROCESSING TIME
+            </div>
             <div className="w-12 h-1 gradient-bg-secondary mx-auto mt-2 rounded-full"></div>
           </div>
           <div className="text-center p-6 lg:p-8 glass-card hover-lift group">
-            <div className="text-3xl lg:text-4xl font-bold text-gradient-accent mb-3 font-orbitron group-hover:scale-110 transition-transform">10M+</div>
-            <div className="text-sm lg:text-base text-gray-400 font-inter tracking-wide">TRACKS IN DATABASE</div>
+            <div className="text-3xl lg:text-4xl font-bold text-gradient-accent mb-3 font-orbitron group-hover:scale-110 transition-transform">
+              10M+
+            </div>
+            <div className="text-sm lg:text-base text-gray-400 font-inter tracking-wide">
+              TRACKS IN DATABASE
+            </div>
             <div className="w-12 h-1 gradient-bg-accent mx-auto mt-2 rounded-full"></div>
           </div>
         </div>
