@@ -1,6 +1,6 @@
 import { Playlist, Track, RecognitionResult } from '../types/index';
 import { productionSpotifyService } from './productionSpotifyService';
-import { mockSpotifyService } from './mockSpotifyService';
+// Removed mock spotify service
 import { youtubeService } from './youtubeService';
 import { supabasePlaylistService } from './supabasePlaylistService';
 import { logger } from '../utils/logger';
@@ -1060,7 +1060,7 @@ class PlaylistService {
                 'YouTube service failed, using mock data',
                 youtubeError
               );
-              tracks = await mockSpotifyService.getRecommendations({
+              tracks = await productionSpotifyService.getRecommendations({
                 seed_genres: ['electronic', 'house', 'techno'],
                 limit: 15,
               });
@@ -1118,9 +1118,9 @@ class PlaylistService {
       'generateMagicSetPlaylist',
       async () => {
         const energyMap = {
-          low: 'low',
-          medium: 'medium',
-          high: 'high',
+          low: 0.3,
+          medium: 0.6,
+          high: 0.9,
         };
 
         const energy = energyMap[params.energyLevel];
@@ -1132,7 +1132,7 @@ class PlaylistService {
           tracks = await this.musicService.getRecommendations({
             seed_genres: genres,
             limit: 20,
-            target_energy: energy as any,
+            target_energy: energy,
           });
         } catch (error) {
           logger.warn(
@@ -1146,7 +1146,7 @@ class PlaylistService {
               const ytTracks = await youtubeService.getRecommendations({
                 seed_genres: genres,
                 limit: 20,
-                energy: energy as any,
+                energy: energy.toString(),
               });
               tracks = ytTracks || [];
             } else {
@@ -1158,7 +1158,7 @@ class PlaylistService {
               'YouTube service failed, using mock service',
               youtubeError
             );
-            tracks = await mockSpotifyService.getRecommendations({
+            tracks = await productionSpotifyService.getRecommendations({
               seed_genres: genres,
               limit: 20,
             });

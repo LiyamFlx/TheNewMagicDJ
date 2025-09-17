@@ -340,7 +340,7 @@ test.describe('🤖 CI/CD QA Validation - MagicDJ Platform', () => {
 
       // Check that specific previous issues don't reoccur
       const regressionIssues = errors.filter(error =>
-        error.includes('SoundHelix') ||           // CORS issues
+        error.includes('YouTube') ||            // YouTube API issues
         error.includes('Minified React error #300') || // React crashes
         error.includes('duplicate key value')      // DB constraint errors
       );

@@ -1,7 +1,7 @@
 import { Track } from '../types';
 import { logger } from '../utils/logger';
 import { fetchWithRetry } from '../utils/http';
-import { generateWavDataUrl } from '../utils/audioFallback';
+// Removed audio fallback imports
 
 // =============================================================================
 // TYPE DEFINITIONS & INTERFACES
@@ -108,43 +108,9 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 100; // Conservative limit per minute
 
-const DEMO_AUDIO_URLS = (() => {
-  const freqs = [
-    220, 246.94, 261.63, 293.66, 329.63, 349.23, 392.0, 440, 493.88, 523.25,
-  ];
-  return freqs.map(f => generateWavDataUrl(f, 12));
-})();
+// No more demo audio - we use real YouTube URLs
 
-const GENRE_TRACK_TITLES = {
-  house: [
-    'House Anthem',
-    'Deep Groove',
-    'Progressive Beat',
-    'Club Banger',
-    'Underground Mix',
-  ],
-  electronic: [
-    'Synth Wave',
-    'Digital Dreams',
-    'Cyber Beats',
-    'Electronic Symphony',
-    'Tech Fusion',
-  ],
-  techno: [
-    'Industrial Pulse',
-    'Berlin Nights',
-    'Minimal Tech',
-    'Dark Energy',
-    'Warehouse Vibe',
-  ],
-  'hip-hop': [
-    'Urban Flow',
-    'Street Beats',
-    'Boom Bap',
-    'Trap Anthem',
-    'Old School',
-  ],
-} as const;
+// Removed unused genre track titles
 
 // =============================================================================
 // UTILITY FUNCTIONS
@@ -166,35 +132,7 @@ function parseDuration(duration: string): number {
   return hours * 3600 + minutes * 60 + seconds;
 }
 
-/**
- * Generates a consistent hash from a string
- * @param str - Input string to hash
- * @returns Hash number
- */
-function stringHash(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return Math.abs(hash);
-}
-
-/**
- * Detects genre from seed text
- * @param seed - Seed text to analyze
- * @returns Detected genre or 'electronic' as default
- */
-function detectGenre(seed: string): keyof typeof GENRE_TRACK_TITLES {
-  const lowerSeed = seed.toLowerCase();
-
-  if (lowerSeed.includes('house')) return 'house';
-  if (lowerSeed.includes('techno')) return 'techno';
-  if (lowerSeed.includes('hip') || lowerSeed.includes('rap')) return 'hip-hop';
-
-  return 'electronic';
-}
+// Removed unused utility functions
 
 // =============================================================================
 // MAIN SERVICE CLASS
@@ -312,47 +250,18 @@ export class YouTubeService {
   }
 
   /**
-   * Generates fallback tracks when YouTube API is unavailable
-   * @param seed - Genre/style seed for track generation
-   * @param count - Number of tracks to generate
-   * @returns Promise resolving to array of fallback Track objects
+   * No more fallback tracks - if YouTube API fails, we return empty array
+   * This forces the app to handle real failures instead of hiding them with fake data
    */
   public async getFallbackTracks(
     seed: string,
     count: number
   ): Promise<Track[]> {
-    logger.info('YouTubeService', 'Generating fallback tracks', {
+    logger.warn('YouTubeService', 'YouTube API unavailable - no fallback tracks', {
       seed,
       count,
     });
-
-    const genre = detectGenre(seed);
-    const titles = GENRE_TRACK_TITLES[genre];
-
-    const tracks: Track[] = [];
-
-    for (let i = 0; i < count; i++) {
-      const baseTitle = titles[i % titles.length];
-      const artist = `${genre.charAt(0).toUpperCase() + genre.slice(1)} Artist ${i + 1}`;
-
-      tracks.push({
-        id: `yt-fallback-${Date.now()}-${i}`,
-        title: baseTitle,
-        artist,
-        album: `${genre.charAt(0).toUpperCase() + genre.slice(1)} Collection`,
-        duration: 180 + Math.floor(Math.random() * 120), // 3-5 minutes
-        preview_url: DEMO_AUDIO_URLS[i % DEMO_AUDIO_URLS.length],
-        bpm: Math.floor(Math.random() * 60) + 100, // 100-160 BPM
-        key: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][
-          Math.floor(Math.random() * 12)
-        ],
-        energy: Math.random(),
-        danceability: Math.random(),
-        valence: Math.random(),
-      });
-    }
-
-    return tracks;
+    return [];
   }
 
   // ===========================================================================
@@ -486,14 +395,12 @@ export class YouTubeService {
   }
 
   /**
-   * Maps YouTube video ID to a consistent streamable URL
+   * Maps YouTube video ID to a real YouTube URL
    * @param videoId - YouTube video ID
-   * @returns Streamable audio URL
+   * @returns Real YouTube URL
    */
   private getStreamableUrl(videoId: string): string {
-    // Use consistent hash to map video ID to demo track
-    const hash = stringHash(videoId);
-    return DEMO_AUDIO_URLS[hash % DEMO_AUDIO_URLS.length];
+    return `https://www.youtube.com/watch?v=${videoId}`;
   }
 
   /**

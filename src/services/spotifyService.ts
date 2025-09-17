@@ -1,7 +1,5 @@
 import { Track } from '../types';
-import { mockSpotifyService } from './mockSpotifyService';
 import { productionSpotifyService } from './productionSpotifyService';
-import config from '../config';
 
 interface SpotifyRecommendationParams {
   seed_tracks?: string[];
@@ -20,47 +18,17 @@ interface SpotifyService {
 }
 
 class UnifiedSpotifyService implements SpotifyService {
-  private token: string | null = null;
-  private useMock: boolean = false;
 
-  constructor() {
-    // Determine if we should use mock service
-    this.useMock = this.shouldUseMock();
-  }
-
-  private shouldUseMock(): boolean {
-    return config.USE_SPOTIFY_MOCK;
-  }
-
-  initialize(token: string): void {
-    this.token = token;
-
-    // If we have a real token and are not forced to use mock, switch to production
-    if (token && token !== 'mock-spotify-token-dev' && !this.useMock) {
-      // Production service doesn't need explicit initialization with token
-      // It handles token management internally through the API
-    }
+  initialize(_token: string): void {
+    // Production service handles its own token management
+    // No initialization needed
   }
 
   async getRecommendations(
     params: SpotifyRecommendationParams
   ): Promise<Track[]> {
-    if (this.useMock || this.token === 'mock-spotify-token-dev') {
-      return mockSpotifyService.getRecommendations(params);
-    }
-
-    // Use production service, which handles its own token management
+    // Always use production service - no more mocking
     return productionSpotifyService.getRecommendations(params);
-  }
-
-  // Utility method to check if we're using mock service
-  isUsingMock(): boolean {
-    return this.useMock || this.token === 'mock-spotify-token-dev';
-  }
-
-  // Method to force mock mode (useful for testing/development)
-  setMockMode(useMock: boolean): void {
-    this.useMock = useMock;
   }
 }
 

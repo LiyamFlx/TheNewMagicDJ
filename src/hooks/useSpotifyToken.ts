@@ -24,30 +24,9 @@ export function useSpotifyToken(): UseSpotifyTokenReturn {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      // In development, return a mock token
-      if (import.meta.env?.DEV) {
-        setState({
-          token: 'mock-spotify-token-dev',
-          isLoading: false,
-          error: null,
-          expiresAt: Date.now() + 3600000,
-        });
-        return;
-      }
-
       const response = await fetch('/api/spotify-token');
 
       if (!response.ok) {
-        if (response.status === 503) {
-          // Gracefully degrade to mock token
-          setState({
-            token: 'mock-spotify-token-dev',
-            isLoading: false,
-            error: null,
-            expiresAt: Date.now() + 3600000,
-          });
-          return;
-        }
         throw new Error(`Token fetch failed: ${response.status}`);
       }
 
@@ -60,10 +39,10 @@ export function useSpotifyToken(): UseSpotifyTokenReturn {
       });
     } catch (error) {
       setState({
-        token: 'mock-spotify-token-dev',
+        token: null,
         isLoading: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        expiresAt: Date.now() + 3600000,
+        expiresAt: null,
       });
     }
   }, []);

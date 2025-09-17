@@ -133,9 +133,8 @@ class ProductionSpotifyService {
           if ((import.meta as any)?.env?.DEV) {
             logger.info(
               'ProductionSpotifyService',
-              'Dev mode: returning fallback tracks'
+              'Dev mode: using real Spotify API'
             );
-            return this.getFallbackTracks(params.limit || 15);
           }
           const token = await this.authenticate();
 
@@ -277,40 +276,19 @@ class ProductionSpotifyService {
         } catch (error) {
           logger.error(
             'ProductionSpotifyService',
-            'Recommendations failed, using fallback',
+            'Recommendations failed - no fallback',
             error
           );
 
-          // Return fallback tracks with demo audio
-          return this.getFallbackTracks(params.limit || 15);
+          // No more fallback - return empty array to surface real errors
+          return [];
         }
       },
       params
     );
   }
 
-  private getFallbackTracks(count: number): Track[] {
-    const fallbackTracks: Track[] = [];
-
-    for (let i = 0; i < count; i++) {
-      fallbackTracks.push({
-        id: `fallback-${i}`,
-        title: `Demo Track ${i + 1}`,
-        artist: 'Demo Artist',
-        album: 'Demo Album',
-        duration: 180 + Math.floor(Math.random() * 120), // 3-5 minutes
-        bpm: Math.floor(Math.random() * 60) + 100,
-        key: ['C', 'D', 'E', 'F', 'G', 'A', 'B'][Math.floor(Math.random() * 7)],
-        energy: Math.random(),
-        danceability: Math.random(),
-        valence: Math.random(),
-        // No external preview to avoid CORS; players will generate local fallback audio
-        preview_url: undefined,
-      });
-    }
-
-    return fallbackTracks;
-  }
+  // Removed getFallbackTracks - no more fake data
 }
 
 export const productionSpotifyService = new ProductionSpotifyService();
