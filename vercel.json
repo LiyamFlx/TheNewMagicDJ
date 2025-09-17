@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "the-new-magic-dj",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
@@ -14,10 +13,6 @@
       "runtime": "@vercel/node@3.2.14",
       "maxDuration": 30
     }
-  },
-  "env": {
-    "VITA_SPOTIFY_CLIENT_ID": "@vita-spotify-client-id",
-    "VITA_SPOTIFY_CLIENT_SECRET": "@vita-spotify-client-secret"
   },
   "rewrites": [
     {
