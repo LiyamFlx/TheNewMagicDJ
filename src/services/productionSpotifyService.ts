@@ -3,6 +3,7 @@ import { logger } from '../utils/logger';
 import { fetchWithRetry } from '../utils/http';
 import { rateLimiter } from '../utils/rateLimiter';
 import { errorFromResponse } from '../utils/errors';
+import config from '../config';
 
 interface SpotifyRecommendationParams {
   seed_tracks?: string[];
@@ -70,8 +71,10 @@ class ProductionSpotifyService {
 
         try {
           // Request token from serverless proxy to avoid exposing secrets in client
+          const base = config.API_BASE_URL || '';
+          const tokenUrl = `${base}/api/spotify-token`;
           const response = await fetchWithRetry(
-            '/api/spotify-token',
+            tokenUrl,
             { method: 'GET' },
             { timeoutMs: 12000, retries: 2 }
           );
@@ -87,6 +90,13 @@ class ProductionSpotifyService {
             throw err;
           }
 
+          const ct = response.headers.get('content-type') || '';
+          if (!ct.includes('application/json')) {
+            const snippet = (await response.text()).slice(0, 120);
+            const err = { code: 'BAD_RESPONSE', message: 'Non-JSON token response', details: snippet } as any;
+            logger.error('ProductionSpotifyService', 'Authentication failed', err);
+            throw err;
+          }
           const data: SpotifyAuthResponse = await response.json();
           this.accessToken = data.access_token;
           this.tokenExpiry = Date.now() + data.expires_in * 1000 - 60000; // 1 minute buffer
