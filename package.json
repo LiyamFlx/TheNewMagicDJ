@@ -29,6 +29,7 @@
     "serverless"
   ],
   "scripts": {
+    "test": "echo \"No test suite defined yet\" && exit 0",
     "dev": "vite --host",
     "dev:api": "vercel dev",
     "build": "tsc && vite build",
