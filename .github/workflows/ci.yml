@@ -7,10 +7,10 @@ concurrency:
 
 on:
   push:
-    branches: ["main"]
+    branches: [main]
   pull_request:
-    branches: ["main"]
-  workflow_dispatch:   # ✅ allows manual triggers from GitHub UI or gh cli
+    branches: [main]
+  workflow_dispatch:   #  allows manual triggers from GitHub UI or gh cli
 
 jobs:
   build:
