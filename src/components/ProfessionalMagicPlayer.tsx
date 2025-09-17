@@ -22,10 +22,11 @@ import {
 import { Playlist, Session, Track } from '../types';
 import MagicDancer from './MagicDancer';
 import PlaylistEditor from './PlaylistEditor';
+import YouTubePlayer, { YouTubePlayerRef, YouTubePlayerState } from './YouTubePlayer';
+import { audioSourceService, AudioSource } from '../services/audioSourceService';
 import { logger } from '../utils/logger';
 import { throttle } from '../utils/debounce';
 import { formatTimeClock } from '../utils/format';
-import { generateWavDataUrl } from '../utils/audioFallback';
 
 interface ProfessionalMagicPlayerProps {
   playlist: Playlist | null;
@@ -55,10 +56,20 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const [autoMix, setAutoMix] = useState(false);
   const [, setCuePoints] = useState<{ [key: string]: number[] }>({});
 
-  // Audio elements using refs for stability
+  // Audio elements and YouTube players using refs for stability
   const audioARef = useRef<HTMLAudioElement | null>(null);
   const audioBRef = useRef<HTMLAudioElement | null>(null);
+  const youtubeARef = useRef<YouTubePlayerRef | null>(null);
+  const youtubeBRef = useRef<YouTubePlayerRef | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+
+  // Audio source management
+  const [deckASources, setDeckASources] = useState<AudioSource[]>([]);
+  const [deckBSources, setDeckBSources] = useState<AudioSource[]>([]);
+  const [deckACurrentSource, setDeckACurrentSource] = useState<AudioSource | null>(null);
+  const [deckBCurrentSource, setDeckBCurrentSource] = useState<AudioSource | null>(null);
+  const [deckASourceIndex, setDeckASourceIndex] = useState(0);
+  const [deckBSourceIndex, setDeckBSourceIndex] = useState(0);
 
   // Audio state
   const [currentTime, setCurrentTime] = useState(0);
@@ -92,12 +103,6 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     ended?: () => void;
     error?: (e: Event) => void;
   }>({});
-
-  // Error throttling to prevent spam
-  const errorThrottleRef = useRef<{
-    lastError: number;
-    errorCount: number;
-  }>({ lastError: 0, errorCount: 0 });
 
   const currentTrack = playlist?.tracks[currentTrackIndex];
   const nextTrack = playlist?.tracks[currentTrackIndex + 1];
@@ -148,38 +153,207 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     }
   }, [currentTrackIndex, playlist?.tracks.length, onSessionEnd]);
 
-  // Initialize Audio A
-  useEffect(() => {
-    if (!currentTrack) return;
+  // Helper functions for audio source management
+  const loadAudioSources = useCallback(async (track: Track): Promise<AudioSource[]> => {
+    try {
+      logger.info('ProfessionalMagicPlayer', 'Loading audio sources for track', {
+        trackId: track.id,
+        trackTitle: track.title
+      });
 
-    // Clean up existing audio
-    if (audioARef.current) {
-      const audio = audioARef.current;
-      const listeners = audioAListenersRef.current;
+      const sources = await audioSourceService.getAudioSourcesForTrack(track);
+      logger.info('ProfessionalMagicPlayer', 'Audio sources loaded', {
+        trackId: track.id,
+        sourceCount: sources.length,
+        sourceTypes: sources.map(s => s.type)
+      });
 
+      return sources;
+    } catch (error) {
+      logger.error('ProfessionalMagicPlayer', 'Failed to load audio sources', {
+        trackId: track.id,
+        error
+      });
+      return [];
+    }
+  }, []);
+
+  const tryNextSource = useCallback((deck: 'A' | 'B', currentIndex: number, sources: AudioSource[]) => {
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < sources.length) {
+      logger.info('ProfessionalMagicPlayer', `Trying next source for deck ${deck}`, {
+        currentIndex,
+        nextIndex,
+        nextSourceType: sources[nextIndex]?.type
+      });
+
+      if (deck === 'A') {
+        setDeckASourceIndex(nextIndex);
+      } else {
+        setDeckBSourceIndex(nextIndex);
+      }
+      return true;
+    }
+    return false;
+  }, []);
+
+  // Audio cleanup utility
+  const cleanupAudioElement = useCallback((audio: HTMLAudioElement, listeners: any) => {
+    try {
+      // Pause and reset audio
       audio.pause();
-      if (listeners.loadedmetadata)
+      audio.currentTime = 0;
+
+      // Remove all event listeners
+      if (listeners.loadedmetadata) {
         audio.removeEventListener('loadedmetadata', listeners.loadedmetadata);
-      if (listeners.canplaythrough)
+      }
+      if (listeners.canplaythrough) {
         audio.removeEventListener('canplaythrough', listeners.canplaythrough);
-      if (listeners.timeupdate)
+      }
+      if (listeners.timeupdate) {
         audio.removeEventListener('timeupdate', listeners.timeupdate);
-      if (listeners.ended) audio.removeEventListener('ended', listeners.ended);
-      if (listeners.error) audio.removeEventListener('error', listeners.error);
+      }
+      if (listeners.ended) {
+        audio.removeEventListener('ended', listeners.ended);
+      }
+      if (listeners.error) {
+        audio.removeEventListener('error', listeners.error);
+      }
+
+      // Clear source to free memory
+      audio.src = '';
+      audio.load();
+
+      logger.debug('ProfessionalMagicPlayer', 'Audio element cleaned up successfully');
+    } catch (error) {
+      logger.warn('ProfessionalMagicPlayer', 'Error during audio cleanup', error);
+    }
+  }, []);
+
+  const initializeAudioPlayer = useCallback((source: AudioSource, deck: 'A' | 'B') => {
+    if (source.type === 'youtube') {
+      // YouTube source will be handled by YouTubePlayer component
+      return null;
     }
 
+    // Create HTML audio element for proxy and demo sources
     const audio = new Audio();
     audio.preload = 'auto';
     audio.crossOrigin = 'anonymous';
+
+    // Set source with error handling
+    try {
+      audio.src = source.url;
+    } catch (error) {
+      logger.error('ProfessionalMagicPlayer', 'Failed to set audio source', {
+        sourceType: source.type,
+        error
+      });
+      return null;
+    }
+
+    logger.info('ProfessionalMagicPlayer', `Initialized audio player for deck ${deck}`, {
+      sourceType: source.type,
+      sourceUrl: source.url.substring(0, 50) + '...'
+    });
+
+    return audio;
+  }, []);
+
+  const handleSourceError = useCallback((deck: 'A' | 'B', error: any) => {
+    const sources = deck === 'A' ? deckASources : deckBSources;
+    const currentIndex = deck === 'A' ? deckASourceIndex : deckBSourceIndex;
+
+    logger.error('ProfessionalMagicPlayer', `Audio source error on deck ${deck}`, {
+      error,
+      currentSourceType: sources[currentIndex]?.type,
+      currentIndex,
+      totalSources: sources.length
+    });
+
+    // Try next source
+    if (!tryNextSource(deck, currentIndex, sources)) {
+      // No more sources available
+      setErrorMessage(`All audio sources failed for deck ${deck}`);
+      setIsDegraded(true);
+      setTimeout(() => setErrorMessage(null), 3000);
+    }
+  }, [deckASources, deckBSources, deckASourceIndex, deckBSourceIndex, tryNextSource]);
+
+  // Load audio sources for current track
+  useEffect(() => {
+    if (!currentTrack) {
+      setDeckASources([]);
+      setDeckACurrentSource(null);
+      setDeckASourceIndex(0);
+      return;
+    }
+
+    let isCancelled = false;
+
+    const loadSources = async () => {
+      setIsLoading(true);
+      const sources = await loadAudioSources(currentTrack);
+
+      if (!isCancelled && sources.length > 0) {
+        setDeckASources(sources);
+        setDeckASourceIndex(0);
+      } else if (!isCancelled) {
+        // Fallback if no sources available
+        setDeckASources([]);
+        setDeckACurrentSource(null);
+        setErrorMessage('No audio sources available');
+        setIsDegraded(true);
+        setTimeout(() => setErrorMessage(null), 3000);
+      }
+    };
+
+    loadSources();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentTrack, loadAudioSources]);
+
+  // Initialize Audio A when source changes
+  useEffect(() => {
+    if (deckASources.length === 0 || deckASourceIndex >= deckASources.length) {
+      setDeckACurrentSource(null);
+      return;
+    }
+
+    const source = deckASources[deckASourceIndex];
+    setDeckACurrentSource(source);
+
+    // Clean up existing audio using utility function
+    if (audioARef.current) {
+      cleanupAudioElement(audioARef.current, audioAListenersRef.current);
+      audioARef.current = null;
+      // Clear listeners reference
+      audioAListenersRef.current = {};
+    }
+
+    // Skip YouTube sources - they're handled by YouTubePlayer component
+    if (source.type === 'youtube') {
+      setIsLoading(false);
+      setDuration(source.duration || 180);
+      return;
+    }
+
+    // Initialize HTML audio for proxy and demo sources
+    const audio = initializeAudioPlayer(source, 'A');
+    if (!audio) return;
+
     audio.volume = deckAVolume / 100;
 
     // Create listener functions
     const onLoadedMetadata = () => {
-      setDuration(audio.duration || 180);
+      setDuration(audio.duration || source.duration || 180);
       logger.info('ProfessionalMagicPlayer', 'Audio A metadata loaded', {
         duration: audio.duration,
-        readyState: audio.readyState,
-        src: audio.src.substring(0, 50) + '...',
+        sourceType: source.type,
+        sourceUrl: source.url.substring(0, 50) + '...',
       });
     };
 
@@ -187,8 +361,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       setIsLoading(false);
       logger.info('ProfessionalMagicPlayer', 'Audio A can play through', {
         duration: audio.duration,
-        readyState: audio.readyState,
-        src: audio.src.substring(0, 50) + '...',
+        sourceType: source.type,
       });
     };
 
@@ -200,60 +373,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     };
 
     const onError = (e: Event) => {
-      const target = e.target as HTMLAudioElement;
-      const error = target.error;
-      const now = Date.now();
-
-      // Throttle error logging to prevent spam
-      if (now - errorThrottleRef.current.lastError < 2000) {
-        errorThrottleRef.current.errorCount++;
-        if (errorThrottleRef.current.errorCount > 5) {
-          return; // Stop logging after 5 rapid errors
-        }
-      } else {
-        errorThrottleRef.current.errorCount = 1;
-      }
-      errorThrottleRef.current.lastError = now;
-
-      logger.error('ProfessionalMagicPlayer', 'Audio A playback error', {
-        code: error?.code,
-        message: error?.message,
-        src: target.src,
-        networkState: target.networkState,
-        readyState: target.readyState,
-        errorCount: errorThrottleRef.current.errorCount,
+      logger.error('ProfessionalMagicPlayer', 'Audio A source failed', {
+        sourceType: source.type,
+        sourceUrl: source.url,
+        error: (e.target as HTMLAudioElement).error
       });
 
-      setIsLoading(false);
-      setDuration(currentTrack.duration ?? 180);
-
-      // Only show error message on first few errors, not repeatedly
-      if (
-        errorThrottleRef.current.errorCount <= 2 &&
-        target.src &&
-        !target.src.startsWith('data:audio/wav')
-      ) {
-        setErrorMessage('Audio failed, using demo audio');
-        setIsDegraded(true);
-        setTimeout(() => setErrorMessage(null), 3000);
-      }
-
-      // Auto-skip to next track if current track fails to load (but not repeatedly)
-      if (
-        error &&
-        error.code !== 1 &&
-        errorThrottleRef.current.errorCount === 1
-      ) {
-        logger.info('ProfessionalMagicPlayer', 'Auto-skipping failed track', {
-          currentIndex: currentTrackIndex,
-          totalTracks: playlist?.tracks.length,
-        });
-        setTimeout(() => {
-          if (currentTrackIndex < (playlist?.tracks.length ?? 0) - 1) {
-            handleSkipForward();
-          }
-        }, 1000);
-      }
+      handleSourceError('A', e);
     };
 
     // Store listeners for cleanup
@@ -272,82 +398,88 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     audio.addEventListener('ended', handleTrackEnd);
     audio.addEventListener('error', onError);
 
-    // Set audio source - prioritize track's preview_url
-    if (currentTrack.preview_url && currentTrack.preview_url.trim() !== '') {
-      audio.src = currentTrack.preview_url;
-      setIsDegraded(false);
-      logger.info(
-        'ProfessionalMagicPlayer',
-        'Audio A source set to track preview',
-        {
-          trackTitle: currentTrack.title,
-          audioSrc: currentTrack.preview_url,
-        }
-      );
-    } else {
-      // Use track index to vary frequency for local fallback
-      const baseFreq = 440 + currentTrackIndex * 20; // Vary frequency per track
-      audio.src = generateWavDataUrl(baseFreq, 12);
-      setIsDegraded(true);
-
-      logger.info(
-        'ProfessionalMagicPlayer',
-        'Audio A source set to generated fallback',
-        {
-          trackTitle: currentTrack.title,
-          frequency: baseFreq,
-          reason: 'No preview_url available',
-        }
-      );
-    }
-
-    // Set volume immediately
-    audio.volume = 0.7;
-
     audioARef.current = audio;
     setIsLoading(true);
 
     return () => {
-      const listeners = audioAListenersRef.current;
-      if (listeners.loadedmetadata)
-        audio.removeEventListener('loadedmetadata', listeners.loadedmetadata);
-      if (listeners.canplaythrough)
-        audio.removeEventListener('canplaythrough', listeners.canplaythrough);
-      if (listeners.timeupdate)
-        audio.removeEventListener('timeupdate', listeners.timeupdate);
-      if (listeners.ended) audio.removeEventListener('ended', listeners.ended);
-      if (listeners.error) audio.removeEventListener('error', listeners.error);
-      audio.pause();
+      if (audio) {
+        cleanupAudioElement(audio, audioAListenersRef.current);
+      }
     };
-  }, [currentTrack, currentTrackIndex, playlist?.tracks.length, onSessionEnd]);
+  }, [deckASources, deckASourceIndex, deckAVolume, initializeAudioPlayer, handleTrackEnd, handleSourceError, cleanupAudioElement]);
 
-  // Initialize Audio B
+  // Load audio sources for next track (Deck B)
   useEffect(() => {
     if (!nextTrack) {
-      if (audioBRef.current) {
-        const audio = audioBRef.current;
-        const listeners = audioBListenersRef.current;
+      setDeckBSources([]);
+      setDeckBCurrentSource(null);
+      setDeckBSourceIndex(0);
+      return;
+    }
 
-        audio.pause();
-        if (listeners.loadedmetadata)
-          audio.removeEventListener('loadedmetadata', listeners.loadedmetadata);
-        if (listeners.timeupdate)
-          audio.removeEventListener('timeupdate', listeners.timeupdate);
-        if (listeners.ended)
-          audio.removeEventListener('ended', listeners.ended);
-        if (listeners.error)
-          audio.removeEventListener('error', listeners.error);
+    let isCancelled = false;
+
+    const loadSources = async () => {
+      const sources = await loadAudioSources(nextTrack);
+
+      if (!isCancelled && sources.length > 0) {
+        setDeckBSources(sources);
+        setDeckBSourceIndex(0);
+      } else if (!isCancelled) {
+        setDeckBSources([]);
+        setDeckBCurrentSource(null);
+      }
+    };
+
+    loadSources();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [nextTrack, loadAudioSources]);
+
+  // Initialize Audio B when source changes
+  useEffect(() => {
+    if (deckBSources.length === 0 || deckBSourceIndex >= deckBSources.length) {
+      setDeckBCurrentSource(null);
+
+      // Clean up existing audio using utility function
+      if (audioBRef.current) {
+        cleanupAudioElement(audioBRef.current, audioBListenersRef.current);
         audioBRef.current = null;
+        audioBListenersRef.current = {};
       }
       return;
     }
 
-    const audio = new Audio();
+    const source = deckBSources[deckBSourceIndex];
+    setDeckBCurrentSource(source);
+
+    // Clean up existing audio using utility function
+    if (audioBRef.current) {
+      cleanupAudioElement(audioBRef.current, audioBListenersRef.current);
+      audioBRef.current = null;
+      audioBListenersRef.current = {};
+    }
+
+    // Skip YouTube sources - they're handled by YouTubePlayer component
+    if (source.type === 'youtube') {
+      return;
+    }
+
+    // Initialize HTML audio for proxy and demo sources
+    const audio = initializeAudioPlayer(source, 'B');
+    if (!audio) return;
+
     audio.preload = 'metadata';
+    audio.volume = deckBVolume / 100;
 
     // Create listener functions for deck B
     const onLoadedMetadata = () => {
-      // Deck B metadata loaded
+      logger.info('ProfessionalMagicPlayer', 'Audio B metadata loaded', {
+        sourceType: source.type,
+        sourceUrl: source.url.substring(0, 50) + '...',
+      });
     };
 
     const onTimeUpdate = () => {
@@ -357,32 +489,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     };
 
     const onError = (e: Event) => {
-      const target = e.target as HTMLAudioElement;
-      const error = target.error;
-      const now = Date.now();
-
-      // Use same throttling for Audio B
-      if (now - errorThrottleRef.current.lastError < 2000) {
-        errorThrottleRef.current.errorCount++;
-        if (errorThrottleRef.current.errorCount > 5) {
-          return; // Stop logging after 5 rapid errors
-        }
-      } else {
-        errorThrottleRef.current.errorCount = 1;
-      }
-      errorThrottleRef.current.lastError = now;
-
-      logger.error('ProfessionalMagicPlayer', 'Audio B playback error', {
-        code: error?.code,
-        message: error?.message,
-        src: target.src,
-        errorCount: errorThrottleRef.current.errorCount,
+      logger.error('ProfessionalMagicPlayer', 'Audio B source failed', {
+        sourceType: source.type,
+        sourceUrl: source.url,
+        error: (e.target as HTMLAudioElement).error
       });
 
-      // Set degraded mode if errors persist
-      if (errorThrottleRef.current.errorCount <= 2) {
-        setIsDegraded(true);
-      }
+      handleSourceError('B', e);
     };
 
     // Store listeners for cleanup
@@ -397,194 +510,185 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('error', onError);
 
-    // Set audio source - prioritize track's preview_url
-    if (nextTrack.preview_url && nextTrack.preview_url.trim() !== '') {
-      audio.src = nextTrack.preview_url;
-    } else {
-      // Use a simple silent audio data URL as fallback
-      audio.src =
-        'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEeBDKJ0fPOgzEHIHjJ+tycRw0UW7zv85xrGw5UqObsu2AcBjSO2OzNeSsFJHPN7tmSPwhGn+J+t2ApDS+5vG0t';
-    }
-
-    // Set volume immediately
-    audio.volume = 0.5;
-
     audioBRef.current = audio;
 
     return () => {
-      const listeners = audioBListenersRef.current;
-      if (listeners.loadedmetadata)
-        audio.removeEventListener('loadedmetadata', listeners.loadedmetadata);
-      if (listeners.timeupdate)
-        audio.removeEventListener('timeupdate', listeners.timeupdate);
-      if (listeners.error) audio.removeEventListener('error', listeners.error);
-      audio.pause();
+      if (audio) {
+        cleanupAudioElement(audio, audioBListenersRef.current);
+      }
     };
-  }, [nextTrack]);
+  }, [deckBSources, deckBSourceIndex, deckBVolume, initializeAudioPlayer, handleSourceError, cleanupAudioElement]);
 
-  // Handle play/pause with state tracking to prevent double triggers
-  const [lastPlayPauseState, setLastPlayPauseState] = useState<boolean | null>(
-    null
-  );
+  // Atomic audio state management to prevent race conditions
+  const audioStateRef = useRef<{
+    isTransitioning: boolean;
+    pendingAction: boolean | null;
+    lastKnownState: boolean | null;
+  }>({
+    isTransitioning: false,
+    pendingAction: null,
+    lastKnownState: null
+  });
 
-  useEffect(() => {
-    // Prevent duplicate calls with same state
-    if (lastPlayPauseState === isPlaying) {
+  // Atomic audio control function to prevent race conditions
+  const handlePlayPauseAtomic = useCallback(async (shouldPlay: boolean) => {
+    const state = audioStateRef.current;
+
+    // If already transitioning, queue the action
+    if (state.isTransitioning) {
+      state.pendingAction = shouldPlay;
+      logger.debug('ProfessionalMagicPlayer', 'Audio action queued during transition', { shouldPlay });
       return;
     }
-    setLastPlayPauseState(isPlaying);
 
-    const audio = audioARef.current;
+    // Check if this is a duplicate call
+    if (state.lastKnownState === shouldPlay) {
+      logger.debug('ProfessionalMagicPlayer', 'Skipping duplicate audio action', { shouldPlay });
+      return;
+    }
 
-    logger.info('ProfessionalMagicPlayer', 'Play/Pause effect triggered', {
-      isPlaying,
-      hasAudio: !!audio,
-      audioSrc: audio?.src,
-      isLoading,
-      readyState: audio?.readyState,
-      currentTrack: currentTrack?.title,
-    });
+    state.isTransitioning = true;
+    state.lastKnownState = shouldPlay;
 
-    if (!audio || isLoading || audio.readyState < 4) {
-      // 4 = HAVE_ENOUGH_DATA
-      logger.warn(
-        'ProfessionalMagicPlayer',
-        'Play/Pause skipped - audio not ready',
-        {
+    try {
+      const audio = audioARef.current;
+      const youtubePlayer = youtubeARef.current;
+      const currentSource = deckACurrentSource;
+
+      logger.info('ProfessionalMagicPlayer', 'Atomic audio control triggered', {
+        shouldPlay,
+        hasAudio: !!audio,
+        hasYoutube: !!youtubePlayer,
+        sourceType: currentSource?.type,
+        isLoading,
+        currentTrack: currentTrack?.title,
+      });
+
+      // Handle YouTube source
+      if (currentSource?.type === 'youtube' && youtubePlayer) {
+        if (shouldPlay) {
+          await youtubePlayer.play();
+        } else {
+          youtubePlayer.pause();
+        }
+        return;
+      }
+
+      // Handle HTML audio source
+      if (!audio || isLoading || audio.readyState < 4) {
+        logger.warn('ProfessionalMagicPlayer', 'Audio not ready for playback', {
           hasAudio: !!audio,
           isLoading,
           readyState: audio?.readyState,
-          readyStateRequired: 4, // HAVE_ENOUGH_DATA
-          audioSrc: audio?.src,
-        }
-      );
-      return;
-    }
-
-    if (isPlaying) {
-      // Initialize AudioContext if needed
-      if (!audioContextRef.current && window.AudioContext) {
-        try {
-          audioContextRef.current = new (window.AudioContext ||
-            (window as any).webkitAudioContext)();
-
-          // Handle AudioContext state changes
-          audioContextRef.current.addEventListener('statechange', () => {
-            logger.info(
-              'ProfessionalMagicPlayer',
-              'AudioContext state changed',
-              {
-                state: audioContextRef.current?.state,
-              }
-            );
-          });
-        } catch (error: any) {
-          logger.warn(
-            'ProfessionalMagicPlayer',
-            'AudioContext creation failed',
-            error
-          );
-          setErrorMessage('Audio device unavailable. Using basic playback.');
-          setIsDegraded(true);
-          setTimeout(() => setErrorMessage(null), 3000);
-        }
-      }
-
-      // Resume AudioContext if suspended (required for autoplay policy)
-      if (
-        audioContextRef.current &&
-        audioContextRef.current.state === 'suspended'
-      ) {
-        audioContextRef.current.resume().catch(error => {
-          logger.warn(
-            'ProfessionalMagicPlayer',
-            'AudioContext resume failed',
-            error
-          );
-
-          // Check if this is a device error
-          if (
-            error.name === 'NotSupportedError' ||
-            error.message.includes('audio device')
-          ) {
-            setErrorMessage('Audio device error. Check system audio settings.');
-            setIsDegraded(true);
-            setTimeout(() => setErrorMessage(null), 5000);
-          } else {
-            setShowUnmuteOverlay(true);
-          }
+          sourceType: currentSource?.type,
         });
+        return;
       }
 
-      // Ensure audio is ready before playing
-      logger.info('ProfessionalMagicPlayer', 'Attempting to play audio', {
-        audioSrc: audio.src,
-        readyState: audio.readyState,
-        networkState: audio.networkState,
-        audioContextState: audioContextRef.current?.state,
-      });
+      if (shouldPlay) {
+        // Initialize AudioContext if needed
+        if (!audioContextRef.current && window.AudioContext) {
+          try {
+            audioContextRef.current = new (window.AudioContext ||
+              (window as any).webkitAudioContext)();
 
-      // Add retry mechanism for playback
-      const attemptPlay = async (retries = 3): Promise<void> => {
-        try {
-          await audio.play();
-          logger.info(
-            'ProfessionalMagicPlayer',
-            'Audio playback started successfully'
-          );
-          setShowUnmuteOverlay(false);
-        } catch (error: any) {
-          logger.error(
-            'ProfessionalMagicPlayer',
-            `Audio play failed (${retries} retries left)`,
-            {
+            audioContextRef.current.addEventListener('statechange', () => {
+              logger.info('ProfessionalMagicPlayer', 'AudioContext state changed', {
+                state: audioContextRef.current?.state,
+              });
+            });
+          } catch (error: any) {
+            logger.warn('ProfessionalMagicPlayer', 'AudioContext creation failed', error);
+            setErrorMessage('Audio device unavailable. Using basic playback.');
+            setIsDegraded(true);
+            setTimeout(() => setErrorMessage(null), 3000);
+          }
+        }
+
+        // Resume AudioContext if suspended
+        if (audioContextRef.current?.state === 'suspended') {
+          await audioContextRef.current.resume().catch(error => {
+            logger.warn('ProfessionalMagicPlayer', 'AudioContext resume failed', error);
+            if (error.name === 'NotSupportedError' || error.message.includes('audio device')) {
+              setErrorMessage('Audio device error. Check system audio settings.');
+              setIsDegraded(true);
+              setTimeout(() => setErrorMessage(null), 5000);
+            } else {
+              setShowUnmuteOverlay(true);
+            }
+          });
+        }
+
+        logger.info('ProfessionalMagicPlayer', 'Attempting to play audio', {
+          audioSrc: audio.src,
+          readyState: audio.readyState,
+          networkState: audio.networkState,
+          audioContextState: audioContextRef.current?.state,
+        });
+
+        // Retry mechanism for playback
+        let retries = 3;
+        while (retries > 0) {
+          try {
+            await audio.play();
+            logger.info('ProfessionalMagicPlayer', 'Audio playback started successfully');
+            setShowUnmuteOverlay(false);
+            break;
+          } catch (error: any) {
+            logger.error('ProfessionalMagicPlayer', `Audio play failed (${retries} retries left)`, {
               error: error.message,
               name: error.name,
               readyState: audio.readyState,
               networkState: audio.networkState,
-            }
-          );
+            });
 
-          if (retries > 0) {
-            // Wait and retry
-            await new Promise(resolve => setTimeout(resolve, 500));
-            return attemptPlay(retries - 1);
-          } else {
-            // Show unmute overlay for user interaction
-            setShowUnmuteOverlay(true);
-            throw error;
+            retries--;
+            if (retries > 0) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+            } else {
+              // Final failure handling
+              if (error.name === 'NotAllowedError') {
+                setShowUnmuteOverlay(true);
+                logger.info('ProfessionalMagicPlayer', 'Autoplay blocked - showing unmute overlay');
+              } else {
+                setErrorMessage('Playback failed. Retrying...');
+                setTimeout(() => {
+                  setErrorMessage(null);
+                  audio.load();
+                }, 2000);
+                throw error;
+              }
+            }
           }
         }
-      };
+      } else {
+        logger.info('ProfessionalMagicPlayer', 'Pausing audio');
+        audio.pause();
+      }
 
-      attemptPlay().catch(error => {
-        logger.error(
-          'ProfessionalMagicPlayer',
-          'All play attempts failed',
-          error
-        );
-        onPlayPause(false);
+    } catch (error) {
+      logger.error('ProfessionalMagicPlayer', 'Atomic audio control failed', error);
+      if (shouldPlay) {
+        handleSourceError('A', error);
+      }
+    } finally {
+      state.isTransitioning = false;
 
-        // Check if this is an autoplay restriction
-        if (error.name === 'NotAllowedError') {
-          setShowUnmuteOverlay(true);
-          logger.info(
-            'ProfessionalMagicPlayer',
-            'Autoplay blocked - showing unmute overlay'
-          );
-        } else {
-          setErrorMessage('Playback failed. Retrying...');
-          setTimeout(() => {
-            setErrorMessage(null);
-            audio.load();
-          }, 2000);
-        }
-      });
-    } else {
-      logger.info('ProfessionalMagicPlayer', 'Pausing audio');
-      audio.pause();
+      // Process any queued action
+      if (state.pendingAction !== null) {
+        const pendingAction = state.pendingAction;
+        state.pendingAction = null;
+        logger.debug('ProfessionalMagicPlayer', 'Processing queued audio action', { pendingAction });
+        // Use setTimeout to avoid immediate recursion
+        setTimeout(() => handlePlayPauseAtomic(pendingAction), 0);
+      }
     }
-  }, [isPlaying, isLoading, currentTrack]);
+  }, [isLoading, currentTrack, deckACurrentSource, handleSourceError]);
+
+  // Use the atomic handler in useEffect
+  useEffect(() => {
+    handlePlayPauseAtomic(isPlaying);
+  }, [isPlaying, handlePlayPauseAtomic]);
 
   // Handle volume changes
   useEffect(() => {
@@ -631,31 +735,76 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     };
   }, [isPlaying, autoMix, nextTrack]);
 
-  // Animation loop
+  // Optimized animation loop with dirty tracking
+  const lastRenderState = useRef({
+    deckAProgress: -1,
+    deckBProgress: -1,
+    currentTrackId: '',
+    nextTrackId: '',
+    isPlaying: false
+  });
+
   useEffect(() => {
+    let animationId: number;
+
     const animate = () => {
-      drawWaveform(
-        waveformCanvasA.current,
-        currentTrack,
-        deckAProgress,
-        'green',
-        waveformDataA.current
-      );
-      drawWaveform(
-        waveformCanvasB.current,
-        nextTrack,
-        deckBProgress,
-        'purple',
-        waveformDataB.current
-      );
-      animationFrameRef.current = requestAnimationFrame(animate);
+      const current = lastRenderState.current;
+      const shouldUpdateA =
+        current.deckAProgress !== deckAProgress ||
+        current.currentTrackId !== (currentTrack?.id || '') ||
+        current.isPlaying !== isPlaying;
+
+      const shouldUpdateB =
+        current.deckBProgress !== deckBProgress ||
+        current.nextTrackId !== (nextTrack?.id || '') ||
+        current.isPlaying !== isPlaying;
+
+      // Only redraw if something changed
+      if (shouldUpdateA) {
+        drawWaveform(
+          waveformCanvasA.current,
+          currentTrack,
+          deckAProgress,
+          'green',
+          waveformDataA.current
+        );
+      }
+
+      if (shouldUpdateB) {
+        drawWaveform(
+          waveformCanvasB.current,
+          nextTrack,
+          deckBProgress,
+          'purple',
+          waveformDataB.current
+        );
+      }
+
+      // Update last render state
+      if (shouldUpdateA || shouldUpdateB) {
+        current.deckAProgress = deckAProgress;
+        current.deckBProgress = deckBProgress;
+        current.currentTrackId = currentTrack?.id || '';
+        current.nextTrackId = nextTrack?.id || '';
+        current.isPlaying = isPlaying;
+      }
+
+      // Continue animation only if playing or if updates are needed
+      if (isPlaying || shouldUpdateA || shouldUpdateB) {
+        animationId = requestAnimationFrame(animate);
+      } else {
+        // Schedule next check in 100ms when not playing
+        setTimeout(() => {
+          animationId = requestAnimationFrame(animate);
+        }, 100);
+      }
     };
 
-    animate();
+    animationId = requestAnimationFrame(animate);
 
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+      if (animationId) {
+        cancelAnimationFrame(animationId);
       }
     };
   }, [currentTrack, nextTrack, deckAProgress, deckBProgress, isPlaying]);
@@ -1171,25 +1320,62 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               </div>
             </div>
 
-            {/* Enhanced Waveform */}
+            {/* Enhanced Waveform / YouTube Player */}
             <div className="mb-6">
-              <canvas
-                ref={waveformCanvasA}
-                width={320}
-                height={120}
-                className="w-full h-20 lg:h-28 bg-slate-900 border border-glass rounded-lg cursor-pointer"
-                onClick={e => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const percentage =
-                    ((e.clientX - rect.left) / rect.width) * 100;
-                  handleSeek(percentage);
-                }}
-                role="slider"
-                aria-label="Track waveform and seek control"
-                aria-valuenow={deckAProgress}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              />
+              {deckACurrentSource?.type === 'youtube' ? (
+                <div className="relative">
+                  <YouTubePlayer
+                    ref={youtubeARef}
+                    videoId={deckACurrentSource.metadata?.videoId || ''}
+                    volume={deckAVolume}
+                    className="w-full h-20 lg:h-28 rounded-lg border border-glass"
+                    onReady={() => {
+                      setIsLoading(false);
+                      logger.info('ProfessionalMagicPlayer', 'YouTube A player ready');
+                    }}
+                    onStateChange={(state) => {
+                      if (state === YouTubePlayerState.PLAYING) {
+                        onPlayPause(true);
+                      } else if (state === YouTubePlayerState.PAUSED) {
+                        onPlayPause(false);
+                      } else if (state === YouTubePlayerState.ENDED) {
+                        handleTrackEnd();
+                      }
+                    }}
+                    onError={(error) => {
+                      logger.error('ProfessionalMagicPlayer', 'YouTube A player error', error);
+                      handleSourceError('A', error);
+                    }}
+                    onProgress={(currentTime, duration) => {
+                      setCurrentTime(currentTime);
+                      setDuration(duration);
+                      const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+                      setDeckAProgress(progress);
+                    }}
+                  />
+                  <div className="absolute top-2 right-2 px-2 py-1 bg-red-600 text-white text-xs rounded font-orbitron">
+                    YOUTUBE
+                  </div>
+                </div>
+              ) : (
+                <canvas
+                  ref={waveformCanvasA}
+                  width={320}
+                  height={120}
+                  className="w-full h-20 lg:h-28 bg-slate-900 border border-glass rounded-lg cursor-pointer"
+                  onClick={e => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const percentage =
+                      ((e.clientX - rect.left) / rect.width) * 100;
+                    handleSeek(percentage);
+                  }}
+                  role="slider"
+                  aria-label="Track waveform and seek control"
+                  aria-valuenow={deckAProgress}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                />
+              )}
               <div className="flex justify-between text-xs text-slate-400 mt-2 font-orbitron">
                 <span>{formatTimeClock(currentTime)}</span>
                 <span className="text-fuchsia-400">
@@ -1199,6 +1385,19 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   {formatTimeClock(duration || (currentTrack?.duration ?? 180))}
                 </span>
               </div>
+              {deckACurrentSource && (
+                <div className="flex items-center justify-between text-xs mt-1">
+                  <span className="text-slate-500 font-orbitron">
+                    Source: {deckACurrentSource.type.toUpperCase()}
+                    {deckACurrentSource.quality && ` (${deckACurrentSource.quality})`}
+                  </span>
+                  {deckASources.length > 1 && (
+                    <span className="text-slate-500 font-orbitron">
+                      {deckASourceIndex + 1}/{deckASources.length}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Enhanced Controls */}
@@ -1472,15 +1671,44 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               )}
             </div>
 
-            {/* Enhanced Waveform */}
+            {/* Enhanced Waveform / YouTube Player */}
             <div className="mb-6">
-              <canvas
-                ref={waveformCanvasB}
-                width={320}
-                height={120}
-                className="w-full h-20 lg:h-28 bg-slate-900 border border-glass rounded-lg"
-                aria-label="Deck B waveform display"
-              />
+              {deckBCurrentSource?.type === 'youtube' ? (
+                <div className="relative">
+                  <YouTubePlayer
+                    ref={youtubeBRef}
+                    videoId={deckBCurrentSource.metadata?.videoId || ''}
+                    volume={deckBVolume}
+                    className="w-full h-20 lg:h-28 rounded-lg border border-glass"
+                    onReady={() => {
+                      logger.info('ProfessionalMagicPlayer', 'YouTube B player ready');
+                    }}
+                    onStateChange={(state) => {
+                      // Handle state changes for deck B
+                      logger.debug('ProfessionalMagicPlayer', 'YouTube B state change', state);
+                    }}
+                    onError={(error) => {
+                      logger.error('ProfessionalMagicPlayer', 'YouTube B player error', error);
+                      handleSourceError('B', error);
+                    }}
+                    onProgress={(currentTime, duration) => {
+                      const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+                      setDeckBProgress(progress);
+                    }}
+                  />
+                  <div className="absolute top-2 right-2 px-2 py-1 bg-red-600 text-white text-xs rounded font-orbitron">
+                    YOUTUBE
+                  </div>
+                </div>
+              ) : (
+                <canvas
+                  ref={waveformCanvasB}
+                  width={320}
+                  height={120}
+                  className="w-full h-20 lg:h-28 bg-slate-900 border border-glass rounded-lg"
+                  aria-label="Deck B waveform display"
+                />
+              )}
               <div className="flex justify-between text-xs text-slate-400 mt-2 font-orbitron">
                 <span>0:00</span>
                 <span className="text-cyan-400">
@@ -1492,6 +1720,19 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                     : '--:--'}
                 </span>
               </div>
+              {deckBCurrentSource && (
+                <div className="flex items-center justify-between text-xs mt-1">
+                  <span className="text-slate-500 font-orbitron">
+                    Source: {deckBCurrentSource.type.toUpperCase()}
+                    {deckBCurrentSource.quality && ` (${deckBCurrentSource.quality})`}
+                  </span>
+                  {deckBSources.length > 1 && (
+                    <span className="text-slate-500 font-orbitron">
+                      {deckBSourceIndex + 1}/{deckBSources.length}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Enhanced Controls */}
