@@ -1,13 +1,10 @@
----
 name: QA Validation
-
 on:
   push:
     branches: ["main", "develop"]
   pull_request:
     branches: ["main"]
   workflow_dispatch:
-
 jobs:
   lint-test:
     runs-on: ubuntu-latest
