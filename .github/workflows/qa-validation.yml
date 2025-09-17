@@ -1,30 +1,32 @@
 ---
-name:  CI/CD QA Validation
+---
+---
+name: CI/CD QA Validation
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: ["main","develop"]
   pull_request:
-    branches: [main]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
   qa-validation:
-    name:  QA Validation Tests
+    name: QA Validation Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
-      - name:  Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name:  Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
 
-      - name:  Install dependencies
+      - name: Install dependencies
       - name: ♻ Cache Playwright
         uses: actions/cache@v3
         with:
@@ -32,19 +34,19 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
         run: npm ci
 
-      - name:  TypeScript check
+      - name: TypeScript check
         run: npm run typecheck
 
-      - name:  Build application
+      - name: Build application
         run: npm run build
 
-      - name:  Install Playwright browsers
+      - name: Install Playwright browsers
         run: npm run test:install
 
-      - name:  Install Playwright system dependencies
+      - name: Install Playwright system dependencies
         run: npm run test:install-deps
 
-      - name:  Run QA Validation Tests
+      - name: Run QA Validation Tests
         run: npm run test:qa
         env:
           # Vercel deployment protection bypass
@@ -54,7 +56,7 @@ jobs:
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
           VITA_SPOTIFY_CLIENT_ID: ${{ secrets.VITA_SPOTIFY_CLIENT_ID }}
 
-      - name:  Upload test results
+      - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -65,7 +67,7 @@ jobs:
             playwright-report.json
           retention-days: 7
 
-      - name:  Upload HTML report
+      - name: Upload HTML report
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -73,7 +75,7 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-      - name:  Comment PR with results
+      - name: Comment PR with results
         uses: actions/github-script@v7
         if: github.event_name == 'pull_request' && always()
         with:
@@ -129,22 +131,22 @@ jobs:
             });
 
   deployment-validation:
-    name:  Deployment Validation
+    name: Deployment Validation
     runs-on: ubuntu-latest
     needs: qa-validation
     if: github.ref == 'refs/heads/main'
 
     steps:
-      - name:  Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name:  Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
 
-      - name:  Install dependencies
+      - name: Install dependencies
       - name: ♻ Cache Playwright
         uses: actions/cache@v3
         with:
@@ -152,7 +154,7 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
         run: npm ci
 
-      - name:  Deploy to Vercel
+      - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -160,7 +162,7 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
 
-      - name:  Post-deployment validation
+      - name: Post-deployment validation
         run: |
           echo " Deployment completed successfully!"
           echo "🔗 Production URL: https://the-new-magic-dj.vercel.app"
