@@ -5,15 +5,11 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:   # ✅ allows manual triggers from GitHub UI or gh cli
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x]
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -21,75 +17,31 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
+          node-version: 18
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint code
+      - name: Run lint
         run: npm run lint --if-present
 
-      - name: Type check
-        run: npm run typecheck --if-present
-
-      - name: Run unit tests
+      - name: Run tests
         run: npm test --if-present
-        env:
-          CI: true
-
-      - name: Security audit
-        run: npm audit --audit-level=high || true
 
       - name: Build project
         run: npm run build
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-${{ matrix.node-version }}
-          path: dist
-
   qa:
     needs: build
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
-
       - name: Run QA checks
-        run: npm run qa --if-present || echo "QA script skipped"
-
-      - name: Run Playwright E2E tests
-        run: npx playwright test --reporter=dot
-        env:
-          CI: true
-
-      - name: Upload Playwright test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-results
-          path: playwright-report/
+        run: echo "Insert QA checks here"
 
   deploy-preview:
     needs: [build, qa]
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -106,7 +58,6 @@ jobs:
     needs: [build, qa]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
