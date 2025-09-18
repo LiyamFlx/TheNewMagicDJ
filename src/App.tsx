@@ -9,7 +9,6 @@ import {
 
 import Navigation from './components/Navigation';
 import LandingPage from './components/LandingPage';
-import LoginPage from './components/LoginPage';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
 import AuthSaveBanner from './components/AuthSaveBanner';
@@ -54,7 +53,12 @@ interface AppState {
 }
 
 const initialState: AppState = {
-  user: null,
+  user: {
+    id: 'default-user',
+    email: 'user@magicdjapp.com',
+    name: 'Magic DJ User',
+    created_at: new Date().toISOString(),
+  },
   savedPlaylists: [],
   recentSessions: [],
   currentPlaylist: null,
@@ -158,7 +162,7 @@ function AppContent() {
             name: 'Electronic Night',
             tracks: 15,
             duration: 3600,
-            user_id: 'mock',
+            user_id: 'default-user',
             playlist_id: 'mock',
             started_at: new Date().toISOString(),
             status: 'completed' as const,
@@ -167,6 +171,7 @@ function AppContent() {
           },
         ];
         dispatch({ type: 'SET_SESSIONS', payload: mockSessions });
+        Logger.info('MagicDJ initialized without authentication');
       } catch (err) {
         Logger.error('Init error', err);
         dispatch({
@@ -179,7 +184,7 @@ function AppContent() {
       }
     };
     initializeApp();
-  }, []); // Remove state.user dependency to prevent infinite loops
+  }, []);
 
   // Separate effect for user data loading
   useEffect(() => {
@@ -329,12 +334,7 @@ function AppContent() {
     ]
   );
 
-  // --- Auth handlers ---
-  const handleLogin = (user: User) => {
-    dispatch({ type: 'SET_USER', payload: user });
-    showToast(`Welcome, ${user.name || user.email}`, 'success');
-    navigate('/');
-  };
+  // Authentication removed - no login handlers needed
 
   // --- Playlist handlers ---
   const handlePlaylistGenerated = (pl: Playlist) => {
@@ -456,9 +456,7 @@ function AppContent() {
     );
   }
 
-  if (!state.user) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
+  // Authentication removed - direct access to app
 
   return (
     <div className="min-h-screen gradient-bg-primary">
