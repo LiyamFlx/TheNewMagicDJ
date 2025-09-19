@@ -68,7 +68,7 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
             0
           ) /
             Math.max(1, playlist.tracks.length)) *
-            100
+          100
         ) || 75,
     }));
 
@@ -141,8 +141,10 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
             <button
               onClick={onBack}
               className="w-8 h-8 lg:w-10 lg:h-10 rounded-none bg-cyber-dark border border-neon-green hover:neon-glow-green flex items-center justify-center transition-all"
+              aria-label="Go back"
+              title="Go back"
             >
-              <ArrowLeft className="w-4 h-4 lg:w-5 lg:h-5 neon-text-green" />
+              <ArrowLeft className="w-4 h-4 lg:w-5 lg:h-5 neon-text-green" aria-hidden="true" />
             </button>
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 lg:w-10 lg:h-10 bg-cyber-dark border-2 border-neon-purple rounded-none flex items-center justify-center neon-glow-purple">
@@ -160,8 +162,10 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
           <button
             onClick={onCreateNew}
             className="cyber-button px-4 py-2 rounded-none flex items-center space-x-2"
+            aria-label="Create new set"
+            title="Create new set"
           >
-            <Music className="w-4 h-4 neon-text-green" />
+            <Music className="w-4 h-4 neon-text-green" aria-hidden="true" />
             <span>Create New</span>
           </button>
         </div>
@@ -194,7 +198,7 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
             <div className="text-2xl font-bold neon-text-purple mb-2">
               {Math.round(
                 library.reduce((sum, item) => sum + item.energy, 0) /
-                  library.length || 0
+                library.length || 0
               )}
               %
             </div>
@@ -207,13 +211,15 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
           <div className="flex flex-col lg:flex-row items-center justify-between space-y-4 lg:space-y-0 lg:space-x-4">
             {/* Search */}
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-cyber-dim" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-cyber-dim" aria-hidden="true" />
               <input
                 type="text"
                 placeholder="Search your library..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-cyber-dark border border-cyber-light rounded-none focus:outline-none focus:border-neon-green text-cyber-white placeholder-cyber-dim"
+                aria-label="Search library"
+                title="Search your library"
               />
             </div>
 
@@ -223,6 +229,8 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                 value={filterType}
                 onChange={e => setFilterType(e.target.value as any)}
                 className="bg-cyber-dark border border-neon-green rounded-none px-3 py-2 text-cyber-white focus:outline-none focus:border-neon-purple"
+                aria-label="Filter by type"
+                title="Filter by type"
               >
                 <option value="all">All Types</option>
                 <option value="magic_match">Magic Match</option>
@@ -233,6 +241,8 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as any)}
                 className="bg-cyber-dark border border-neon-purple rounded-none px-3 py-2 text-cyber-white focus:outline-none focus:border-neon-green"
+                aria-label="Sort by"
+                title="Sort by"
               >
                 <option value="recent">Most Recent</option>
                 <option value="name">Name</option>
@@ -243,14 +253,18 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-2 ${viewMode === 'grid' ? 'bg-neon-green text-cyber-black' : 'text-neon-green'}`}
+                  aria-label="Grid view"
+                  title="Grid view"
                 >
-                  <Grid className="w-4 h-4" />
+                  <Grid className="w-4 h-4" aria-hidden="true" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
                   className={`p-2 ${viewMode === 'list' ? 'bg-neon-green text-cyber-black' : 'text-neon-green'}`}
+                  aria-label="List view"
+                  title="List view"
                 >
-                  <List className="w-4 h-4" />
+                  <List className="w-4 h-4" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -272,6 +286,8 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
             <button
               onClick={onCreateNew}
               className="cyber-button px-6 py-3 rounded-none"
+              aria-label="Create new set"
+              title="Create new set"
             >
               Create New Set
             </button>
@@ -287,9 +303,8 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
             {filteredLibrary.map(item => (
               <div
                 key={item.id}
-                className={`cyber-card rounded-none p-4 hover:neon-glow-green cursor-pointer transition-all group ${
-                  viewMode === 'list' ? 'flex items-center space-x-4' : ''
-                }`}
+                className={`cyber-card rounded-none p-4 hover:neon-glow-green cursor-pointer transition-all group ${viewMode === 'list' ? 'flex items-center space-x-4' : ''
+                  }`}
                 onClick={() => handlePlaylistClick(item)}
               >
                 {viewMode === 'grid' ? (
@@ -303,8 +318,10 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                             // Handle edit
                           }}
                           className="w-6 h-6 bg-cyber-dark border border-neon-purple rounded-none flex items-center justify-center hover:neon-glow-purple"
+                          aria-label={`Edit ${item.name}`}
+                          title={`Edit ${item.name}`}
                         >
-                          <Edit3 className="w-3 h-3 neon-text-purple" />
+                          <Edit3 className="w-3 h-3 neon-text-purple" aria-hidden="true" />
                         </button>
                         <button
                           onClick={e => {
@@ -312,8 +329,10 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                             handleDelete(item.id);
                           }}
                           className="w-6 h-6 bg-cyber-dark border border-red-500 rounded-none flex items-center justify-center hover:bg-red-900/20"
+                          aria-label={`Delete ${item.name}`}
+                          title={`Delete ${item.name}`}
                         >
-                          <Trash2 className="w-3 h-3 text-red-400" />
+                          <Trash2 className="w-3 h-3 text-red-400" aria-hidden="true" />
                         </button>
                       </div>
                     </div>
@@ -363,8 +382,10 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                           handlePlaylistClick(item);
                         }}
                         className="cyber-button px-3 py-2 rounded-none flex items-center space-x-2 text-sm"
+                        aria-label={`Play ${item.name}`}
+                        title={`Play ${item.name}`}
                       >
-                        <Play className="w-3 h-3 neon-text-green" />
+                        <Play className="w-3 h-3 neon-text-green" aria-hidden="true" />
                         <span>Play</span>
                       </button>
 
@@ -375,6 +396,8 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                             // Handle edit
                           }}
                           className="w-8 h-8 bg-cyber-dark border border-neon-purple rounded-none flex items-center justify-center hover:neon-glow-purple"
+                          aria-label={`Edit ${item.name}`}
+                          title={`Edit ${item.name}`}
                         >
                           <Edit3 className="w-3 h-3 neon-text-purple" />
                         </button>
@@ -384,6 +407,8 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                             handleDelete(item.id);
                           }}
                           className="w-8 h-8 bg-cyber-dark border border-red-500 rounded-none flex items-center justify-center hover:bg-red-900/20"
+                          aria-label={`Delete ${item.name}`}
+                          title={`Delete ${item.name}`}
                         >
                           <Trash2 className="w-3 h-3 text-red-400" />
                         </button>

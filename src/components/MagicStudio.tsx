@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import styles from './MagicStudio.module.css';
 import {
   Zap,
   Music,
@@ -358,6 +359,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
           <div
             className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full blur-3xl animate-float"
             style={{ animationDelay: '1s' }}
+            aria-hidden="true"
           ></div>
         </div>
 
@@ -400,8 +402,9 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
               {Array.from({ length: 15 }).map((_, i) => (
                 <div
                   key={i}
-                  className="waveform-bar"
-                  style={{ animationDelay: `${i * 0.1}s` }}
+                  className={`${styles.waveformBar} w-1 bg-gradient-to-t from-cyan-400 to-blue-600 rounded-full`}
+                  style={{ '--delay': `${i * 0.1}s` } as React.CSSProperties}
+                  aria-hidden="true"
                 ></div>
               ))}
             </div>
@@ -421,8 +424,8 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
           style={{ animationDelay: '2s' }}
         ></div>
         <div
-          className="absolute top-3/4 left-1/2 w-48 h-48 bg-gradient-to-r from-green-500/10 to-cyan-500/10 rounded-full blur-3xl animate-float"
-          style={{ animationDelay: '4s' }}
+          className={`absolute top-3/4 left-1/2 w-48 h-48 bg-gradient-to-r from-green-500/10 to-cyan-500/10 rounded-full blur-3xl animate-float ${styles.floatingElement2}`}
+          aria-hidden="true"
         ></div>
       </div>
 
@@ -432,6 +435,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
           <div className="flex items-center space-x-4">
             <button
               onClick={onBack}
+              aria-label="Go back"
               className="w-10 h-10 lg:w-12 lg:h-12 glass-button flex items-center justify-center hover-lift"
             >
               <ArrowLeft className="w-5 h-5 lg:w-6 lg:h-6 text-gradient-accent" />
@@ -726,6 +730,8 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
         accept="audio/*"
         onChange={handleFileUpload}
         className="hidden"
+        aria-label="Upload audio file"
+        title="Upload audio file"
       />
     </div>
   );

@@ -1,0 +1,19 @@
+.floatingElement1 {
+  animation: float 6s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+.floatingElement2 {
+  animation: float 8s ease-in-out infinite;
+  animation-delay: 4s;
+}
+
+.waveformBar {
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0px); }
+}

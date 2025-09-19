@@ -171,10 +171,13 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
                     e.key === 'Enter' && handleSavePlaylistName()
                   }
                   autoFocus
+                  aria-label="Edit playlist name"
+                  placeholder="Enter playlist name"
                 />
                 <button
                   onClick={handleSavePlaylistName}
                   className="w-8 h-8 btn-accent flex items-center justify-center hover-lift"
+                  title="Save changes"
                 >
                   <Save className="w-4 h-4 text-white" />
                 </button>
@@ -184,6 +187,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
                     setPlaylistName(playlist.name);
                   }}
                   className="w-8 h-8 glass-button flex items-center justify-center hover-lift border border-red-400"
+                  title="Cancel editing"
                 >
                   <X className="w-4 h-4 text-red-400" />
                 </button>
@@ -196,6 +200,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
                 <button
                   onClick={() => setEditingName(true)}
                   className="w-8 h-8 btn-secondary flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover-lift"
+                  title="Edit playlist name"
                 >
                   <Edit3 className="w-4 h-4 text-white" />
                 </button>
@@ -353,6 +358,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
                       onTrackRemove(originalIndex);
                     }}
                     className="w-10 h-10 glass-button flex items-center justify-center hover:scale-110 transition-all border border-red-400 hover:border-red-300"
+                    title="Remove track"
                   >
                     <Trash2 className="w-5 h-5 text-red-400" />
                   </button>
