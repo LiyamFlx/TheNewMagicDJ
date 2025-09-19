@@ -504,12 +504,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     const sources = deck === 'A' ? state.sources.deckA : state.sources.deckB;
     const currentIndex = deck === 'A' ? state.sources.deckAIndex : state.sources.deckBIndex;
 
-    console.error(`Audio source error on deck ${deck}:`, error);
+    // Log only once per deck to avoid spam
+    logger.warn('ProfessionalMagicPlayer', `Audio source error on deck ${deck}`, { error: error.message });
 
     // Try next source
     const nextIndex = currentIndex + 1;
     if (nextIndex < sources.length) {
-      console.log(`Trying next source for deck ${deck}: ${nextIndex}/${sources.length}`);
       dispatch({ type: 'SET_SOURCE_INDEX', payload: { deck: deck === 'A' ? 'deckA' : 'deckB', index: nextIndex } });
     } else {
       // No more sources available
@@ -525,42 +525,48 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
   // Load sources for current track
   useEffect(() => {
-    console.log('🎵 TRACK LOAD EFFECT TRIGGERED - currentTrack:', currentTrack);
-    window.alert('Track load effect triggered: ' + (currentTrack ? currentTrack.title : 'NO TRACK'));
-
     if (!currentTrack) {
-      console.log('❌ No current track, clearing deck A sources');
       dispatch({ type: 'SET_SOURCES', payload: { deck: 'deckA', sources: [] } });
       return;
+    }
+
+    // Ensure track has proper metadata structure
+    if (!currentTrack.meta) {
+      currentTrack.meta = {};
     }
 
     let cancelled = false;
 
     const loadSources = async () => {
-      console.log('🔄 Loading sources for track:', currentTrack.title);
       dispatch({ type: 'SET_LOADING', payload: true });
 
       try {
         const sources = await loadAudioSources(currentTrack);
-        console.log('📦 Received sources:', sources.length, sources);
+
+        // Validate sources have proper URLs
+        const validSources = sources.filter(source => {
+          if (!source.url || typeof source.url !== 'string') return false;
+          // Check for valid audio URLs (direct audio files or generated blobs)
+          return source.url.startsWith('blob:') ||
+                 source.url.startsWith('data:audio/') ||
+                 source.url.match(/\.(mp3|wav|m4a|ogg|aac)$/i) ||
+                 source.url.startsWith('https://');
+        });
 
         if (!cancelled) {
-          if (sources.length > 0) {
-            console.log('✅ Setting deck A sources:', sources[0].url.substring(0, 50) + '...');
-            dispatch({ type: 'SET_SOURCES', payload: { deck: 'deckA', sources, index: 0 } });
+          if (validSources.length > 0) {
+            dispatch({ type: 'SET_SOURCES', payload: { deck: 'deckA', sources: validSources, index: 0 } });
           } else {
-            console.error('❌ No sources available for track');
             dispatch({
               type: 'SET_ERROR',
               payload: {
-                message: 'No audio sources available',
+                message: 'No valid audio sources available',
                 isDegraded: true
               }
             });
           }
         }
       } catch (error) {
-        console.error('❌ Failed to load sources:', error);
         if (!cancelled) {
           dispatch({
             type: 'SET_ERROR',
@@ -644,13 +650,16 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     audio.preload = 'metadata';
     audio.volume = volumeCalculations.deckA;
 
-    // Set source directly
-    console.log('🎵 Setting audio source for deck A:', deckACurrent.url.substring(0, 50) + '...');
+    // Validate and set source
+    if (!deckACurrent.url || typeof deckACurrent.url !== 'string') {
+      handleSourceError('A', new Error('Invalid audio source URL'));
+      return;
+    }
+
     audio.src = deckACurrent.url;
 
     // Validate that src was set
     if (!audio.src) {
-      console.error('❌ Audio src is empty after setting!');
       handleSourceError('A', new Error('Empty audio src'));
       return;
     }

@@ -4,17 +4,8 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables:', {
-    hasUrl: !!supabaseUrl,
-    hasKey: !!supabaseAnonKey,
-    url: supabaseUrl || 'MISSING',
-    keyLength: supabaseAnonKey?.length || 0,
-  });
-
   // Provide fallback to prevent app from crashing
-  console.warn(
-    'Using placeholder Supabase client. Update .env file with real credentials.'
-  );
+  console.warn('Using placeholder Supabase client. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env for database features.');
 }
 
 // Use placeholder values if environment variables are missing to prevent crash

@@ -15,6 +15,7 @@ export interface Track {
   images?: { url: string; height: number; width: number }[];
   external_urls?: { [key: string]: string };
   spotify_id?: string;
+  meta?: Record<string, any>;
 }
 
 export interface Playlist {
