@@ -1047,12 +1047,35 @@ class PlaylistService {
             const seed_tracks = baseTrack.spotify_id
               ? [baseTrack.spotify_id]
               : [];
-            // Try YouTube first for track-based recommendations
+            // Try YouTube first for track-based recommendations using analyzed audio
             try {
+              // Parse audio features from fingerprint if available
+              let audioFeatures = null;
+              if (params.fingerprint) {
+                try {
+                  audioFeatures = JSON.parse(params.fingerprint);
+                } catch {
+                  // Fallback if fingerprint is not JSON
+                }
+              }
+
+              const searchGenres = audioFeatures?.estimatedGenre
+                ? [audioFeatures.estimatedGenre]
+                : ['electronic'];
+              const searchVibe = audioFeatures?.estimatedVibe || 'electronic';
+              const searchEnergy = audioFeatures?.energyLevel || 'medium';
+
+              logger.info('PlaylistService', 'Using analyzed audio characteristics', {
+                genre: searchGenres[0],
+                vibe: searchVibe,
+                energy: searchEnergy,
+                tempo: audioFeatures?.tempo
+              });
+
               tracks = await this.primaryMusicService.getRecommendations({
-                seed_genres: ['electronic'],
-                vibe: 'electronic',
-                energy: 'medium',
+                seed_genres: searchGenres,
+                vibe: searchVibe,
+                energy: searchEnergy,
                 limit: 15,
               }) || [];
 
@@ -1078,12 +1101,34 @@ class PlaylistService {
 
         if (tracks.length === 0) {
           try {
-            // Try YouTube first for genre-based recommendations
+            // Try YouTube first for genre-based recommendations using analyzed audio
             try {
+              // Parse audio features from fingerprint if available
+              let audioFeatures = null;
+              if (params.fingerprint) {
+                try {
+                  audioFeatures = JSON.parse(params.fingerprint);
+                } catch {
+                  // Fallback if fingerprint is not JSON
+                }
+              }
+
+              const searchGenres = audioFeatures?.estimatedGenre
+                ? [audioFeatures.estimatedGenre]
+                : ['electronic'];
+              const searchVibe = audioFeatures?.estimatedVibe || 'electronic';
+              const searchEnergy = audioFeatures?.energyLevel || 'medium';
+
+              logger.info('PlaylistService', 'Using analyzed audio characteristics (fallback)', {
+                genre: searchGenres[0],
+                vibe: searchVibe,
+                energy: searchEnergy
+              });
+
               tracks = await this.primaryMusicService.getRecommendations({
-                seed_genres: ['electronic'],
-                vibe: 'electronic',
-                energy: 'medium',
+                seed_genres: searchGenres,
+                vibe: searchVibe,
+                energy: searchEnergy,
                 limit: 15,
               }) || [];
 
@@ -1137,14 +1182,28 @@ class PlaylistService {
 
         tracks = this.validateTracks(tracks);
 
+        // Parse audio features for playlist metadata
+        let audioFeatures = null;
+        if (params.fingerprint) {
+          try {
+            audioFeatures = JSON.parse(params.fingerprint);
+          } catch {
+            // Fallback if fingerprint is not JSON
+          }
+        }
+
         const playlist: Playlist = {
           id: `magic-match-${Date.now()}`,
           name: recognizedTrack
             ? `Magic Match: ${recognizedTrack.title}`
-            : 'Magic Match Playlist',
+            : audioFeatures
+              ? `Magic Match: ${audioFeatures.estimatedGenre || 'Electronic'} (${audioFeatures.energyLevel || 'Medium'} Energy)`
+              : 'Magic Match Playlist',
           description: recognizedTrack
             ? `AI-curated playlist based on "${recognizedTrack.title}" by ${recognizedTrack.artist}`
-            : 'AI-curated playlist based on audio recognition',
+            : audioFeatures
+              ? `AI-curated ${audioFeatures.estimatedGenre || 'electronic'} playlist with ${audioFeatures.energyLevel || 'medium'} energy, ${Math.round(audioFeatures.tempo || 120)} BPM`
+              : 'AI-curated playlist based on audio analysis',
           tracks,
           total_duration: tracks.reduce(
             (sum, track) => sum + (track.duration ?? 0),
