@@ -504,29 +504,19 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     const sources = deck === 'A' ? state.sources.deckA : state.sources.deckB;
     const currentIndex = deck === 'A' ? state.sources.deckAIndex : state.sources.deckBIndex;
 
-    logger.error('ProfessionalMagicPlayer', `Audio source error on deck ${deck}`, {
-      error,
-      currentSourceType: sources[currentIndex]?.type,
-      currentIndex,
-      totalSources: sources.length
-    });
+    console.error(`Audio source error on deck ${deck}:`, error);
 
     // Try next source
     const nextIndex = currentIndex + 1;
     if (nextIndex < sources.length) {
-      logger.info('ProfessionalMagicPlayer', `Trying next source for deck ${deck}`, {
-        currentIndex,
-        nextIndex,
-        nextSourceType: sources[nextIndex]?.type
-      });
-
+      console.log(`Trying next source for deck ${deck}: ${nextIndex}/${sources.length}`);
       dispatch({ type: 'SET_SOURCE_INDEX', payload: { deck: deck === 'A' ? 'deckA' : 'deckB', index: nextIndex } });
     } else {
       // No more sources available
       dispatch({
         type: 'SET_ERROR',
         payload: {
-          message: `All audio sources failed for deck ${deck}`,
+          message: `Audio unavailable for deck ${deck}`,
           isDegraded: true
         }
       });
