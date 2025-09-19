@@ -100,10 +100,12 @@ class AudioSourceService {
    * Get audio sources for a track
    */
   async getAudioSourcesForTrack(track: Track): Promise<AudioSource[]> {
+    console.log('🎵 Getting audio sources for track:', track.title);
     const sources: AudioSource[] = [];
 
     // If track has a URL property, try to use it directly
     if (track.url) {
+      console.log('📎 Adding track URL:', track.url);
       sources.push({
         type: 'demo',
         url: track.url,
@@ -115,6 +117,7 @@ class AudioSourceService {
 
     // If track has a preview_url that's a direct audio URL, use it
     if (track.preview_url && (track.preview_url.includes('.mp3') || track.preview_url.includes('.wav') || track.preview_url.includes('.m4a'))) {
+      console.log('🎧 Adding preview URL:', track.preview_url);
       sources.push({
         type: 'demo',
         url: track.preview_url,
@@ -125,26 +128,34 @@ class AudioSourceService {
     }
 
     // Create a simple beep audio using Web Audio API
-    const beepAudio = this.createBeepAudio();
-    sources.push({
-      type: 'demo',
-      url: beepAudio,
-      title: `${track.title} (Beep)`,
-      duration: 5,
-      quality: 'medium',
-      metadata: { generated: true }
-    });
+    try {
+      const beepAudio = this.createBeepAudio();
+      console.log('🔊 Created beep audio URL:', beepAudio.substring(0, 50) + '...');
+      sources.push({
+        type: 'demo',
+        url: beepAudio,
+        title: `${track.title} (Beep)`,
+        duration: 5,
+        quality: 'medium',
+        metadata: { generated: true }
+      });
+    } catch (error) {
+      console.error('❌ Failed to create beep audio:', error);
+    }
 
     // Always provide a demo audio fallback
+    const fallbackAudio = this.generateDemoAudio(track);
+    console.log('🔇 Adding fallback audio URL:', fallbackAudio.substring(0, 50) + '...');
     sources.push({
       type: 'demo',
-      url: this.generateDemoAudio(track),
-      title: `${track.title} (Generated)`,
-      duration: track.duration || 30,
+      url: fallbackAudio,
+      title: `${track.title} (Silent)`,
+      duration: track.duration || 5,
       quality: 'medium',
-      metadata: { generated: true }
+      metadata: { fallback: true }
     });
 
+    console.log(`✅ Total ${sources.length} audio sources created for ${track.title}`);
     return sources;
   }
 

@@ -526,6 +526,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   // Load sources for current track
   useEffect(() => {
     if (!currentTrack) {
+      console.log('❌ No current track, clearing deck A sources');
       dispatch({ type: 'SET_SOURCES', payload: { deck: 'deckA', sources: [] } });
       return;
     }
@@ -533,15 +534,19 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     let cancelled = false;
 
     const loadSources = async () => {
+      console.log('🔄 Loading sources for track:', currentTrack.title);
       dispatch({ type: 'SET_LOADING', payload: true });
 
       try {
         const sources = await loadAudioSources(currentTrack);
+        console.log('📦 Received sources:', sources.length, sources);
 
         if (!cancelled) {
           if (sources.length > 0) {
+            console.log('✅ Setting deck A sources:', sources[0].url.substring(0, 50) + '...');
             dispatch({ type: 'SET_SOURCES', payload: { deck: 'deckA', sources, index: 0 } });
           } else {
+            console.error('❌ No sources available for track');
             dispatch({
               type: 'SET_ERROR',
               payload: {
@@ -552,6 +557,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           }
         }
       } catch (error) {
+        console.error('❌ Failed to load sources:', error);
         if (!cancelled) {
           dispatch({
             type: 'SET_ERROR',
@@ -636,7 +642,15 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     audio.volume = volumeCalculations.deckA;
 
     // Set source directly
+    console.log('🎵 Setting audio source for deck A:', deckACurrent.url.substring(0, 50) + '...');
     audio.src = deckACurrent.url;
+
+    // Validate that src was set
+    if (!audio.src) {
+      console.error('❌ Audio src is empty after setting!');
+      handleSourceError('A', new Error('Empty audio src'));
+      return;
+    }
 
     // Event listeners
     const onLoadedMetadata = () => {
