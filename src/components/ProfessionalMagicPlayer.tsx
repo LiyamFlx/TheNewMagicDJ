@@ -573,14 +573,31 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       // Handle YouTube source
       if (currentSource?.type === 'youtube' && youtubePlayer) {
         try {
-          // Wait for player to be ready with proper promise-based approach
+          // Enhanced readiness checks
           if (!youtubePlayer.isReady()) {
-            logger.info('ProfessionalMagicPlayer', 'Waiting for YouTube player readiness');
+            logger.info('ProfessionalMagicPlayer', 'Waiting for YouTube player readiness', {
+              currentState: youtubePlayer.getState(),
+              videoId: deckACurrentSource?.url
+            });
             await youtubePlayer.waitForReady();
             logger.info('ProfessionalMagicPlayer', 'YouTube player is now ready');
           }
 
-          // Player is ready, execute action
+          // Double-check player state before operation
+          const playerState = youtubePlayer.getState();
+          const isPlayerReady = youtubePlayer.isReady();
+
+          if (!isPlayerReady) {
+            throw new Error(`Player not ready after wait. State: ${playerState}`);
+          }
+
+          // Player is ready, execute action with additional state logging
+          logger.debug('ProfessionalMagicPlayer', 'Executing YouTube operation', {
+            action: shouldPlay ? 'play' : 'pause',
+            playerState,
+            isReady: isPlayerReady
+          });
+
           if (shouldPlay) {
             await youtubePlayer.play();
             logger.debug('ProfessionalMagicPlayer', 'YouTube playback started');
@@ -593,9 +610,19 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           audioStateRef.current.retryCount = 0;
           return;
         } catch (error) {
-          logger.error('ProfessionalMagicPlayer', 'YouTube player operation failed', {
+          logger.error(
+            'ProfessionalMagicPlayer',
+            'YouTube player operation failed',
+            error
+          );
+
+          // Also log to console with full details for debugging
+          console.error('YouTube player operation failed:', {
             action: shouldPlay ? 'play' : 'pause',
-            error: error instanceof Error ? error.message : String(error)
+            error,
+            stack: error instanceof Error ? error.stack : undefined,
+            playerReady: youtubePlayer?.isReady(),
+            playerState: youtubePlayer?.getState()
           });
 
           // Increment retry counter and retry with exponential backoff (max 3 retries)
@@ -615,10 +642,23 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               handlePlayPauseAtomic(shouldPlay);
             }, retryDelay);
           } else {
-            logger.error('ProfessionalMagicPlayer', 'YouTube operation failed after max retries', {
+            logger.error(
+              'ProfessionalMagicPlayer',
+              'YouTube operation failed after max retries',
+              error
+            );
+
+            // Detailed console error for debugging
+            console.error('YouTube operation failed after max retries:', {
               retryCount: audioStateRef.current.retryCount,
-              maxRetries
+              maxRetries,
+              finalError: error,
+              stack: error instanceof Error ? error.stack : undefined,
+              playerReady: youtubePlayer?.isReady(),
+              playerState: youtubePlayer?.getState(),
+              action: shouldPlay ? 'play' : 'pause'
             });
+
             audioStateRef.current.retryCount = 0; // Reset for next operation
           }
           return;
