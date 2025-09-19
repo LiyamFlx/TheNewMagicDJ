@@ -65,7 +65,7 @@ const initialState: AppState = {
   currentSession: null,
   isPlaying: false,
   isEditingPlaylist: false,
-  isLoading: true,
+  isLoading: false, // Guest mode - skip auth for testing
   error: null,
 };
 
