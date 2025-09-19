@@ -34,9 +34,9 @@ class AudioSourceService {
       });
     }
 
-    // Priority 2: Direct track URL if available
-    if (track.url && track.url !== track.preview_url) {
-      const sourceType: AudioSourceType = track.url.includes('youtube') ? 'youtube' : 'spotify';
+    // Priority 2: Only add non-YouTube URLs (YouTube watch URLs cause CORS errors)
+    if (track.url && track.url !== track.preview_url && !track.url.includes('youtube.com/watch')) {
+      const sourceType: AudioSourceType = track.url.includes('spotify') ? 'spotify' : 'youtube';
       sources.push({
         type: sourceType,
         url: track.url,

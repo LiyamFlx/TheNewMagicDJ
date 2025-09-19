@@ -334,7 +334,7 @@ export class YouTubeService {
         artist: item.snippet.channelTitle,
         album: 'YouTube',
         duration,
-        preview_url: this.getStreamableUrl(item.id.videoId),
+        preview_url: undefined, // YouTube URLs cause CORS errors - no direct streaming
         bpm: Math.floor(Math.random() * 60) + 100, // 100-160 BPM
         key: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][
           Math.floor(Math.random() * 12)
@@ -388,14 +388,6 @@ export class YouTubeService {
     }
   }
 
-  /**
-   * Maps YouTube video ID to a real YouTube URL
-   * @param videoId - YouTube video ID
-   * @returns Real YouTube URL
-   */
-  private getStreamableUrl(videoId: string): string {
-    return `https://www.youtube.com/watch?v=${videoId}`;
-  }
 
   /**
    * Handles YouTube API errors with specific error codes
