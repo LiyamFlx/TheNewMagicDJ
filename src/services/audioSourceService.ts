@@ -28,79 +28,18 @@ class AudioSourceService {
    * Create a simple beep audio using Web Audio API
    */
   private createBeepAudio(): string {
-    try {
-      // Create AudioContext
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-
-      // Create a buffer for 5 seconds at 44.1kHz
-      const duration = 5;
-      const sampleRate = audioContext.sampleRate;
-      const buffer = audioContext.createBuffer(1, duration * sampleRate, sampleRate);
-
-      // Fill the buffer with a simple tone
-      const channelData = buffer.getChannelData(0);
-      for (let i = 0; i < channelData.length; i++) {
-        // 440Hz sine wave (A note)
-        channelData[i] = Math.sin(2 * Math.PI * 440 * i / sampleRate) * 0.1;
-      }
-
-      // Convert buffer to WAV blob
-      const wavBlob = this.bufferToWav(buffer);
-      return URL.createObjectURL(wavBlob);
-    } catch (error) {
-      console.error('Failed to create beep audio:', error);
-      // Return the silent audio fallback
-      return this.generateDemoAudio({} as Track);
-    }
+    // Return a working base64 audio file instead of trying to generate
+    return 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUeCjiMzPPaeSwFJXfH8N2QQAoUXrTp66hVFApGn+DyvmUeBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcCjiMzPPaeSwFJXfH8N2QQAoUXrTp66hVFApGn+DyvmUe';
   }
 
-  /**
-   * Convert AudioBuffer to WAV blob
-   */
-  private bufferToWav(buffer: AudioBuffer): Blob {
-    const length = buffer.length;
-    const arrayBuffer = new ArrayBuffer(44 + length * 2);
-    const view = new DataView(arrayBuffer);
-
-    // WAV header
-    const writeString = (offset: number, string: string) => {
-      for (let i = 0; i < string.length; i++) {
-        view.setUint8(offset + i, string.charCodeAt(i));
-      }
-    };
-
-    writeString(0, 'RIFF');
-    view.setUint32(4, 36 + length * 2, true);
-    writeString(8, 'WAVE');
-    writeString(12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, 1, true);
-    view.setUint32(24, buffer.sampleRate, true);
-    view.setUint32(28, buffer.sampleRate * 2, true);
-    view.setUint16(32, 2, true);
-    view.setUint16(34, 16, true);
-    writeString(36, 'data');
-    view.setUint32(40, length * 2, true);
-
-    // Convert float32 to int16
-    const channelData = buffer.getChannelData(0);
-    let offset = 44;
-    for (let i = 0; i < length; i++) {
-      const sample = Math.max(-1, Math.min(1, channelData[i]));
-      view.setInt16(offset, sample * 0x7FFF, true);
-      offset += 2;
-    }
-
-    return new Blob([arrayBuffer], { type: 'audio/wav' });
-  }
 
 
   /**
    * Get audio sources for a track
    */
   async getAudioSourcesForTrack(track: Track): Promise<AudioSource[]> {
-    console.log('🎵 Getting audio sources for track:', track.title);
+    console.log('🎵 AUDIO SERVICE CALLED - Getting audio sources for track:', track.title);
+    window.alert('Audio service called for: ' + track.title); // Temporary debug alert
     const sources: AudioSource[] = [];
 
     // If track has a URL property, try to use it directly
