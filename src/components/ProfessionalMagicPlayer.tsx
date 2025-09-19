@@ -525,6 +525,9 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
   // Load sources for current track
   useEffect(() => {
+    console.log('🎵 TRACK LOAD EFFECT TRIGGERED - currentTrack:', currentTrack);
+    window.alert('Track load effect triggered: ' + (currentTrack ? currentTrack.title : 'NO TRACK'));
+
     if (!currentTrack) {
       console.log('❌ No current track, clearing deck A sources');
       dispatch({ type: 'SET_SOURCES', payload: { deck: 'deckA', sources: [] } });
