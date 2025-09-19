@@ -20,16 +20,21 @@ class AudioSourceService {
    * Create a simple working audio blob
    */
   private createWorkingAudio(): string {
-    // Create a very short working WAV file
+    // Create a longer working WAV file for proper DJ testing
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const duration = 1; // 1 second
+    const duration = 30; // 30 seconds for proper testing
     const sampleRate = 22050; // Lower sample rate for smaller file
     const buffer = audioContext.createBuffer(1, duration * sampleRate, sampleRate);
 
-    // Generate a simple sine wave
+    // Generate a more interesting audio pattern - bass line with rhythm
     const data = buffer.getChannelData(0);
     for (let i = 0; i < data.length; i++) {
-      data[i] = Math.sin(2 * Math.PI * 440 * i / sampleRate) * 0.1; // Quiet 440Hz tone
+      const time = i / sampleRate;
+      const beat = Math.floor(time * 2) % 4; // 120 BPM beat pattern
+      const bassFreq = beat === 0 || beat === 2 ? 80 : 100; // Kick pattern
+      const volume = beat === 0 ? 0.3 : 0.1; // Accent on beats 1 and 3
+
+      data[i] = Math.sin(2 * Math.PI * bassFreq * time) * volume;
     }
 
     // Convert to WAV
@@ -114,7 +119,7 @@ class AudioSourceService {
         type: 'demo',
         url: workingAudio,
         title: `${track.title} (Demo)`,
-        duration: 1,
+        duration: 30,
         quality: 'medium',
         metadata: { generated: true }
       });
@@ -124,7 +129,7 @@ class AudioSourceService {
         type: 'demo',
         url: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUe',
         title: `${track.title} (Fallback)`,
-        duration: 1,
+        duration: 30,
         quality: 'medium',
         metadata: { fallback: true }
       });
