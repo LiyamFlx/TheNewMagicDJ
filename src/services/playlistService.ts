@@ -327,7 +327,11 @@ class PlaylistService {
         trackCount: playlist.tracks.length,
       });
 
-      return savedPlaylist;
+      // Ensure playlist has a valid ID
+      if (!savedPlaylist?.id) {
+        throw new Error('Playlist creation failed: No ID returned');
+      }
+      return savedPlaylist as import('../types/index').Playlist;
     } catch (error) {
       logger.error('PlaylistService', 'Failed to create playlist', error);
       return null;
@@ -369,8 +373,8 @@ class PlaylistService {
       }
 
       // Get user playlists and find the requested one
-      const playlists = await supabasePlaylistService.getUserPlaylists(userId);
-      const playlist = playlists?.find((p: Playlist) => p.id === playlistId);
+      const playlists = await supabasePlaylistService.getPlaylists(userId);
+      const playlist = playlists?.find((p: any) => p.id === playlistId);
 
       if (!playlist) {
         logger.warn('PlaylistService', 'Playlist not found or access denied', {
@@ -388,18 +392,25 @@ class PlaylistService {
 
       // Validate and fix track URLs
       if (playlist.tracks) {
-        playlist.tracks = this.validateTracks(playlist.tracks);
+        playlist.tracks = this.validateTracks(playlist.tracks as any);
       }
 
+      // Ensure playlist has a valid ID and cast to proper type
+      if (!playlist?.id) {
+        throw new Error('Retrieved playlist missing ID');
+      }
+
+      const typedPlaylist = playlist as import('../types/index').Playlist;
+
       // Cache result
-      this.setCached(cacheKey, playlist);
+      this.setCached(cacheKey, typedPlaylist);
 
       logger.info('PlaylistService', 'Playlist retrieved successfully', {
         playlistId,
-        trackCount: playlist.tracks?.length ?? 0,
+        trackCount: typedPlaylist.tracks?.length ?? 0,
       });
 
-      return playlist;
+      return typedPlaylist;
     } catch (error) {
       logger.error('PlaylistService', 'Failed to get playlist', error);
       return null;
@@ -431,7 +442,7 @@ class PlaylistService {
       }
 
       // Get playlists from database
-      const playlists = await supabasePlaylistService.getUserPlaylists(
+      const playlists = await supabasePlaylistService.getPlaylists(
         params.userId
       );
       if (!playlists) {
@@ -442,7 +453,7 @@ class PlaylistService {
       // Apply sorting
       let sortedPlaylists = [...playlists];
       if (params.sortBy) {
-        sortedPlaylists.sort((a: Playlist, b: Playlist) => {
+        sortedPlaylists.sort((a: any, b: any) => {
           const aVal = (a as any)[params.sortBy!];
           const bVal = (b as any)[params.sortBy!];
 
@@ -462,23 +473,28 @@ class PlaylistService {
       const limit = params.limit ?? 50;
       const paginatedPlaylists = sortedPlaylists.slice(offset, offset + limit);
 
-      // Validate tracks for each playlist
+      // Validate tracks for each playlist and ensure proper typing
+      const typedPlaylists: import('../types/index').Playlist[] = [];
       for (const playlist of paginatedPlaylists) {
-        if (playlist.tracks) {
-          playlist.tracks = this.validateTracks(playlist.tracks);
+        if (!playlist.id) {
+          continue; // Skip playlists without IDs
         }
+        if (playlist.tracks) {
+          playlist.tracks = this.validateTracks(playlist.tracks as any);
+        }
+        typedPlaylists.push(playlist as import('../types/index').Playlist);
       }
 
       // Cache result
-      this.setCached(cacheKey, paginatedPlaylists);
+      this.setCached(cacheKey, typedPlaylists);
 
       logger.info('PlaylistService', 'User playlists retrieved successfully', {
         userId: params.userId,
         totalCount: playlists.length,
-        returnedCount: paginatedPlaylists.length,
+        returnedCount: typedPlaylists.length,
       });
 
-      return paginatedPlaylists;
+      return typedPlaylists;
     } catch (error) {
       logger.error('PlaylistService', 'Failed to get user playlists', error);
       return null;
@@ -562,7 +578,11 @@ class PlaylistService {
         userId: params.userId,
       });
 
-      return savedPlaylist;
+      // Ensure playlist has a valid ID
+      if (!savedPlaylist?.id) {
+        throw new Error('Playlist update failed: No ID returned');
+      }
+      return savedPlaylist as import('../types/index').Playlist;
     } catch (error) {
       logger.error('PlaylistService', 'Failed to update playlist', error);
       return null;
@@ -733,7 +753,11 @@ class PlaylistService {
         position: clampedPosition,
       });
 
-      return savedPlaylist;
+      // Ensure playlist has a valid ID
+      if (!savedPlaylist?.id) {
+        throw new Error('Add track failed: No playlist ID returned');
+      }
+      return savedPlaylist as import('../types/index').Playlist;
     } catch (error) {
       logger.error('PlaylistService', 'Failed to add track to playlist', error);
       return null;
@@ -827,7 +851,11 @@ class PlaylistService {
         }
       );
 
-      return savedPlaylist;
+      // Ensure playlist has a valid ID
+      if (!savedPlaylist?.id) {
+        throw new Error('Remove track failed: No playlist ID returned');
+      }
+      return savedPlaylist as import('../types/index').Playlist;
     } catch (error) {
       logger.error(
         'PlaylistService',
@@ -952,7 +980,11 @@ class PlaylistService {
         toPosition: clampedNewPosition,
       });
 
-      return savedPlaylist;
+      // Ensure playlist has a valid ID
+      if (!savedPlaylist?.id) {
+        throw new Error('Reorder tracks failed: No playlist ID returned');
+      }
+      return savedPlaylist as import('../types/index').Playlist;
     } catch (error) {
       logger.error(
         'PlaylistService',
