@@ -108,10 +108,6 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 100; // Conservative limit per minute
 
-// No more demo audio - we use real YouTube URLs
-
-// Removed unused genre track titles
-
 // =============================================================================
 // UTILITY FUNCTIONS
 // =============================================================================
@@ -131,8 +127,6 @@ function parseDuration(duration: string): number {
 
   return hours * 3600 + minutes * 60 + seconds;
 }
-
-// Removed unused utility functions
 
 // =============================================================================
 // MAIN SERVICE CLASS

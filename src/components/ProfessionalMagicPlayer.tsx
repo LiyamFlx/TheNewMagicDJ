@@ -109,7 +109,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const currentTrack = playlist?.tracks[currentTrackIndex];
   const nextTrack = playlist?.tracks[currentTrackIndex + 1];
 
-  // Touch session to avoid TS unused var warning and provide traceability
+  // Log session information for debugging and analytics
   useEffect(() => {
     logger.info('ProfessionalMagicPlayer', 'Session active', {
       sessionId: session?.id,

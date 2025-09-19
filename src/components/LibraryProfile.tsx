@@ -13,6 +13,7 @@ import {
 import { User, Playlist } from '../types';
 import { formatDurationHuman } from '../utils/format';
 import { getEnergyColor } from '../utils/energy';
+import { supabasePlaylistService } from '../services/supabasePlaylistService';
 
 interface LibraryItem {
   id: string;
@@ -111,9 +112,13 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
     onPlaylistSelect(playlist);
   };
 
-  const handleDelete = (id: string) => {
-    setLibrary(prev => prev.filter(item => item.id !== id));
-    // TODO: Implement actual deletion from Supabase
+  const handleDelete = async (id: string) => {
+    try {
+      await supabasePlaylistService.deletePlaylist(id);
+      setLibrary(prev => prev.filter(item => item.id !== id));
+    } catch (error) {
+      console.error('Failed to delete playlist:', error);
+    }
   };
 
   if (isLoading) {
