@@ -1,6 +1,7 @@
 import { Track } from '../types';
 import { logger } from '../utils/logger';
 import { fetchWithRetry } from '../utils/http';
+import config from '../config';
 // Removed audio fallback imports
 
 // =============================================================================
@@ -145,7 +146,7 @@ export class YouTubeService {
   };
 
   constructor() {
-    this.apiKey = import.meta.env.VITE_YOUTUBE_API_KEY || '';
+    this.apiKey = config.YOUTUBE_API_KEY;
   }
 
   // ===========================================================================

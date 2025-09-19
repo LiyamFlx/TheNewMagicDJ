@@ -645,7 +645,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       audioARef.current = null;
     }
 
-    // Skip YouTube sources
+    // Skip YouTube sources - iframe player handles audio
     if (deckACurrent.type === 'youtube') {
       dispatch({ type: 'SET_LOADING', payload: false });
       dispatch({
@@ -729,8 +729,15 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       audioBRef.current = null;
     }
 
-    // Skip YouTube sources for deck B
+    // Skip YouTube sources for deck B - iframe player handles audio
     if (deckBCurrent.type === 'youtube') {
+      dispatch({ type: 'SET_LOADING', payload: false });
+      dispatch({
+        type: 'SET_TIME', payload: {
+          currentTime: 0,
+          duration: deckBCurrent.duration || 180
+        }
+      });
       return;
     }
 

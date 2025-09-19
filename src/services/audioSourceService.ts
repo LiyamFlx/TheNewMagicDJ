@@ -23,25 +23,27 @@ class AudioSourceService {
   async getAudioSourcesForTrack(track: Track): Promise<AudioSource[]> {
     const sources: AudioSource[] = [];
 
-    // Priority 1: Spotify preview URL (30-second real audio)
+    // Priority 1: YouTube tracks (full-length via iframe player)
+    if (track.album === 'YouTube' && track.id) {
+      sources.push({
+        type: 'youtube' as AudioSourceType,
+        url: '', // No direct URL - iframe player handles this
+        title: track.title,
+        duration: track.duration || 180,
+        quality: 'high',
+        metadata: {
+          videoId: track.id, // YouTube video ID for iframe player
+        }
+      });
+    }
+
+    // Priority 2: Spotify preview URL (30-second clips)
     if (track.preview_url) {
       sources.push({
         type: 'spotify' as AudioSourceType,
         url: track.preview_url,
         title: track.title,
         duration: 30, // Spotify previews are 30 seconds
-        quality: 'high'
-      });
-    }
-
-    // Priority 2: Only add non-YouTube URLs (YouTube watch URLs cause CORS errors)
-    if (track.url && track.url !== track.preview_url && !track.url.includes('youtube.com/watch')) {
-      const sourceType: AudioSourceType = track.url.includes('spotify') ? 'spotify' : 'youtube';
-      sources.push({
-        type: sourceType,
-        url: track.url,
-        title: track.title,
-        duration: track.duration,
         quality: 'high'
       });
     }

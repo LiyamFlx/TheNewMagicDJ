@@ -5,6 +5,8 @@ type FrontendConfig = {
   IS_DEV: boolean;
   API_BASE_URL: string;
   USE_SPOTIFY_MOCK: boolean;
+  YOUTUBE_API_KEY: string;
+  YOUTUBE_CLIENT_ID: string;
 };
 
 const IS_DEV = Boolean(import.meta.env?.DEV);
@@ -18,10 +20,16 @@ const USE_SPOTIFY_MOCK = Boolean(
     (IS_DEV && !import.meta.env?.VITE_SPOTIFY_CLIENT_ID)
 );
 
+// YouTube API configuration
+const YOUTUBE_API_KEY = (import.meta.env?.VITE_YOUTUBE_API_KEY as string) || 'AIzaSyAnIaqX86d9r-PCNdzTwpe64dWAq60zRbY';
+const YOUTUBE_CLIENT_ID = (import.meta.env?.VITE_YOUTUBE_CLIENT_ID as string) || '257624552069-c9le9nejqmfqd4qisirasj7ided86lgs.apps.googleusercontent.com';
+
 export const config: FrontendConfig = {
   IS_DEV,
   API_BASE_URL,
   USE_SPOTIFY_MOCK,
+  YOUTUBE_API_KEY,
+  YOUTUBE_CLIENT_ID,
 };
 
 export default config;
