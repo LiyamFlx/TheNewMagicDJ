@@ -1193,6 +1193,9 @@ class PlaylistService {
 
         tracks = this.validateTracks(tracks);
 
+        // Add diagnostic logging for track source percentages
+        this.logTrackSourceDiagnostics(tracks);
+
         const playlist: Playlist = {
           id: `magic-set-${Date.now()}`,
           name: `Magic Set: ${params.vibe.charAt(0).toUpperCase() + params.vibe.slice(1)} (${params.energyLevel.toUpperCase()})`,
@@ -1411,6 +1414,72 @@ class PlaylistService {
       ) {
         this.cache.delete(key);
       }
+    }
+  }
+
+  /**
+   * Log diagnostic information about track source distribution
+   */
+  private logTrackSourceDiagnostics(tracks: Track[]): void {
+    if (tracks.length === 0) {
+      logger.warn('PlaylistService', 'No tracks to analyze for source diagnostics');
+      return;
+    }
+
+    const sourceStats = {
+      youtube: 0,
+      spotify: 0,
+      demo: 0,
+      proxy: 0,
+      unknown: 0,
+    };
+
+    // Analyze track sources based on URL patterns and metadata
+    tracks.forEach(track => {
+      if (track.url?.includes('youtube.com') || track.url?.includes('youtu.be')) {
+        sourceStats.youtube++;
+      } else if (track.url?.includes('spotify.com') || track.platform === 'spotify') {
+        sourceStats.spotify++;
+      } else if (track.url?.startsWith('data:') || track.url?.includes('demo') || !track.url) {
+        sourceStats.demo++;
+      } else if (track.url?.includes('/api/proxy-audio')) {
+        sourceStats.proxy++;
+      } else {
+        sourceStats.unknown++;
+      }
+    });
+
+    // Calculate percentages
+    const total = tracks.length;
+    const percentages = {
+      youtube: Math.round((sourceStats.youtube / total) * 100),
+      spotify: Math.round((sourceStats.spotify / total) * 100),
+      demo: Math.round((sourceStats.demo / total) * 100),
+      proxy: Math.round((sourceStats.proxy / total) * 100),
+      unknown: Math.round((sourceStats.unknown / total) * 100),
+    };
+
+    logger.info('PlaylistService', 'Track Source Distribution', {
+      totalTracks: total,
+      sources: sourceStats,
+      percentages,
+      pipeline: 'YouTube → Spotify → Demo fallback'
+    });
+
+    // Warn if too many demo tracks (indicates API issues)
+    if (percentages.demo > 50) {
+      logger.warn('PlaylistService', 'High percentage of demo tracks indicates API issues', {
+        demoPercentage: percentages.demo,
+        youtubeCount: sourceStats.youtube,
+        spotifyCount: sourceStats.spotify
+      });
+    }
+
+    // Info if good YouTube performance
+    if (percentages.youtube > 80) {
+      logger.info('PlaylistService', 'Excellent YouTube API performance', {
+        youtubePercentage: percentages.youtube
+      });
     }
   }
 }

@@ -75,6 +75,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [youtubeAReady, setYoutubeAReady] = useState(false);
+  const [youtubeBReady, setYoutubeBReady] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showPlaylistEditor, setShowPlaylistEditor] = useState(false);
   const [showMagicDancer, setShowMagicDancer] = useState(true);
@@ -320,11 +322,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   useEffect(() => {
     if (deckASources.length === 0 || deckASourceIndex >= deckASources.length) {
       setDeckACurrentSource(null);
+      setYoutubeAReady(false);
       return;
     }
 
     const source = deckASources[deckASourceIndex];
     setDeckACurrentSource(source);
+    setYoutubeAReady(false); // Reset readiness when source changes
 
     // Clean up existing audio using utility function
     if (audioARef.current) {
@@ -566,6 +570,28 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
       // Handle YouTube source
       if (currentSource?.type === 'youtube' && youtubePlayer) {
+        // Check if YouTube player is ready before attempting control
+        if (!youtubePlayer.isReady() || !youtubeAReady) {
+          logger.warn('ProfessionalMagicPlayer', 'YouTube player not ready - queuing action');
+          // Retry after a short delay
+          setTimeout(() => {
+            if (youtubePlayer.isReady() && youtubeAReady) {
+              logger.info('ProfessionalMagicPlayer', 'YouTube player ready on retry');
+              if (shouldPlay) {
+                youtubePlayer.play().catch(error => {
+                  logger.error('ProfessionalMagicPlayer', 'YouTube play failed on retry', error);
+                });
+              } else {
+                youtubePlayer.pause();
+              }
+            } else {
+              logger.error('ProfessionalMagicPlayer', 'YouTube player still not ready after retry');
+            }
+          }, 100);
+          return;
+        }
+
+        // Player is ready, execute action
         if (shouldPlay) {
           await youtubePlayer.play();
         } else {
@@ -1331,6 +1357,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                     className="w-full h-20 lg:h-28 rounded-lg border border-glass"
                     onReady={() => {
                       setIsLoading(false);
+                      setYoutubeAReady(true);
                       logger.info('ProfessionalMagicPlayer', 'YouTube A player ready');
                     }}
                     onStateChange={(state) => {
@@ -1681,6 +1708,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                     volume={deckBVolume}
                     className="w-full h-20 lg:h-28 rounded-lg border border-glass"
                     onReady={() => {
+                      setYoutubeBReady(true);
                       logger.info('ProfessionalMagicPlayer', 'YouTube B player ready');
                     }}
                     onStateChange={(state) => {

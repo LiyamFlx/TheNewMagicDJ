@@ -10,12 +10,13 @@ interface SpotifyTokenState {
 interface UseSpotifyTokenReturn extends SpotifyTokenState {
   refetch: () => Promise<void>;
   isExpired: boolean;
+  fetchLazy: () => Promise<string | null>;
 }
 
 export function useSpotifyToken(): UseSpotifyTokenReturn {
   const [state, setState] = useState<SpotifyTokenState>({
     token: null,
-    isLoading: true,
+    isLoading: false, // Start as not loading since we're lazy
     error: null,
     expiresAt: null,
   });
@@ -47,9 +48,21 @@ export function useSpotifyToken(): UseSpotifyTokenReturn {
     }
   }, []);
 
-  useEffect(() => {
-    fetchToken();
-  }, [fetchToken]);
+  // Remove automatic token fetching - now lazy loaded
+  // useEffect(() => {
+  //   fetchToken();
+  // }, [fetchToken]);
+
+  const fetchLazy = useCallback(async (): Promise<string | null> => {
+    // If we already have a valid token, return it
+    if (state.token && state.expiresAt && Date.now() < state.expiresAt) {
+      return state.token;
+    }
+
+    // Otherwise fetch a new token
+    await fetchToken();
+    return state.token;
+  }, [fetchToken, state.token, state.expiresAt]);
 
   const isExpired = state.expiresAt ? Date.now() >= state.expiresAt : false;
 
@@ -57,5 +70,6 @@ export function useSpotifyToken(): UseSpotifyTokenReturn {
     ...state,
     refetch: fetchToken,
     isExpired,
+    fetchLazy,
   };
 }

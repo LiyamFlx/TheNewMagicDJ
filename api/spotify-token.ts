@@ -62,6 +62,7 @@ async function fetchWithTimeout(
 
 async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
+    res.setHeader('Content-Type', 'application/json');
     return res
       .status(405)
       .json({ error: { code: 'BAD_REQUEST', message: 'Method not allowed' } });
@@ -72,6 +73,7 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
 
   if (!clientId || !clientSecret) {
     // Don't spam logs in production, return graceful error
+    res.setHeader('Content-Type', 'application/json');
     return res.status(503).json({
       error: {
         code: 'MISSING_CREDENTIALS',
@@ -93,6 +95,7 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
         'Retry-After',
         Math.ceil((bucket.retryAfter || 1000) / 1000).toString()
       );
+      res.setHeader('Content-Type', 'application/json');
       return res.status(429).json({
         error: { code: 'RATE_LIMITED', message: 'Too many requests' },
       });
@@ -101,6 +104,7 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
     const now = Date.now();
     if (tokenCache && now < tokenCache.expires_at - 60_000) {
       res.setHeader('Cache-Control', 'no-store');
+      res.setHeader('Content-Type', 'application/json');
       return res.status(200).json({
         access_token: tokenCache.access_token,
         token_type: tokenCache.token_type,
@@ -152,6 +156,7 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
 
     const token = await inflight;
     res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Type', 'application/json');
     return res.status(200).json({
       access_token: token.access_token,
       token_type: token.token_type,
@@ -166,6 +171,7 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
       message: 'Spotify service temporarily unavailable',
     });
     // Return 503 for service unavailable to trigger proper fallback
+    res.setHeader('Content-Type', 'application/json');
     res.status(503).json({
       error: {
         ...normalized,

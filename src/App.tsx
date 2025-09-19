@@ -117,6 +117,7 @@ function AppContent() {
     isLoading: tokenLoading,
     error: tokenError,
     refetch: refetchToken,
+    fetchLazy: fetchSpotifyTokenLazy,
   } = useSpotifyToken();
 
   // Local storage
@@ -130,23 +131,24 @@ function AppContent() {
     ''
   );
 
-  // --- Initialize Spotify ---
-  useEffect(() => {
-    if (spotifyToken && !tokenError) {
-      spotifyService.initialize(spotifyToken);
-      Logger.info('Spotify service initialized');
-    }
-  }, [spotifyToken, tokenError]);
+  // --- Spotify is now lazily initialized when needed as fallback ---
+  // Removed automatic initialization to improve startup performance
 
-  // Retry on Spotify token error
-  useEffect(() => {
-    if (tokenError) {
-      Logger.error('Spotify token error', tokenError);
-      showToast('Spotify service temporarily unavailable', 'error');
-      const retryTimeout = setTimeout(refetchToken, 30000);
-      return () => clearTimeout(retryTimeout);
+  // Provide lazy Spotify initialization function for services
+  const initializeSpotifyLazy = useCallback(async (): Promise<boolean> => {
+    try {
+      const token = await fetchSpotifyTokenLazy();
+      if (token) {
+        spotifyService.initialize(token);
+        Logger.info('Spotify service lazily initialized');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      Logger.error('Lazy Spotify initialization failed', error);
+      return false;
     }
-  }, [tokenError, refetchToken, showToast]);
+  }, [fetchSpotifyTokenLazy]);
 
   // --- Initialize App ---
   useEffect(() => {
