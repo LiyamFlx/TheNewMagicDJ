@@ -20,27 +20,38 @@ class AudioSourceService {
    * Create a simple working audio blob
    */
   private createWorkingAudio(): string {
-    // Create a longer working WAV file for proper DJ testing
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const duration = 30; // 30 seconds for proper testing
-    const sampleRate = 22050; // Lower sample rate for smaller file
-    const buffer = audioContext.createBuffer(1, duration * sampleRate, sampleRate);
+    try {
+      // Use OfflineAudioContext to avoid renderer errors
+      const duration = 30; // 30 seconds for proper testing
+      const sampleRate = 22050; // Lower sample rate for smaller file
+      const offlineContext = new (window.OfflineAudioContext || (window as any).webkitOfflineAudioContext)(
+        1, // channels
+        duration * sampleRate, // length
+        sampleRate // sample rate
+      );
 
-    // Generate a more interesting audio pattern - bass line with rhythm
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i++) {
-      const time = i / sampleRate;
-      const beat = Math.floor(time * 2) % 4; // 120 BPM beat pattern
-      const bassFreq = beat === 0 || beat === 2 ? 80 : 100; // Kick pattern
-      const volume = beat === 0 ? 0.3 : 0.1; // Accent on beats 1 and 3
+      const buffer = offlineContext.createBuffer(1, duration * sampleRate, sampleRate);
 
-      data[i] = Math.sin(2 * Math.PI * bassFreq * time) * volume;
+      // Generate a more interesting audio pattern - bass line with rhythm
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        const time = i / sampleRate;
+        const beat = Math.floor(time * 2) % 4; // 120 BPM beat pattern
+        const bassFreq = beat === 0 || beat === 2 ? 80 : 100; // Kick pattern
+        const volume = beat === 0 ? 0.3 : 0.1; // Accent on beats 1 and 3
+
+        data[i] = Math.sin(2 * Math.PI * bassFreq * time) * volume;
+      }
+
+      // Convert to WAV
+      const arrayBuffer = this.encodeWAV(buffer);
+      const blob = new Blob([arrayBuffer], { type: 'audio/wav' });
+
+      return URL.createObjectURL(blob);
+    } catch (error) {
+      console.warn('OfflineAudioContext creation failed, using fallback audio:', error);
+      throw error;
     }
-
-    // Convert to WAV
-    const arrayBuffer = this.encodeWAV(buffer);
-    const blob = new Blob([arrayBuffer], { type: 'audio/wav' });
-    return URL.createObjectURL(blob);
   }
 
   /**
