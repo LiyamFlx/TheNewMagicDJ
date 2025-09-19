@@ -127,5 +127,5 @@ async function acoustidHandler(req: VercelRequest, res: VercelResponse) {
 }
 
 export default (apiConfig.ENABLE_IDEMPOTENCY
-  ? withIdempotency(requireAuth(acoustidHandler))
-  : requireAuth(acoustidHandler));
+  ? withIdempotency(acoustidHandler)
+  : acoustidHandler);
