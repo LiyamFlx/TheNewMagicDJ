@@ -384,7 +384,7 @@ class PlaylistService {
 
       // Load tracks if not already loaded or if specifically requested
       if (loadTracks && (!playlist.tracks || playlist.tracks.length === 0)) {
-        // For this demo, tracks are already loaded from supabase
+        // Tracks are already loaded from supabase
         // In a real implementation, you might lazy-load track details here
       }
 
@@ -1460,7 +1460,6 @@ class PlaylistService {
     const sourceStats = {
       youtube: 0,
       spotify: 0,
-      demo: 0,
       proxy: 0,
       unknown: 0,
     };
@@ -1471,8 +1470,6 @@ class PlaylistService {
         sourceStats.youtube++;
       } else if (track.url?.includes('spotify.com') || track.platform === 'spotify') {
         sourceStats.spotify++;
-      } else if (track.url?.startsWith('data:') || track.url?.includes('demo') || !track.url) {
-        sourceStats.demo++;
       } else if (track.url?.includes('/api/proxy-audio')) {
         sourceStats.proxy++;
       } else {
@@ -1485,7 +1482,6 @@ class PlaylistService {
     const percentages = {
       youtube: Math.round((sourceStats.youtube / total) * 100),
       spotify: Math.round((sourceStats.spotify / total) * 100),
-      demo: Math.round((sourceStats.demo / total) * 100),
       proxy: Math.round((sourceStats.proxy / total) * 100),
       unknown: Math.round((sourceStats.unknown / total) * 100),
     };
@@ -1494,13 +1490,13 @@ class PlaylistService {
       totalTracks: total,
       sources: sourceStats,
       percentages,
-      pipeline: 'YouTube → Spotify → Demo fallback'
+      pipeline: 'YouTube → Spotify only'
     });
 
-    // Warn if too many demo tracks (indicates API issues)
-    if (percentages.demo > 50) {
-      logger.warn('PlaylistService', 'High percentage of demo tracks indicates API issues', {
-        demoPercentage: percentages.demo,
+    // Warn if low success rate indicates API issues
+    if (percentages.youtube + percentages.spotify < 50) {
+      logger.warn('PlaylistService', 'Low success rate indicates API issues', {
+        successRate: percentages.youtube + percentages.spotify,
         youtubeCount: sourceStats.youtube,
         spotifyCount: sourceStats.spotify
       });
