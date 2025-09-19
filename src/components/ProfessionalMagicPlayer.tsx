@@ -499,20 +499,30 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     }
   }, [state.currentTrackIndex, state.settings.shuffle, state.settings.repeat, playlist?.tracks.length, onSessionEnd]);
 
-  // Handle source errors with retry logic
+  // Handle source errors with retry logic and rate limiting
+  const errorCountRef = useRef<{[key: string]: number}>({});
   const handleSourceError = useCallback((deck: 'A' | 'B', error: any) => {
     const sources = deck === 'A' ? state.sources.deckA : state.sources.deckB;
     const currentIndex = deck === 'A' ? state.sources.deckAIndex : state.sources.deckBIndex;
 
-    // Log only once per deck to avoid spam
-    logger.warn('ProfessionalMagicPlayer', `Audio source error on deck ${deck}`, { error: error.message });
+    // Rate limit error logging (max 3 errors per deck)
+    const errorKey = `deck${deck}`;
+    errorCountRef.current[errorKey] = (errorCountRef.current[errorKey] || 0) + 1;
+
+    if (errorCountRef.current[errorKey] <= 3) {
+      logger.warn('ProfessionalMagicPlayer', `Audio source error on deck ${deck} (${errorCountRef.current[errorKey]}/3)`, {
+        error: error?.message || 'Unknown error',
+        currentIndex,
+        totalSources: sources.length
+      });
+    }
 
     // Try next source
     const nextIndex = currentIndex + 1;
-    if (nextIndex < sources.length) {
+    if (nextIndex < sources.length && errorCountRef.current[errorKey] <= 5) {
       dispatch({ type: 'SET_SOURCE_INDEX', payload: { deck: deck === 'A' ? 'deckA' : 'deckB', index: nextIndex } });
     } else {
-      // No more sources available
+      // No more sources available or too many errors
       dispatch({
         type: 'SET_ERROR',
         payload: {
@@ -520,6 +530,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           isDegraded: true
         }
       });
+      // Reset error count for future attempts
+      errorCountRef.current[errorKey] = 0;
     }
   }, [state.sources]);
 
