@@ -108,9 +108,7 @@ const MAX_TRACKS_PER_PLAYLIST = 1000;
 // Note: Lazy loading chunk size for future pagination implementation
 // const LAZY_LOAD_CHUNK_SIZE = 50;
 
-// Note: External audio URLs removed to avoid CORS issues
-// Audio players will generate safe local fallback audio automatically
-const FALLBACK_AUDIO_URLS: readonly string[] = [];
+// Real music sources only - no demo/fallback content
 
 // =============================================================================
 // UTILITY FUNCTIONS
@@ -1119,7 +1117,7 @@ class PlaylistService {
             } catch (youtubeError) {
               logger.warn(
                 'PlaylistService',
-                'YouTube service failed, using mock data',
+                'YouTube service failed, falling back to Spotify',
                 youtubeError
               );
               tracks = await productionSpotifyService.getRecommendations({
@@ -1217,9 +1215,8 @@ class PlaylistService {
             });
             logger.info('PlaylistService', 'Spotify fallback successful', { count: tracks.length });
           } catch (fallbackError) {
-            logger.warn('PlaylistService', 'Both YouTube and Spotify failed, using demo tracks', fallbackError);
-            // This will be handled by the fallback generation in ProductionSpotifyService
-            tracks = [];
+            logger.error('PlaylistService', 'Both YouTube and Spotify failed - no real music available', fallbackError);
+            throw new Error('Unable to fetch real music tracks. Please check your internet connection and try again.');
           }
         }
 
@@ -1354,22 +1351,24 @@ class PlaylistService {
    * @returns Array of validated tracks with fallback URLs if needed
    */
   private validateTracks(tracks: Track[]): Track[] {
-    return tracks.map((track, index) => {
+    // Filter out tracks without real preview URLs
+    // Only return tracks with actual Spotify/YouTube audio sources
+    return tracks.filter((track) => {
       if (!track.preview_url || track.preview_url.trim() === '') {
-        logger.warn(
+        logger.info(
           'PlaylistService',
-          'Track missing preview_url, adding fallback',
+          'Skipping track without real audio source',
           {
             trackId: track.id,
             title: track.title,
+            artist: track.artist,
           }
         );
-        return {
-          ...track,
-          preview_url: FALLBACK_AUDIO_URLS[index % FALLBACK_AUDIO_URLS.length],
-        };
+        return false; // Remove tracks without real audio
       }
-      return track;
+
+      // Ensure track has valid metadata
+      return track.title && track.artist && track.preview_url;
     });
   }
 

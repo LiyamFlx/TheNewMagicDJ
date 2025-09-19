@@ -1,6 +1,7 @@
 import { Track } from '../types/index';
+import { spotifyPlaybackService } from './spotifyPlaybackService';
 
-export type AudioSourceType = 'youtube' | 'demo';
+export type AudioSourceType = 'youtube' | 'spotify';
 
 export interface AudioSource {
   type: AudioSourceType;
@@ -12,109 +13,58 @@ export interface AudioSource {
 }
 
 /**
- * Audio source service that provides playable audio sources for tracks
+ * Audio source service that provides real audio sources for tracks from streaming platforms
  */
 class AudioSourceService {
 
   /**
-   * Create a simple working audio blob
-   */
-  private createWorkingAudio(): string {
-    // Create a proper WAV file programmatically without AudioContext
-    // This generates a 5-second 440Hz sine wave
-    const sampleRate = 22050;
-    const duration = 5; // 5 seconds
-    const numSamples = sampleRate * duration;
-
-    // Create WAV header
-    const buffer = new ArrayBuffer(44 + numSamples * 2);
-    const view = new DataView(buffer);
-
-    // WAV header
-    const writeString = (offset: number, string: string) => {
-      for (let i = 0; i < string.length; i++) {
-        view.setUint8(offset + i, string.charCodeAt(i));
-      }
-    };
-
-    writeString(0, 'RIFF');
-    view.setUint32(4, 36 + numSamples * 2, true);
-    writeString(8, 'WAVE');
-    writeString(12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);  // PCM
-    view.setUint16(22, 1, true);  // mono
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * 2, true);
-    view.setUint16(32, 2, true);
-    view.setUint16(34, 16, true);
-    writeString(36, 'data');
-    view.setUint32(40, numSamples * 2, true);
-
-    // Generate audio data (440Hz sine wave)
-    let offset = 44;
-    for (let i = 0; i < numSamples; i++) {
-      const sample = Math.sin(2 * Math.PI * 440 * i / sampleRate) * 0.3;
-      view.setInt16(offset, sample * 32767, true);
-      offset += 2;
-    }
-
-    const blob = new Blob([buffer], { type: 'audio/wav' });
-    return URL.createObjectURL(blob);
-  }
-
-
-  /**
-   * Get audio sources for a track
+   * Get real audio sources for a track from streaming platforms
    */
   async getAudioSourcesForTrack(track: Track): Promise<AudioSource[]> {
     const sources: AudioSource[] = [];
 
-    // If track has a URL property, try to use it directly
-    if (track.url) {
+    // Priority 1: Spotify preview URL (30-second real audio)
+    if (track.preview_url) {
       sources.push({
-        type: 'demo',
+        type: 'spotify' as AudioSourceType,
+        url: track.preview_url,
+        title: track.title,
+        duration: 30, // Spotify previews are 30 seconds
+        quality: 'high'
+      });
+    }
+
+    // Priority 2: Direct track URL if available
+    if (track.url && track.url !== track.preview_url) {
+      const sourceType: AudioSourceType = track.url.includes('youtube') ? 'youtube' : 'spotify';
+      sources.push({
+        type: sourceType,
         url: track.url,
         title: track.title,
         duration: track.duration,
-        quality: 'medium'
+        quality: 'high'
       });
     }
 
-    // If track has a preview_url that's a direct audio URL, use it
-    if (track.preview_url && (track.preview_url.includes('.mp3') || track.preview_url.includes('.wav') || track.preview_url.includes('.m4a'))) {
+    // If we have Spotify ID, we can create Spotify Web Playback source
+    if (track.spotify_id) {
       sources.push({
-        type: 'demo',
-        url: track.preview_url,
+        type: 'spotify' as AudioSourceType,
+        url: `spotify:track:${track.spotify_id}`,
         title: track.title,
         duration: track.duration,
-        quality: 'medium'
+        quality: 'high',
+        metadata: {
+          spotify_id: track.spotify_id,
+          requires_premium: true
+        }
       });
     }
 
-    // Add working generated audio
-    try {
-      const workingAudio = this.createWorkingAudio();
-      sources.push({
-        type: 'demo',
-        url: workingAudio,
-        title: `${track.title} (Demo)`,
-        duration: 5,
-        quality: 'medium',
-        metadata: { generated: true }
-      });
-    } catch (error) {
-      // Fallback - create a minimal working WAV if blob creation fails
-      console.warn('Audio generation failed, using minimal fallback');
-      // Use a simple silence as final fallback
-      sources.push({
-        type: 'demo',
-        url: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=',
-        title: `${track.title} (Silence)`,
-        duration: 1,
-        quality: 'medium',
-        metadata: { fallback: true }
-      });
+    // If no real sources available, return empty array
+    // This forces the application to get real tracks instead of playing demos
+    if (sources.length === 0) {
+      console.warn(`No real audio sources available for track: ${track.title} by ${track.artist}`);
     }
 
     return sources;
@@ -126,6 +76,31 @@ class AudioSourceService {
   async getBestAudioSource(track: Track): Promise<AudioSource | null> {
     const sources = await this.getAudioSourcesForTrack(track);
     return sources.length > 0 ? sources[0] : null;
+  }
+
+  /**
+   * Play a full track using Spotify Web Playback SDK (for premium users)
+   */
+  async playFullTrackOnSpotify(track: Track): Promise<boolean> {
+    if (!track.spotify_id) {
+      console.warn('No Spotify ID available for track:', track.title);
+      return false;
+    }
+
+    if (!spotifyPlaybackService.isConnected()) {
+      console.warn('Spotify Web Playback not connected');
+      return false;
+    }
+
+    const spotifyUri = `spotify:track:${track.spotify_id}`;
+    return await spotifyPlaybackService.playTrack(spotifyUri);
+  }
+
+  /**
+   * Initialize Spotify Web Playback with user token
+   */
+  async initializeSpotifyPlayback(accessToken: string): Promise<boolean> {
+    return await spotifyPlaybackService.initialize(accessToken);
   }
 }
 
