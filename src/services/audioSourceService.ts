@@ -19,52 +19,11 @@ class AudioSourceService {
   /**
    * Generate a demo audio URL using Web Audio API
    */
-  private generateDemoAudio(track: Track): string {
-    // Create a data URL for a simple beep tone
-    const duration = Math.min(track.duration || 180, 300); // Max 5 minutes
-    const frequency = 440; // A4 note
-
-    // Generate simple audio data
-    const audioData = this.generateToneData(frequency, duration);
-    const blob = new Blob([audioData], { type: 'audio/wav' });
-    return URL.createObjectURL(blob);
+  private generateDemoAudio(_track: Track): string {
+    // Simple silent audio data URL for fallback
+    return 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUe';
   }
 
-  private generateToneData(frequency: number, duration: number): ArrayBuffer {
-    const sampleRate = 44100;
-    const samples = Math.floor(sampleRate * duration);
-    const buffer = new ArrayBuffer(44 + samples * 2); // WAV header + data
-    const view = new DataView(buffer);
-
-    // WAV header
-    const writeString = (offset: number, string: string) => {
-      for (let i = 0; i < string.length; i++) {
-        view.setUint8(offset + i, string.charCodeAt(i));
-      }
-    };
-
-    writeString(0, 'RIFF');
-    view.setUint32(4, 36 + samples * 2, true);
-    writeString(8, 'WAVE');
-    writeString(12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, 1, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * 2, true);
-    view.setUint16(32, 2, true);
-    view.setUint16(34, 16, true);
-    writeString(36, 'data');
-    view.setUint32(40, samples * 2, true);
-
-    // Generate tone data
-    for (let i = 0; i < samples; i++) {
-      const sample = Math.sin(2 * Math.PI * frequency * i / sampleRate) * 0.3;
-      view.setInt16(44 + i * 2, sample * 32767, true);
-    }
-
-    return buffer;
-  }
 
   /**
    * Get audio sources for a track
@@ -72,11 +31,11 @@ class AudioSourceService {
   async getAudioSourcesForTrack(track: Track): Promise<AudioSource[]> {
     const sources: AudioSource[] = [];
 
-    // If track has a preview_url that's a YouTube watch URL, use it
-    if (track.preview_url && track.preview_url.includes('youtube.com/watch')) {
+    // If track has a URL property, try to use it directly
+    if (track.url) {
       sources.push({
-        type: 'youtube',
-        url: track.preview_url,
+        type: 'demo',
+        url: track.url,
         title: track.title,
         duration: track.duration,
         quality: 'medium'
@@ -84,7 +43,7 @@ class AudioSourceService {
     }
 
     // If track has a preview_url that's a direct audio URL, use it
-    if (track.preview_url && (track.preview_url.includes('.mp3') || track.preview_url.includes('.wav'))) {
+    if (track.preview_url && (track.preview_url.includes('.mp3') || track.preview_url.includes('.wav') || track.preview_url.includes('.m4a'))) {
       sources.push({
         type: 'demo',
         url: track.preview_url,
@@ -94,12 +53,30 @@ class AudioSourceService {
       });
     }
 
+    // For testing: add some real MP3 URLs
+    const testAudioUrls = [
+      'https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3',
+      'https://file-examples.com/storage/fea8c67ce7e2b56e33c8c1b/2017/11/file_example_MP3_700KB.mp3',
+      'https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Kangaroo_MusiQue_-_The_Neverwritten_Role_Playing_Game.mp3'
+    ];
+
+    // Add a test audio URL for immediate functionality
+    const testUrl = testAudioUrls[Math.floor(Math.random() * testAudioUrls.length)];
+    sources.push({
+      type: 'demo',
+      url: testUrl,
+      title: `${track.title} (Test Audio)`,
+      duration: 30,
+      quality: 'medium',
+      metadata: { test: true }
+    });
+
     // Always provide a demo audio fallback
     sources.push({
       type: 'demo',
       url: this.generateDemoAudio(track),
-      title: `${track.title} (Demo)`,
-      duration: track.duration,
+      title: `${track.title} (Generated)`,
+      duration: track.duration || 30,
       quality: 'medium',
       metadata: { generated: true }
     });

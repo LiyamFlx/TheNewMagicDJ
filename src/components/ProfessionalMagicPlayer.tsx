@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useReducer, useMemo } from 'react';
+import { useEffect, useRef, useCallback, useReducer, useMemo } from 'react';
 import {
   Play,
   Pause,
@@ -18,14 +18,13 @@ import {
   Radio,
   Crosshair,
   RotateCcw,
-  Shuffle,
-  Repeat,
   Clock,
 } from 'lucide-react';
 import { Playlist, Session, Track } from '../types';
 import MagicDancer from './MagicDancer';
 import PlaylistEditor from './PlaylistEditor';
 import YouTubePlayer, { YouTubePlayerRef, YouTubePlayerState } from './YouTubePlayer';
+import AudioDebugger from './AudioDebugger';
 import { audioSourceService, AudioSource } from '../services/audioSourceService';
 import { logger } from '../utils/logger';
 import { throttle } from '../utils/debounce';
@@ -89,6 +88,7 @@ interface PlayerState {
     showMagicDancer: boolean;
     showUnmuteOverlay: boolean;
     showSettings: boolean;
+    showAudioDebugger: boolean;
   };
 
   // Error handling
@@ -161,6 +161,7 @@ const initialState: PlayerState = {
     showMagicDancer: true,
     showUnmuteOverlay: false,
     showSettings: false,
+    showAudioDebugger: false,
   },
   error: {
     message: null,
@@ -308,7 +309,7 @@ const useResourceCleanup = () => {
         try {
           fn();
         } catch (error) {
-          logger.warn('Cleanup function failed', error);
+          logger.warn('ProfessionalMagicPlayer', 'Cleanup function failed', error);
         }
       });
       cleanupFunctions.current = [];
@@ -397,7 +398,6 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const audioBRef = useRef<HTMLAudioElement | null>(null);
   const youtubeARef = useRef<YouTubePlayerRef | null>(null);
   const youtubeBRef = useRef<YouTubePlayerRef | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
 
   // Canvas refs for waveform
   const waveformCanvasA = useRef<HTMLCanvasElement>(null);
@@ -603,7 +603,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         }
       } catch (error) {
         // Silently fail for deck B sources
-        logger.warn('Failed to load deck B sources', error);
+        logger.warn('ProfessionalMagicPlayer', 'Failed to load deck B sources', error);
       }
     };
 
@@ -616,7 +616,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
   // Initialize Audio A
   useEffect(() => {
-    const { deckA, deckAIndex, deckACurrent } = state.sources;
+    const { deckA, deckACurrent } = state.sources;
 
     if (!deckACurrent || deckA.length === 0) {
       return;
@@ -642,28 +642,16 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
     // Create HTML audio element
     const audio = new Audio();
-    audio.preload = 'auto';
-    audio.crossOrigin = 'anonymous';
+    audio.preload = 'metadata';
     audio.volume = volumeCalculations.deckA;
 
-    try {
-      audio.src = deckACurrent.url;
-    } catch (error) {
-      handleSourceError('A', error);
-      return;
-    }
+    // Set source directly
+    audio.src = deckACurrent.url;
 
     // Event listeners
     const onLoadedMetadata = () => {
-      dispatch({
-        type: 'SET_TIME', payload: {
-          currentTime: 0,
-          duration: audio.duration || deckACurrent.duration || 180
-        }
-      });
-    };
-
-    const onCanPlayThrough = () => {
+      const duration = audio.duration || deckACurrent.duration || 180;
+      dispatch({ type: 'SET_TIME', payload: { currentTime: 0, duration } });
       dispatch({ type: 'SET_LOADING', payload: false });
     };
 
@@ -673,13 +661,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       dispatch({ type: 'SET_PROGRESS', payload: { deck: 'deckA', value: progress } });
     };
 
-    const onError = (e: Event) => {
-      handleSourceError('A', (e.target as HTMLAudioElement).error);
+    const onError = () => {
+      dispatch({ type: 'SET_LOADING', payload: false });
+      handleSourceError('A', new Error('Audio load failed'));
     };
 
     // Add listeners
     audio.addEventListener('loadedmetadata', onLoadedMetadata);
-    audio.addEventListener('canplaythrough', onCanPlayThrough);
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('ended', handleTrackEnd);
     audio.addEventListener('error', onError);
@@ -697,11 +685,11 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     addCleanup(cleanup);
 
     return cleanup;
-  }, [state.sources.deckACurrent, state.sources.deckAIndex, volumeCalculations.deckA, cleanupAudioElement, handleSourceError, handleTrackEnd, addCleanup]);
+  }, [state.sources.deckACurrent, volumeCalculations.deckA, cleanupAudioElement, handleSourceError, handleTrackEnd, addCleanup]);
 
-  // Initialize Audio B  
+  // Initialize Audio B
   useEffect(() => {
-    const { deckB, deckBIndex, deckBCurrent } = state.sources;
+    const { deckB, deckBCurrent } = state.sources;
 
     if (!deckBCurrent || deckB.length === 0) {
       return;
@@ -757,7 +745,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     addCleanup(cleanup);
 
     return cleanup;
-  }, [state.sources.deckBCurrent, state.sources.deckBIndex, volumeCalculations.deckB, cleanupAudioElement, handleSourceError, addCleanup]);
+  }, [state.sources.deckBCurrent, volumeCalculations.deckB, cleanupAudioElement, handleSourceError, addCleanup]);
 
   // Volume update effect
   useEffect(() => {
@@ -773,53 +761,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   useEffect(() => {
     const handlePlayPause = async () => {
       const audio = audioARef.current;
-      const youtubePlayer = youtubeARef.current;
-      const currentSource = state.sources.deckACurrent;
 
-      if (currentSource?.type === 'youtube' && youtubePlayer) {
-        try {
-          if (isPlaying) {
-            await youtubePlayer.play();
-          } else {
-            youtubePlayer.pause();
-          }
-        } catch (error) {
-          logger.error('YouTube player operation failed', error);
-          handleSourceError('A', error);
-        }
-        return;
-      }
-
-      if (!audio || state.isLoading) {
+      if (!audio) {
         return;
       }
 
       try {
         if (isPlaying) {
-          // Initialize AudioContext if needed
-          if (!audioContextRef.current && window.AudioContext) {
-            try {
-              audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-              addCleanup(() => {
-                audioContextRef.current?.close();
-              });
-            } catch (error) {
-              logger.warn('AudioContext creation failed', error);
-              dispatch({
-                type: 'SET_ERROR',
-                payload: {
-                  message: 'Audio device unavailable. Using basic playback.',
-                  isDegraded: true
-                }
-              });
-            }
-          }
-
-          // Resume AudioContext if suspended
-          if (audioContextRef.current?.state === 'suspended') {
-            await audioContextRef.current.resume();
-          }
-
           await audio.play();
           dispatch({ type: 'SET_UI', payload: { key: 'showUnmuteOverlay', value: false } });
         } else {
@@ -829,13 +777,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         if (error.name === 'NotAllowedError') {
           dispatch({ type: 'SET_UI', payload: { key: 'showUnmuteOverlay', value: true } });
         } else {
-          handleSourceError('A', error);
+          dispatch({ type: 'SET_ERROR', payload: { message: 'Playback failed', isDegraded: false } });
         }
       }
     };
 
     handlePlayPause();
-  }, [isPlaying, state.sources.deckACurrent, state.isLoading, handleSourceError, addCleanup]);
+  }, [isPlaying]);
 
   // Auto mix functionality
   useEffect(() => {
@@ -1153,24 +1101,19 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
   const handlePlaylistUpdate = useCallback((updatedPlaylist: Playlist) => {
     // In a real app this would update the parent state
-    logger.info('Playlist updated', { playlistId: updatedPlaylist.id });
+    logger.info('ProfessionalMagicPlayer', 'Playlist updated', { playlistId: updatedPlaylist.id });
   }, []);
 
   const addCuePoint = useCallback((deck: 'deckA' | 'deckB', position: number) => {
     dispatch({ type: 'ADD_CUE_POINT', payload: { deck, position } });
-    logger.info('Cue point added', { deck, position });
+    logger.info('ProfessionalMagicPlayer', 'Cue point added', { deck, position });
   }, []);
 
   const clearCuePoints = useCallback((deck: 'deckA' | 'deckB') => {
     dispatch({ type: 'CLEAR_CUE_POINTS', payload: { deck } });
   }, []);
 
-  const jumpToCue = useCallback((deck: 'deckA' | 'deckB', position: number) => {
-    if (deck === 'deckA') {
-      handleSeek(position);
-    }
-    // For deck B, we would need to implement seek functionality
-  }, [handleSeek]);
+  // Note: jumpToCue function removed as it was unused
 
   // Early return for loading state
   if (!playlist || !currentTrack) {
@@ -1232,6 +1175,16 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         </div>
 
         <div className="flex items-center space-x-3 lg:space-x-4">
+          <button
+            onClick={() => dispatch({ type: 'SET_UI', payload: { key: 'showAudioDebugger', value: !state.ui.showAudioDebugger } })}
+            aria-label={state.ui.showAudioDebugger ? 'Hide audio debugger' : 'Show audio debugger'}
+            className={`btn-accent px-3 lg:px-4 py-2 flex items-center space-x-2 text-sm lg:text-base ${state.ui.showAudioDebugger ? 'shadow-neon-yellow' : ''
+              }`}
+          >
+            <Headphones className="w-4 h-4 lg:w-5 lg:h-5" />
+            <span className="hidden sm:inline">DEBUG</span>
+          </button>
+
           <button
             onClick={() => dispatch({ type: 'SET_UI', payload: { key: 'showSettings', value: !state.ui.showSettings } })}
             aria-label={state.ui.showSettings ? 'Hide settings' : 'Show settings'}
@@ -1370,3 +1323,569 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Main Player Interface */}
+      <div className={`flex-1 p-4 lg:p-6 ${state.ui.mobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8 h-full">
+          {/* Enhanced Deck A */}
+          <div className="glass-card hover-lift p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-fuchsia-400 rounded-lg flex items-center justify-center text-slate-900 font-bold text-lg">
+                  A
+                </div>
+                <h2 className="text-xl lg:text-2xl font-bold text-fuchsia-400 tracking-wider font-orbitron">
+                  DECK A
+                </h2>
+              </div>
+            </div>
+
+            {/* Enhanced Track Info */}
+            <div className="mb-6 p-4 bg-glass border border-glass rounded-lg">
+              <h3 className="font-bold text-lg lg:text-xl mb-2 truncate text-white font-orbitron">
+                {currentTrack.title}
+              </h3>
+              <p className="text-fuchsia-400 mb-3 truncate font-orbitron text-base">
+                {currentTrack.artist}
+              </p>
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="text-center">
+                  <div className="text-fuchsia-400 font-bold text-lg">
+                    {currentTrack.bpm ?? 128}
+                  </div>
+                  <div className="text-slate-400 text-xs">BPM</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-fuchsia-400 font-bold text-lg">
+                    {currentTrack.key ?? 'C'}
+                  </div>
+                  <div className="text-slate-400 text-xs">KEY</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-fuchsia-400 font-bold text-lg">
+                    {formatTimeClock(currentTrack.duration ?? 180)}
+                  </div>
+                  <div className="text-slate-400 text-xs">TIME</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Enhanced Waveform / YouTube Player */}
+            <div className="mb-6">
+              {state.sources.deckACurrent?.type === 'youtube' ? (
+                <div className="relative">
+                  <YouTubePlayer
+                    ref={youtubeARef}
+                    videoId={state.sources.deckACurrent.metadata?.videoId || ''}
+                    volume={state.volumes.deckA}
+                    className="w-full h-20 lg:h-28 rounded-lg border border-glass"
+                    onReady={() => {
+                      dispatch({ type: 'SET_LOADING', payload: false });
+                      dispatch({ type: 'SET_READINESS', payload: { player: 'youtubeA', ready: true } });
+                      logger.info('ProfessionalMagicPlayer', 'YouTube A player ready');
+                    }}
+                    onStateChange={(youtubeState) => {
+                      if (youtubeState === YouTubePlayerState.PLAYING) {
+                        onPlayPause(true);
+                      } else if (youtubeState === YouTubePlayerState.PAUSED) {
+                        onPlayPause(false);
+                      } else if (youtubeState === YouTubePlayerState.ENDED) {
+                        handleTrackEnd();
+                      }
+                    }}
+                    onError={(error) => {
+                      logger.error('ProfessionalMagicPlayer', 'YouTube A player error', error);
+                      handleSourceError('A', error);
+                    }}
+                    onProgress={(currentTime, duration) => {
+                      dispatch({ type: 'SET_TIME', payload: { currentTime, duration } });
+                      const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+                      dispatch({ type: 'SET_PROGRESS', payload: { deck: 'deckA', value: progress } });
+                    }}
+                  />
+                  <div className="absolute top-2 right-2 px-2 py-1 bg-red-600 text-white text-xs rounded font-orbitron">
+                    YOUTUBE
+                  </div>
+                </div>
+              ) : (
+                <canvas
+                  ref={waveformCanvasA}
+                  width={320}
+                  height={120}
+                  className="w-full h-20 lg:h-28 bg-slate-900 border border-glass rounded-lg cursor-pointer"
+                  onClick={e => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const percentage = ((e.clientX - rect.left) / rect.width) * 100;
+                    handleSeek(percentage);
+                  }}
+                  role="slider"
+                  aria-label="Track waveform and seek control"
+                  aria-valuenow={state.progress.deckA}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                />
+              )}
+              <div className="flex justify-between text-xs text-slate-400 mt-2 font-orbitron">
+                <span>{formatTimeClock(state.currentTime)}</span>
+                <span className="text-fuchsia-400">
+                  {Math.round(state.progress.deckA)}%
+                </span>
+                <span>
+                  {formatTimeClock(state.duration || (currentTrack?.duration ?? 180))}
+                </span>
+              </div>
+            </div>
+
+            {/* Enhanced Controls */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-center space-x-4">
+                <button
+                  onClick={handleSkipBack}
+                  aria-label="Previous track"
+                  className="w-12 h-12 lg:w-14 lg:h-14 glass-button hover-lift flex items-center justify-center transition-all duration-300"
+                >
+                  <SkipBack className="w-6 h-6 lg:w-7 lg:h-7 text-fuchsia-400" />
+                </button>
+                <button
+                  onClick={() => throttledOnPlayPause(!isPlaying)}
+                  disabled={state.isLoading}
+                  aria-label={isPlaying ? 'Pause' : 'Play'}
+                  className="w-16 h-16 lg:w-20 lg:h-20 glass-button hover-lift flex items-center justify-center transition-all duration-300 disabled:opacity-50 shadow-neon-pink active:scale-95"
+                >
+                  {state.isLoading ? (
+                    <div className="w-8 h-8 lg:w-10 lg:h-10 border-3 border-fuchsia-400 border-t-transparent rounded-sm animate-spin"></div>
+                  ) : isPlaying ? (
+                    <Pause className="w-8 h-8 lg:w-10 lg:h-10 text-fuchsia-400" />
+                  ) : (
+                    <Play className="w-8 h-8 lg:w-10 lg:h-10 text-fuchsia-400" />
+                  )}
+                </button>
+                <button
+                  onClick={handleSkipForward}
+                  aria-label="Next track"
+                  className="w-12 h-12 lg:w-14 lg:h-14 glass-button hover-lift flex items-center justify-center transition-all duration-300"
+                >
+                  <SkipForward className="w-6 h-6 lg:w-7 lg:h-7 text-fuchsia-400" />
+                </button>
+              </div>
+
+              {/* Enhanced Volume Control */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Volume2 className="w-5 h-5 text-fuchsia-400" />
+                    <span className="text-sm font-bold text-fuchsia-400 font-orbitron">
+                      VOLUME
+                    </span>
+                  </div>
+                  <span className="text-sm font-orbitron text-white">
+                    {state.volumes.deckA}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={state.volumes.deckA}
+                  onChange={e => dispatch({ type: 'SET_VOLUME', payload: { deck: 'deckA', value: Number(e.target.value) } })}
+                  className="slider-futuristic w-full"
+                  aria-label="Deck A volume"
+                />
+              </div>
+
+              {/* Enhanced Cue Points */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => addCuePoint('deckA', state.progress.deckA)}
+                  aria-label="Add cue point"
+                  className="btn-secondary flex-1 py-3 px-4 text-sm font-bold flex items-center justify-center space-x-2"
+                >
+                  <Crosshair className="w-4 h-4" />
+                  <span>CUE</span>
+                </button>
+                <button
+                  onClick={() => clearCuePoints('deckA')}
+                  aria-label="Clear cue points"
+                  className="btn-accent flex-1 py-3 px-4 text-sm font-bold flex items-center justify-center space-x-2"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>CLEAR</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Enhanced Center Controls */}
+          <div className="flex flex-col justify-between">
+            {/* Enhanced Crossfader Section */}
+            <div className="glass-card hover-lift p-6 mb-6">
+              <h3 className="text-lg lg:text-xl font-bold mb-6 text-center text-cyan-400 flex items-center justify-center space-x-2 font-orbitron">
+                <Zap className="w-6 h-6" />
+                <span>CROSSFADER</span>
+              </h3>
+
+              <div className="relative mb-8">
+                <input
+                  type="range"
+                  min="-100"
+                  max="100"
+                  value={state.volumes.crossfader}
+                  onChange={e => dispatch({ type: 'SET_VOLUME', payload: { deck: 'crossfader', value: Number(e.target.value) } })}
+                  className="slider-futuristic w-full"
+                  aria-label="Crossfader position"
+                />
+                <div className="flex justify-between text-xs text-slate-400 mt-3 font-orbitron font-bold">
+                  <span className="text-fuchsia-400">A</span>
+                  <span className="text-white">CENTER</span>
+                  <span className="text-cyan-400">B</span>
+                </div>
+                <div className="text-center mt-2">
+                  <span className="text-sm font-orbitron text-cyan-400">
+                    {state.volumes.crossfader > 0 ? '+' : ''}
+                    {state.volumes.crossfader}
+                  </span>
+                </div>
+              </div>
+
+              {/* Master Volume */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <Headphones className="w-5 h-5 text-cyan-400" />
+                    <span className="text-sm font-bold text-cyan-400 font-orbitron">
+                      MASTER
+                    </span>
+                  </div>
+                  <span className="text-sm font-orbitron text-white">
+                    {state.volumes.master}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={state.volumes.master}
+                  onChange={e => dispatch({ type: 'SET_VOLUME', payload: { deck: 'master', value: Number(e.target.value) } })}
+                  className="slider-futuristic w-full"
+                  aria-label="Master volume"
+                />
+              </div>
+
+              {/* Enhanced Master Controls */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => dispatch({ type: 'SET_SETTING', payload: { key: 'bpmSync', value: !state.settings.bpmSync } })}
+                  aria-label={`BPM sync ${state.settings.bpmSync ? 'enabled' : 'disabled'}`}
+                  className={`btn-secondary py-3 px-4 text-sm font-bold ${state.settings.bpmSync ? 'shadow-neon-blue' : ''}`}
+                >
+                  BPM SYNC
+                </button>
+                <button
+                  onClick={() => dispatch({ type: 'SET_SETTING', payload: { key: 'autoMix', value: !state.settings.autoMix } })}
+                  aria-label={`Auto mix ${state.settings.autoMix ? 'enabled' : 'disabled'}`}
+                  className={`btn-primary py-3 px-4 text-sm font-bold ${state.settings.autoMix ? 'shadow-neon-pink' : ''}`}
+                >
+                  AUTO MIX
+                </button>
+              </div>
+            </div>
+
+            {/* Enhanced Session Info */}
+            <div className="glass-card hover-lift p-6">
+              <h3 className="text-lg lg:text-xl font-bold mb-4 text-fuchsia-400 flex items-center space-x-2 font-orbitron">
+                <Clock className="w-5 h-5" />
+                <span>SESSION INFO</span>
+              </h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between items-center p-2 bg-glass rounded-lg">
+                  <span className="text-slate-400 font-orbitron">Playing:</span>
+                  <span className="text-white font-bold">
+                    {state.currentTrackIndex + 1} / {playlist.tracks.length}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-glass rounded-lg">
+                  <span className="text-slate-400 font-orbitron">Remaining:</span>
+                  <span className="text-white font-bold">
+                    {formatTimeClock((playlist.tracks.length - state.currentTrackIndex - 1) * 180)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-glass rounded-lg">
+                  <span className="text-slate-400 font-orbitron">BPM:</span>
+                  <span className="text-fuchsia-400 font-bold">
+                    {currentTrack.bpm ?? 128}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-glass rounded-lg">
+                  <span className="text-slate-400 font-orbitron">Key:</span>
+                  <span className="text-fuchsia-400 font-bold">
+                    {currentTrack.key ?? 'C'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Enhanced Deck B */}
+          <div className="glass-card hover-lift p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-cyan-400 rounded-lg flex items-center justify-center text-slate-900 font-bold text-lg">
+                  B
+                </div>
+                <h2 className="text-xl lg:text-2xl font-bold text-cyan-400 tracking-wider font-orbitron">
+                  DECK B
+                </h2>
+              </div>
+            </div>
+
+            {/* Enhanced Track Info */}
+            <div className="mb-6 p-4 bg-glass border border-glass rounded-lg">
+              {nextTrack ? (
+                <>
+                  <h3 className="font-bold text-lg lg:text-xl mb-2 truncate text-white font-orbitron">
+                    {nextTrack.title}
+                  </h3>
+                  <p className="text-cyan-400 mb-3 truncate font-orbitron text-base">
+                    {nextTrack.artist}
+                  </p>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div className="text-center">
+                      <div className="text-cyan-400 font-bold text-lg">
+                        {nextTrack.bpm ?? 128}
+                      </div>
+                      <div className="text-slate-400 text-xs">BPM</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-cyan-400 font-bold text-lg">
+                        {nextTrack.key ?? 'C'}
+                      </div>
+                      <div className="text-slate-400 text-xs">KEY</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-cyan-400 font-bold text-lg">
+                        {formatTimeClock(nextTrack.duration ?? 180)}
+                      </div>
+                      <div className="text-slate-400 text-xs">TIME</div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <Music className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                  <p className="text-slate-400 font-orbitron">NO TRACK LOADED</p>
+                </div>
+              )}
+            </div>
+
+            {/* Enhanced Waveform / YouTube Player */}
+            <div className="mb-6">
+              {state.sources.deckBCurrent?.type === 'youtube' ? (
+                <div className="relative">
+                  <YouTubePlayer
+                    ref={youtubeBRef}
+                    videoId={state.sources.deckBCurrent.metadata?.videoId || ''}
+                    volume={state.volumes.deckB}
+                    className="w-full h-20 lg:h-28 rounded-lg border border-glass"
+                    onReady={() => {
+                      dispatch({ type: 'SET_READINESS', payload: { player: 'youtubeB', ready: true } });
+                      logger.info('ProfessionalMagicPlayer', 'YouTube B player ready');
+                    }}
+                    onError={(error) => {
+                      logger.error('ProfessionalMagicPlayer', 'YouTube B player error', error);
+                      handleSourceError('B', error);
+                    }}
+                    onProgress={(currentTime, duration) => {
+                      const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+                      dispatch({ type: 'SET_PROGRESS', payload: { deck: 'deckB', value: progress } });
+                    }}
+                  />
+                  <div className="absolute top-2 right-2 px-2 py-1 bg-red-600 text-white text-xs rounded font-orbitron">
+                    YOUTUBE
+                  </div>
+                </div>
+              ) : (
+                <canvas
+                  ref={waveformCanvasB}
+                  width={320}
+                  height={120}
+                  className="w-full h-20 lg:h-28 bg-slate-900 border border-glass rounded-lg"
+                  aria-label="Deck B waveform display"
+                />
+              )}
+              <div className="flex justify-between text-xs text-slate-400 mt-2 font-orbitron">
+                <span>0:00</span>
+                <span className="text-cyan-400">
+                  {Math.round(state.progress.deckB)}%
+                </span>
+                <span>
+                  {nextTrack ? formatTimeClock(nextTrack.duration ?? 180) : '--:--'}
+                </span>
+              </div>
+            </div>
+
+            {/* Enhanced Controls */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-center space-x-4">
+                <button
+                  aria-label="Deck B previous"
+                  className="w-12 h-12 lg:w-14 lg:h-14 glass-button hover-lift flex items-center justify-center transition-all duration-300"
+                >
+                  <SkipBack className="w-6 h-6 lg:w-7 lg:h-7 text-cyan-400" />
+                </button>
+                <button
+                  aria-label="Play deck B"
+                  className="w-16 h-16 lg:w-20 lg:h-20 glass-button hover-lift flex items-center justify-center transition-all duration-300 shadow-neon-cyan"
+                >
+                  <Play className="w-8 h-8 lg:w-10 lg:h-10 text-cyan-400" />
+                </button>
+                <button
+                  aria-label="Deck B next"
+                  className="w-12 h-12 lg:w-14 lg:h-14 glass-button hover-lift flex items-center justify-center transition-all duration-300"
+                >
+                  <SkipForward className="w-6 h-6 lg:w-7 lg:h-7 text-cyan-400" />
+                </button>
+              </div>
+
+              {/* Enhanced Volume Control */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Volume2 className="w-5 h-5 text-cyan-400" />
+                    <span className="text-sm font-bold text-cyan-400 font-orbitron">
+                      VOLUME
+                    </span>
+                  </div>
+                  <span className="text-sm font-orbitron text-white">
+                    {state.volumes.deckB}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={state.volumes.deckB}
+                  onChange={e => dispatch({ type: 'SET_VOLUME', payload: { deck: 'deckB', value: Number(e.target.value) } })}
+                  className="slider-futuristic w-full"
+                  aria-label="Deck B volume"
+                />
+              </div>
+
+              {/* Enhanced Cue Points */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => addCuePoint('deckB', state.progress.deckB)}
+                  aria-label="Add cue point to deck B"
+                  className="btn-secondary flex-1 py-3 px-4 text-sm font-bold flex items-center justify-center space-x-2"
+                >
+                  <Crosshair className="w-4 h-4" />
+                  <span>CUE</span>
+                </button>
+                <button
+                  onClick={() => clearCuePoints('deckB')}
+                  aria-label="Clear cue points on deck B"
+                  className="btn-accent flex-1 py-3 px-4 text-sm font-bold flex items-center justify-center space-x-2"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>CLEAR</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Enhanced Right Sidebar */}
+          <div className="space-y-6 min-h-0">
+            {state.ui.showAudioDebugger && (
+              <AudioDebugger
+                testAudioUrl={state.sources.deckACurrent?.url || ''}
+                className="max-h-96 overflow-y-auto"
+              />
+            )}
+
+            {state.ui.showMagicDancer && (
+              <MagicDancer
+                isActive={isPlaying}
+                currentTrack={currentTrack ? {
+                  title: currentTrack.title,
+                  artist: currentTrack.artist,
+                  bpm: currentTrack.bpm ?? 128,
+                  energy: currentTrack.energy ?? 0.7,
+                } : undefined}
+                onEnergyChange={energy => {
+                  logger.info('ProfessionalMagicPlayer', 'Crowd energy changed', { energy });
+                }}
+              />
+            )}
+
+            {state.ui.showPlaylistEditor && (
+              <PlaylistEditor
+                playlist={playlist}
+                currentTrackIndex={state.currentTrackIndex}
+                isPlaying={isPlaying}
+                onTrackSelect={handleTrackSelect}
+                onTrackRemove={handleTrackRemove}
+                onTrackReorder={handleTrackReorder}
+                onPlaylistUpdate={handlePlaylistUpdate}
+                className="max-h-96 overflow-hidden"
+              />
+            )}
+
+            {!state.ui.showMagicDancer && !state.ui.showPlaylistEditor && !state.ui.showAudioDebugger && (
+              <div className="glass-card hover-lift p-6 text-center">
+                <div className="w-16 h-16 glass-card flex items-center justify-center mx-auto mb-4 shadow-neon-pink animate-pulse-glow">
+                  <Music className="w-8 h-8 text-fuchsia-400" />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-3 font-orbitron">
+                  DJ TOOLS
+                </h3>
+                <p className="text-slate-400 mb-6 font-orbitron text-sm">
+                  Select tools from the header to get started
+                </p>
+                <div className="flex flex-col space-y-3">
+                  <button
+                    onClick={() => dispatch({ type: 'SET_UI', payload: { key: 'showMagicDancer', value: true } })}
+                    aria-label="Show magic dancer"
+                    className="btn-secondary py-3 px-4 text-sm font-bold"
+                  >
+                    MAGIC DANCER
+                  </button>
+                  <button
+                    onClick={() => dispatch({ type: 'SET_UI', payload: { key: 'showPlaylistEditor', value: true } })}
+                    aria-label="Show playlist editor"
+                    className="btn-primary py-3 px-4 text-sm font-bold"
+                  >
+                    PLAYLIST EDITOR
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Unmute Overlay for Autoplay Restrictions */}
+      {state.ui.showUnmuteOverlay && (
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="glass-card p-8 text-center max-w-md mx-4 shadow-neon-pink">
+            <div className="w-20 h-20 bg-glass border border-fuchsia-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-neon-pink animate-pulse-glow">
+              <Volume2 className="w-10 h-10 text-fuchsia-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-4 font-orbitron">
+              TAP TO UNMUTE
+            </h2>
+            <p className="text-slate-400 mb-6 font-orbitron">
+              Your browser requires user interaction before playing audio
+            </p>
+            <button
+              onClick={handleUnmute}
+              className="btn-primary px-8 py-4 text-lg font-bold shadow-neon-pink"
+            >
+              START PLAYING
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ProfessionalMagicPlayer;
