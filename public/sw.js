@@ -1,6 +1,6 @@
 // Enhanced service worker with proper caching strategies
-const CACHE_NAME = 'magicdj-cache-v2';
-const RUNTIME_CACHE = 'magicdj-runtime-v2';
+const CACHE_NAME = 'magicdj-cache-v3-no-youtube';
+const RUNTIME_CACHE = 'magicdj-runtime-v3-no-youtube';
 
 // Assets to precache
 const PRECACHE = [
