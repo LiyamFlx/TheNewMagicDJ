@@ -1,506 +1,1372 @@
-import { useEffect, useRef, useCallback, useReducer } from 'react';
+import { useState, useEffect, useRef, useCallback, useReducer, useMemo } from 'react';
 import {
   Play,
   Pause,
   SkipForward,
   SkipBack,
+  Volume2,
+  Headphones,
+  Settings,
   ArrowLeft,
+  Square,
   Menu,
   X,
+  List,
+  Activity,
+  Music,
+  Zap,
+  Radio,
+  Crosshair,
+  RotateCcw,
+  Shuffle,
+  Repeat,
+  Clock,
 } from 'lucide-react';
-import { Playlist, Session } from '../types';
-import { AudioSource, AudioSourceType } from '../services/audioSourceService';
-
-// Types
-interface YouTubePlayerRef {
-  playVideo: () => void;
-  pauseVideo: () => void;
-  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
-  getCurrentTime: () => number;
-  getDuration: () => number;
-  getPlayerState: () => number;
-  mute: () => void;
-  unMute: () => void;
-  isMuted: () => boolean;
-  setVolume: (volume: number) => void;
-  getVolume: () => number;
-}
-
-interface PlayerState {
-  currentTrackIndex: number;
-  isPlaying: boolean;
-  isLoading: boolean;
-  error: {
-    message: string | null;
-    isDegraded: boolean;
-  };
-  duration: number;
-  currentTime: number;
-  buffered: number;
-  volume: number;
-  isMuted: boolean;
-  cuePoints: Array<{ position: number; label: string }>;
-  settings: {
-    crossfade: number;
-    autoPlay: boolean;
-    loop: boolean;
-    bpmSync: boolean;
-    autoMix: boolean;
-    shuffle: boolean;
-    repeat: boolean;
-  };
-  ui: {
-    showPlaylist: boolean;
-    showSettings: boolean;
-    mobileMenuOpen: boolean;
-    showPlaylistEditor: boolean;
-    showMagicDancer: boolean;
-    showUnmuteOverlay: boolean;
-  };
-  volumes: {
-    deckA: number;
-    deckB: number;
-    master: number;
-    crossfader: number;
-  };
-  progress: {
-    deckA: number;
-    deckB: number;
-  };
-  sources: {
-    deckA: AudioSource | null;
-    deckB: AudioSource | null;
-  };
-  readiness: {
-    audioA: boolean;
-    audioB: boolean;
-    youtubeA: boolean;
-    youtubeB: boolean;
-  };
-}
-
-type PlayerAction =
-  | { type: 'PLAY' }
-  | { type: 'PAUSE' }
-  | { type: 'SET_TRACK_INDEX'; payload: number }
-  | { type: 'SET_IS_LOADING'; payload: boolean }
-  | { type: 'SET_ERROR'; payload: { message: string | null; isDegraded?: boolean } }
-  | { type: 'SET_DURATION'; payload: number }
-  | { type: 'SET_CURRENT_TIME'; payload: number }
-  | { type: 'SET_BUFFERED'; payload: number }
-  | { type: 'SET_VOLUME'; payload: number }
-  | { type: 'TOGGLE_MUTE' }
-  | { type: 'ADD_CUE_POINT'; payload: { position: number; label: string } }
-  | { type: 'CLEAR_CUE_POINTS' }
-  | { type: 'TOGGLE_SETTINGS' }
-  | { type: 'TOGGLE_PLAYLIST' }
-  | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'SET_TIME'; payload: { deck: 'deckA' | 'deckB'; value: number } }
-  | { type: 'SET_PROGRESS'; payload: { deck: 'deckA' | 'deckB'; value: number } }
-  | { type: 'SET_SOURCES'; payload: { deckA: AudioSource | null; deckB: AudioSource | null } }
-  | { type: 'SET_UI'; payload: Partial<PlayerState['ui']> }
-  | { type: 'SET_READINESS'; payload: { key: keyof PlayerState['readiness']; value: boolean } };
+import { Playlist, Session, Track } from '../types';
+import MagicDancer from './MagicDancer';
+import PlaylistEditor from './PlaylistEditor';
+import YouTubePlayer, { YouTubePlayerRef, YouTubePlayerState } from './YouTubePlayer';
+import { audioSourceService, AudioSource } from '../services/audioSourceService';
+import { logger } from '../utils/logger';
+import { throttle } from '../utils/debounce';
+import { formatTimeClock } from '../utils/format';
 
 interface ProfessionalMagicPlayerProps {
   playlist: Playlist | null;
-  session?: Session | null;   // <-- add this
+  session: Session | null;
   isPlaying: boolean;
   onPlayPause: (playing: boolean) => void;
   onSessionEnd: () => void;
   onBack: () => void;
 }
 
+// Consolidated state interface using useReducer
+interface PlayerState {
+  // Track management
+  currentTrackIndex: number;
+
+  // Audio state
+  currentTime: number;
+  duration: number;
+  isLoading: boolean;
+
+  // Volumes and mixing
+  volumes: {
+    deckA: number;
+    deckB: number;
+    master: number;
+    crossfader: number; // -100 to 100
+  };
+
+  // Progress tracking
+  progress: {
+    deckA: number;
+    deckB: number;
+  };
+
+  // Audio sources
+  sources: {
+    deckA: AudioSource[];
+    deckB: AudioSource[];
+    deckAIndex: number;
+    deckBIndex: number;
+    deckACurrent: AudioSource | null;
+    deckBCurrent: AudioSource | null;
+  };
+
+  // Settings
+  settings: {
+    bpmSync: boolean;
+    autoMix: boolean;
+    shuffle: boolean;
+    repeat: boolean;
+  };
+
+  // UI state
+  ui: {
+    mobileMenuOpen: boolean;
+    showPlaylistEditor: boolean;
+    showMagicDancer: boolean;
+    showUnmuteOverlay: boolean;
+    showSettings: boolean;
+  };
+
+  // Error handling
+  error: {
+    message: string | null;
+    isDegraded: boolean;
+  };
+
+  // Player readiness
+  readiness: {
+    youtubeA: boolean;
+    youtubeB: boolean;
+  };
+
+  // Cue points
+  cuePoints: {
+    deckA: number[];
+    deckB: number[];
+  };
+}
+
+type PlayerAction =
+  | { type: 'SET_TRACK_INDEX'; payload: number }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_TIME'; payload: { currentTime: number; duration?: number } }
+  | { type: 'SET_VOLUME'; payload: { deck: 'deckA' | 'deckB' | 'master' | 'crossfader'; value: number } }
+  | { type: 'SET_PROGRESS'; payload: { deck: 'deckA' | 'deckB'; value: number } }
+  | { type: 'SET_SOURCES'; payload: { deck: 'deckA' | 'deckB'; sources: AudioSource[]; index?: number } }
+  | { type: 'SET_SOURCE_INDEX'; payload: { deck: 'deckA' | 'deckB'; index: number } }
+  | { type: 'SET_SETTING'; payload: { key: keyof PlayerState['settings']; value: boolean } }
+  | { type: 'SET_UI'; payload: { key: keyof PlayerState['ui']; value: boolean } }
+  | { type: 'SET_ERROR'; payload: { message: string | null; isDegraded?: boolean } }
+  | { type: 'SET_READINESS'; payload: { player: 'youtubeA' | 'youtubeB'; ready: boolean } }
+  | { type: 'ADD_CUE_POINT'; payload: { deck: 'deckA' | 'deckB'; position: number } }
+  | { type: 'CLEAR_CUE_POINTS'; payload: { deck: 'deckA' | 'deckB' } }
+  | { type: 'RESET_ERROR' };
+
 const initialState: PlayerState = {
   currentTrackIndex: 0,
-  isPlaying: false,
-  isLoading: false,
-  error: {
-    message: null,
-    isDegraded: false
-  },
-  duration: 0,
   currentTime: 0,
-  buffered: 0,
-  volume: 0.8,
-  isMuted: false,
-  cuePoints: [],
-  settings: {
-    crossfade: 0,
-    autoPlay: true,
-    loop: false,
-    bpmSync: false,
-    autoMix: false,
-    shuffle: false,
-    repeat: false,
-  },
-  ui: {
-    showPlaylist: false,
-    showSettings: false,
-    mobileMenuOpen: false,
-    showPlaylistEditor: false,
-    showMagicDancer: true,
-    showUnmuteOverlay: false
-  },
+  duration: 0,
+  isLoading: false,
   volumes: {
-    deckA: 1.0,
-    deckB: 1.0,
-    master: 1.0,
-    crossfader: 0,
+    deckA: 85,
+    deckB: 0,
+    master: 75,
+    crossfader: -50,
   },
   progress: {
     deckA: 0,
     deckB: 0,
   },
   sources: {
-    deckA: null,
-    deckB: null,
+    deckA: [],
+    deckB: [],
+    deckAIndex: 0,
+    deckBIndex: 0,
+    deckACurrent: null,
+    deckBCurrent: null,
+  },
+  settings: {
+    bpmSync: true,
+    autoMix: false,
+    shuffle: false,
+    repeat: false,
+  },
+  ui: {
+    mobileMenuOpen: false,
+    showPlaylistEditor: false,
+    showMagicDancer: true,
+    showUnmuteOverlay: false,
+    showSettings: false,
+  },
+  error: {
+    message: null,
+    isDegraded: false,
   },
   readiness: {
-    audioA: false,
-    audioB: false,
     youtubeA: false,
     youtubeB: false,
+  },
+  cuePoints: {
+    deckA: [],
+    deckB: [],
   },
 };
 
 function playerReducer(state: PlayerState, action: PlayerAction): PlayerState {
   switch (action.type) {
-    case 'PLAY':
-      return { ...state, isPlaying: true };
-    case 'PAUSE':
-      return { ...state, isPlaying: false };
     case 'SET_TRACK_INDEX':
-      return { ...state, currentTrackIndex: action.payload };
-    case 'SET_IS_LOADING':
+      return {
+        ...state,
+        currentTrackIndex: action.payload,
+        progress: { ...state.progress, deckA: 0 },
+        currentTime: 0,
+      };
+
     case 'SET_LOADING':
       return { ...state, isLoading: action.payload };
+
+    case 'SET_TIME':
+      return {
+        ...state,
+        currentTime: action.payload.currentTime,
+        ...(action.payload.duration !== undefined && { duration: action.payload.duration }),
+      };
+
+    case 'SET_VOLUME':
+      return {
+        ...state,
+        volumes: { ...state.volumes, [action.payload.deck]: action.payload.value },
+      };
+
+    case 'SET_PROGRESS':
+      return {
+        ...state,
+        progress: { ...state.progress, [action.payload.deck]: action.payload.value },
+      };
+
+    case 'SET_SOURCES':
+      const deckKey = action.payload.deck === 'deckA' ? 'deckA' : 'deckB';
+      const indexKey = action.payload.deck === 'deckA' ? 'deckAIndex' : 'deckBIndex';
+      const currentKey = action.payload.deck === 'deckA' ? 'deckACurrent' : 'deckBCurrent';
+
+      return {
+        ...state,
+        sources: {
+          ...state.sources,
+          [deckKey]: action.payload.sources,
+          [indexKey]: action.payload.index ?? 0,
+          [currentKey]: action.payload.sources[action.payload.index ?? 0] || null,
+        },
+      };
+
+    case 'SET_SOURCE_INDEX':
+      const deck = action.payload.deck === 'deckA' ? 'deckA' : 'deckB';
+      const sources = state.sources[deck];
+      const current = action.payload.deck === 'deckA' ? 'deckACurrent' : 'deckBCurrent';
+      const index = action.payload.deck === 'deckA' ? 'deckAIndex' : 'deckBIndex';
+
+      return {
+        ...state,
+        sources: {
+          ...state.sources,
+          [index]: action.payload.index,
+          [current]: sources[action.payload.index] || null,
+        },
+      };
+
+    case 'SET_SETTING':
+      return {
+        ...state,
+        settings: { ...state.settings, [action.payload.key]: action.payload.value },
+      };
+
+    case 'SET_UI':
+      return {
+        ...state,
+        ui: { ...state.ui, [action.payload.key]: action.payload.value },
+      };
+
     case 'SET_ERROR':
       return {
         ...state,
         error: {
           message: action.payload.message,
-          isDegraded: action.payload.isDegraded || false
-        }
-      };
-    case 'SET_DURATION':
-      return { ...state, duration: action.payload };
-    case 'SET_CURRENT_TIME':
-      return { ...state, currentTime: action.payload };
-    case 'SET_TIME':
-      return {
-        ...state,
-        currentTime: action.payload.deck === 'deckA'
-          ? action.payload.value
-          : state.currentTime,
-      };
-    case 'SET_BUFFERED':
-      return { ...state, buffered: action.payload };
-    case 'SET_VOLUME':
-      return { ...state, volume: action.payload };
-    case 'TOGGLE_MUTE':
-      return { ...state, isMuted: !state.isMuted };
-    case 'ADD_CUE_POINT':
-      return {
-        ...state,
-        cuePoints: [...state.cuePoints, action.payload],
-      };
-    case 'CLEAR_CUE_POINTS':
-      return { ...state, cuePoints: [] };
-    case 'TOGGLE_SETTINGS':
-      return {
-        ...state,
-        ui: {
-          ...state.ui,
-          showSettings: !state.ui.showSettings,
-          showPlaylist: state.ui.showPlaylist && !state.ui.showSettings ? state.ui.showPlaylist : false,
+          isDegraded: action.payload.isDegraded ?? state.error.isDegraded,
         },
       };
-    case 'TOGGLE_PLAYLIST':
-      return {
-        ...state,
-        ui: {
-          ...state.ui,
-          showPlaylist: !state.ui.showPlaylist,
-          showSettings: state.ui.showSettings && !state.ui.showPlaylist ? state.ui.showSettings : false,
-        },
-      };
-    case 'SET_PROGRESS':
-      return {
-        ...state,
-        progress: {
-          ...state.progress,
-          [action.payload.deck]: action.payload.value,
-        },
-      };
-    case 'SET_SOURCES':
-      return {
-        ...state,
-        sources: {
-          deckA: action.payload.deckA,
-          deckB: action.payload.deckB,
-        },
-      };
-    case 'SET_UI':
-      return {
-        ...state,
-        ui: {
-          ...state.ui,
-          ...action.payload,
-        },
-      };
+
     case 'SET_READINESS':
       return {
         ...state,
-        readiness: {
-          ...state.readiness,
-          [action.payload.key]: action.payload.value,
+        readiness: { ...state.readiness, [action.payload.player]: action.payload.ready },
+      };
+
+    case 'ADD_CUE_POINT':
+      return {
+        ...state,
+        cuePoints: {
+          ...state.cuePoints,
+          [action.payload.deck]: [...state.cuePoints[action.payload.deck], action.payload.position],
         },
       };
+
+    case 'CLEAR_CUE_POINTS':
+      return {
+        ...state,
+        cuePoints: {
+          ...state.cuePoints,
+          [action.payload.deck]: [],
+        },
+      };
+
+    case 'RESET_ERROR':
+      return {
+        ...state,
+        error: { message: null, isDegraded: false },
+      };
+
     default:
       return state;
   }
 }
 
+// Custom hook for resource cleanup
+const useResourceCleanup = () => {
+  const cleanupFunctions = useRef<(() => void)[]>([]);
+
+  const addCleanup = useCallback((fn: () => void) => {
+    cleanupFunctions.current.push(fn);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      cleanupFunctions.current.forEach(fn => {
+        try {
+          fn();
+        } catch (error) {
+          logger.warn('Cleanup function failed', error);
+        }
+      });
+      cleanupFunctions.current = [];
+    };
+  }, []);
+
+  return { addCleanup };
+};
+
+// Custom hook for audio source management
+const useAudioSources = () => {
+  const loadAudioSources = useCallback(async (track: Track): Promise<AudioSource[]> => {
+    try {
+      logger.info('ProfessionalMagicPlayer', 'Loading audio sources for track', {
+        trackId: track.id,
+        trackTitle: track.title
+      });
+
+      const sources = await audioSourceService.getAudioSourcesForTrack(track);
+      logger.info('ProfessionalMagicPlayer', 'Audio sources loaded', {
+        trackId: track.id,
+        sourceCount: sources.length,
+        sourceTypes: sources.map(s => s.type)
+      });
+
+      return sources;
+    } catch (error) {
+      logger.error('ProfessionalMagicPlayer', 'Failed to load audio sources', {
+        trackId: track.id,
+        error
+      });
+      return [];
+    }
+  }, []);
+
+  return { loadAudioSources };
+};
+
+// Custom hook for waveform generation
+const useWaveform = () => {
+  const waveformDataA = useRef<number[]>([]);
+  const waveformDataB = useRef<number[]>([]);
+
+  const generateWaveformData = useCallback((width: number): number[] => {
+    const bars = Math.floor(width / 3);
+    const data: number[] = [];
+
+    for (let i = 0; i < bars; i++) {
+      const frequency = (i / bars) * 10 + 1;
+      const baseAmplitude = Math.sin(frequency * 0.5) * 0.3 + 0.7;
+      data.push(baseAmplitude);
+    }
+
+    return data;
+  }, []);
+
+  const updateWaveformData = useCallback((deck: 'A' | 'B', track: Track | undefined) => {
+    if (track) {
+      const data = generateWaveformData(320);
+      if (deck === 'A') {
+        waveformDataA.current = data;
+      } else {
+        waveformDataB.current = data;
+      }
+    }
+  }, [generateWaveformData]);
+
+  return { waveformDataA, waveformDataB, updateWaveformData };
+};
+
 const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   playlist,
-  isPlaying: propIsPlaying,
+  session,
+  isPlaying,
   onPlayPause,
+  onSessionEnd,
   onBack,
 }) => {
-  // Initialize state with useReducer
   const [state, dispatch] = useReducer(playerReducer, initialState);
+  const { addCleanup } = useResourceCleanup();
+  const { loadAudioSources } = useAudioSources();
+  const { waveformDataA, waveformDataB, updateWaveformData } = useWaveform();
 
   // Refs for audio and YouTube players
   const audioARef = useRef<HTMLAudioElement | null>(null);
   const audioBRef = useRef<HTMLAudioElement | null>(null);
   const youtubeARef = useRef<YouTubePlayerRef | null>(null);
+  const youtubeBRef = useRef<YouTubePlayerRef | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
-  // Handle play/pause
-  const handlePlayPause = useCallback(() => {
-    if (state.isPlaying) {
-      audioARef.current?.pause();
-      audioBRef.current?.pause();
-      youtubeARef.current?.pauseVideo();
-      dispatch({ type: 'PAUSE' });
-      onPlayPause(false);
-    } else {
-      audioARef.current?.play().catch(e => {
-        console.error('Error playing audio:', e);
-        dispatch({
-          type: 'SET_ERROR',
-          payload: {
-            message: 'Failed to play audio',
-            isDegraded: true
-          }
-        });
-      });
-      youtubeARef.current?.playVideo();
-      dispatch({ type: 'PLAY' });
-      onPlayPause(true);
+  // Canvas refs for waveform
+  const waveformCanvasA = useRef<HTMLCanvasElement>(null);
+  const waveformCanvasB = useRef<HTMLCanvasElement>(null);
+
+  // Interval refs
+  const autoMixIntervalRef = useRef<number>();
+  const fadeIntervalRef = useRef<number>();
+
+  // Memoized current and next tracks
+  const currentTrack = useMemo(() => playlist?.tracks[state.currentTrackIndex], [playlist, state.currentTrackIndex]);
+  const nextTrack = useMemo(() => playlist?.tracks[state.currentTrackIndex + 1], [playlist, state.currentTrackIndex]);
+
+  // Memoized volume calculations for performance
+  const volumeCalculations = useMemo(() => {
+    const { volumes } = state;
+    const deckAVol = (volumes.deckA / 100) * (volumes.master / 100);
+    const deckBVol = (volumes.deckB / 100) * (volumes.master / 100);
+
+    const crossfadeA = volumes.crossfader <= 0 ? 1 : Math.max(0, 1 - volumes.crossfader / 100);
+    const crossfadeB = volumes.crossfader >= 0 ? 1 : Math.max(0, 1 + volumes.crossfader / 100);
+
+    return {
+      deckA: Math.max(0, Math.min(1, deckAVol * crossfadeA)),
+      deckB: Math.max(0, Math.min(1, deckBVol * crossfadeB)),
+    };
+  }, [state.volumes]);
+
+  // Error auto-clear effect
+  useEffect(() => {
+    if (state.error.message) {
+      const timeout = setTimeout(() => {
+        dispatch({ type: 'RESET_ERROR' });
+      }, 5000);
+      return () => clearTimeout(timeout);
     }
-  }, [state.isPlaying, onPlayPause]);
+  }, [state.error.message]);
 
-  // Handle track change
-  const handleTrackChange = useCallback((index: number) => {
-    if (!playlist?.tracks?.[index]) return;
+  // Log session information
+  useEffect(() => {
+    if (session?.id) {
+      logger.info('ProfessionalMagicPlayer', 'Session active', {
+        sessionId: session.id,
+      });
+    }
+  }, [session?.id]);
 
-    dispatch({ type: 'SET_IS_LOADING', payload: true });
-    dispatch({ type: 'SET_TRACK_INDEX', payload: index });
+  // Update waveform data when tracks change
+  useEffect(() => {
+    updateWaveformData('A', currentTrack);
+  }, [currentTrack, updateWaveformData]);
 
-    // Load the new track
-    const track = playlist.tracks[index];
-    const sourceType = track.url?.includes('youtube') ? 'youtube' : 'audio' as AudioSourceType;
+  useEffect(() => {
+    updateWaveformData('B', nextTrack);
+  }, [nextTrack, updateWaveformData]);
 
-    dispatch({
-      type: 'SET_SOURCES',
-      payload: {
-        deckA: { type: sourceType, url: track.url || '' },
-        deckB: null
+  // Audio cleanup utility
+  const cleanupAudioElement = useCallback((audio: HTMLAudioElement) => {
+    try {
+      audio.pause();
+      audio.currentTime = 0;
+
+      // Remove all event listeners
+      const events = ['loadedmetadata', 'canplaythrough', 'timeupdate', 'ended', 'error'];
+      events.forEach(event => {
+        audio.removeEventListener(event, () => { });
+      });
+
+      audio.src = '';
+      audio.load();
+
+      logger.debug('ProfessionalMagicPlayer', 'Audio element cleaned up successfully');
+    } catch (error) {
+      logger.warn('ProfessionalMagicPlayer', 'Error during audio cleanup', error);
+    }
+  }, []);
+
+  // Handle track end
+  const handleTrackEnd = useCallback(() => {
+    if (state.settings.repeat && state.currentTrackIndex === (playlist?.tracks.length ?? 0) - 1) {
+      dispatch({ type: 'SET_TRACK_INDEX', payload: 0 });
+      return;
+    }
+
+    if (state.currentTrackIndex < (playlist?.tracks.length ?? 0) - 1) {
+      let nextIndex = state.currentTrackIndex + 1;
+
+      if (state.settings.shuffle) {
+        const availableIndices = Array.from({ length: playlist?.tracks.length ?? 0 }, (_, i) => i)
+          .filter(i => i !== state.currentTrackIndex);
+        nextIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)] ?? nextIndex;
+      }
+
+      dispatch({ type: 'SET_TRACK_INDEX', payload: nextIndex });
+    } else if (state.settings.repeat) {
+      dispatch({ type: 'SET_TRACK_INDEX', payload: 0 });
+    } else {
+      onSessionEnd();
+    }
+  }, [state.currentTrackIndex, state.settings.shuffle, state.settings.repeat, playlist?.tracks.length, onSessionEnd]);
+
+  // Handle source errors with retry logic
+  const handleSourceError = useCallback((deck: 'A' | 'B', error: any) => {
+    const sources = deck === 'A' ? state.sources.deckA : state.sources.deckB;
+    const currentIndex = deck === 'A' ? state.sources.deckAIndex : state.sources.deckBIndex;
+
+    logger.error('ProfessionalMagicPlayer', `Audio source error on deck ${deck}`, {
+      error,
+      currentSourceType: sources[currentIndex]?.type,
+      currentIndex,
+      totalSources: sources.length
+    });
+
+    // Try next source
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < sources.length) {
+      logger.info('ProfessionalMagicPlayer', `Trying next source for deck ${deck}`, {
+        currentIndex,
+        nextIndex,
+        nextSourceType: sources[nextIndex]?.type
+      });
+
+      dispatch({ type: 'SET_SOURCE_INDEX', payload: { deck: deck === 'A' ? 'deckA' : 'deckB', index: nextIndex } });
+    } else {
+      // No more sources available
+      dispatch({
+        type: 'SET_ERROR',
+        payload: {
+          message: `All audio sources failed for deck ${deck}`,
+          isDegraded: true
+        }
+      });
+    }
+  }, [state.sources]);
+
+  // Load sources for current track
+  useEffect(() => {
+    if (!currentTrack) {
+      dispatch({ type: 'SET_SOURCES', payload: { deck: 'deckA', sources: [] } });
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadSources = async () => {
+      dispatch({ type: 'SET_LOADING', payload: true });
+
+      try {
+        const sources = await loadAudioSources(currentTrack);
+
+        if (!cancelled) {
+          if (sources.length > 0) {
+            dispatch({ type: 'SET_SOURCES', payload: { deck: 'deckA', sources, index: 0 } });
+          } else {
+            dispatch({
+              type: 'SET_ERROR',
+              payload: {
+                message: 'No audio sources available',
+                isDegraded: true
+              }
+            });
+          }
+        }
+      } catch (error) {
+        if (!cancelled) {
+          dispatch({
+            type: 'SET_ERROR',
+            payload: {
+              message: 'Failed to load audio sources',
+              isDegraded: true
+            }
+          });
+        }
+      } finally {
+        if (!cancelled) {
+          dispatch({ type: 'SET_LOADING', payload: false });
+        }
+      }
+    };
+
+    loadSources();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentTrack, loadAudioSources]);
+
+  // Load sources for next track
+  useEffect(() => {
+    if (!nextTrack) {
+      dispatch({ type: 'SET_SOURCES', payload: { deck: 'deckB', sources: [] } });
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadSources = async () => {
+      try {
+        const sources = await loadAudioSources(nextTrack);
+
+        if (!cancelled && sources.length > 0) {
+          dispatch({ type: 'SET_SOURCES', payload: { deck: 'deckB', sources, index: 0 } });
+        }
+      } catch (error) {
+        // Silently fail for deck B sources
+        logger.warn('Failed to load deck B sources', error);
+      }
+    };
+
+    loadSources();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [nextTrack, loadAudioSources]);
+
+  // Initialize Audio A
+  useEffect(() => {
+    const { deckA, deckAIndex, deckACurrent } = state.sources;
+
+    if (!deckACurrent || deckA.length === 0) {
+      return;
+    }
+
+    // Clean up existing audio
+    if (audioARef.current) {
+      cleanupAudioElement(audioARef.current);
+      audioARef.current = null;
+    }
+
+    // Skip YouTube sources
+    if (deckACurrent.type === 'youtube') {
+      dispatch({ type: 'SET_LOADING', payload: false });
+      dispatch({
+        type: 'SET_TIME', payload: {
+          currentTime: 0,
+          duration: deckACurrent.duration || 180
+        }
+      });
+      return;
+    }
+
+    // Create HTML audio element
+    const audio = new Audio();
+    audio.preload = 'auto';
+    audio.crossOrigin = 'anonymous';
+    audio.volume = volumeCalculations.deckA;
+
+    try {
+      audio.src = deckACurrent.url;
+    } catch (error) {
+      handleSourceError('A', error);
+      return;
+    }
+
+    // Event listeners
+    const onLoadedMetadata = () => {
+      dispatch({
+        type: 'SET_TIME', payload: {
+          currentTime: 0,
+          duration: audio.duration || deckACurrent.duration || 180
+        }
+      });
+    };
+
+    const onCanPlayThrough = () => {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    };
+
+    const onTimeUpdate = () => {
+      dispatch({ type: 'SET_TIME', payload: { currentTime: audio.currentTime } });
+      const progress = audio.duration > 0 ? (audio.currentTime / audio.duration) * 100 : 0;
+      dispatch({ type: 'SET_PROGRESS', payload: { deck: 'deckA', value: progress } });
+    };
+
+    const onError = (e: Event) => {
+      handleSourceError('A', (e.target as HTMLAudioElement).error);
+    };
+
+    // Add listeners
+    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+    audio.addEventListener('canplaythrough', onCanPlayThrough);
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('ended', handleTrackEnd);
+    audio.addEventListener('error', onError);
+
+    audioARef.current = audio;
+    dispatch({ type: 'SET_LOADING', payload: true });
+
+    // Cleanup function
+    const cleanup = () => {
+      if (audio) {
+        cleanupAudioElement(audio);
+      }
+    };
+
+    addCleanup(cleanup);
+
+    return cleanup;
+  }, [state.sources.deckACurrent, state.sources.deckAIndex, volumeCalculations.deckA, cleanupAudioElement, handleSourceError, handleTrackEnd, addCleanup]);
+
+  // Initialize Audio B  
+  useEffect(() => {
+    const { deckB, deckBIndex, deckBCurrent } = state.sources;
+
+    if (!deckBCurrent || deckB.length === 0) {
+      return;
+    }
+
+    // Clean up existing audio
+    if (audioBRef.current) {
+      cleanupAudioElement(audioBRef.current);
+      audioBRef.current = null;
+    }
+
+    // Skip YouTube sources for deck B
+    if (deckBCurrent.type === 'youtube') {
+      return;
+    }
+
+    // Create HTML audio element
+    const audio = new Audio();
+    audio.preload = 'auto';
+    audio.crossOrigin = 'anonymous';
+    audio.volume = volumeCalculations.deckB;
+
+    try {
+      audio.src = deckBCurrent.url;
+    } catch (error) {
+      handleSourceError('B', error);
+      return;
+    }
+
+    // Event listeners
+    const onTimeUpdate = () => {
+      const progress = audio.duration > 0 ? (audio.currentTime / audio.duration) * 100 : 0;
+      dispatch({ type: 'SET_PROGRESS', payload: { deck: 'deckB', value: progress } });
+    };
+
+    const onError = (e: Event) => {
+      handleSourceError('B', (e.target as HTMLAudioElement).error);
+    };
+
+    // Add listeners
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('error', onError);
+
+    audioBRef.current = audio;
+
+    // Cleanup function
+    const cleanup = () => {
+      if (audio) {
+        cleanupAudioElement(audio);
+      }
+    };
+
+    addCleanup(cleanup);
+
+    return cleanup;
+  }, [state.sources.deckBCurrent, state.sources.deckBIndex, volumeCalculations.deckB, cleanupAudioElement, handleSourceError, addCleanup]);
+
+  // Volume update effect
+  useEffect(() => {
+    if (audioARef.current) {
+      audioARef.current.volume = volumeCalculations.deckA;
+    }
+    if (audioBRef.current) {
+      audioBRef.current.volume = volumeCalculations.deckB;
+    }
+  }, [volumeCalculations]);
+
+  // Play/pause control
+  useEffect(() => {
+    const handlePlayPause = async () => {
+      const audio = audioARef.current;
+      const youtubePlayer = youtubeARef.current;
+      const currentSource = state.sources.deckACurrent;
+
+      if (currentSource?.type === 'youtube' && youtubePlayer) {
+        try {
+          if (isPlaying) {
+            await youtubePlayer.play();
+          } else {
+            youtubePlayer.pause();
+          }
+        } catch (error) {
+          logger.error('YouTube player operation failed', error);
+          handleSourceError('A', error);
+        }
+        return;
+      }
+
+      if (!audio || state.isLoading) {
+        return;
+      }
+
+      try {
+        if (isPlaying) {
+          // Initialize AudioContext if needed
+          if (!audioContextRef.current && window.AudioContext) {
+            try {
+              audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+              addCleanup(() => {
+                audioContextRef.current?.close();
+              });
+            } catch (error) {
+              logger.warn('AudioContext creation failed', error);
+              dispatch({
+                type: 'SET_ERROR',
+                payload: {
+                  message: 'Audio device unavailable. Using basic playback.',
+                  isDegraded: true
+                }
+              });
+            }
+          }
+
+          // Resume AudioContext if suspended
+          if (audioContextRef.current?.state === 'suspended') {
+            await audioContextRef.current.resume();
+          }
+
+          await audio.play();
+          dispatch({ type: 'SET_UI', payload: { key: 'showUnmuteOverlay', value: false } });
+        } else {
+          audio.pause();
+        }
+      } catch (error: any) {
+        if (error.name === 'NotAllowedError') {
+          dispatch({ type: 'SET_UI', payload: { key: 'showUnmuteOverlay', value: true } });
+        } else {
+          handleSourceError('A', error);
+        }
+      }
+    };
+
+    handlePlayPause();
+  }, [isPlaying, state.sources.deckACurrent, state.isLoading, handleSourceError, addCleanup]);
+
+  // Auto mix functionality
+  useEffect(() => {
+    if (autoMixIntervalRef.current) {
+      clearInterval(autoMixIntervalRef.current);
+    }
+
+    if (isPlaying && state.settings.autoMix && nextTrack) {
+      autoMixIntervalRef.current = window.setInterval(() => {
+        const audio = audioARef.current;
+        if (audio && audio.duration > 0) {
+          const progress = (audio.currentTime / audio.duration) * 100;
+          if (progress >= 75) {
+            handleAutoTransition();
+          }
+        }
+      }, 1000);
+
+      addCleanup(() => {
+        if (autoMixIntervalRef.current) {
+          clearInterval(autoMixIntervalRef.current);
+        }
+      });
+    }
+
+    return () => {
+      if (autoMixIntervalRef.current) {
+        clearInterval(autoMixIntervalRef.current);
+      }
+    };
+  }, [isPlaying, state.settings.autoMix, nextTrack, addCleanup]);
+
+  // Waveform animation with performance optimization
+  useEffect(() => {
+    let animationId: number;
+    let lastUpdate = 0;
+
+    const animate = (timestamp: number) => {
+      // Throttle to 30fps for better performance
+      if (timestamp - lastUpdate >= 33) {
+        const shouldUpdateA = isPlaying || state.progress.deckA !== lastUpdate;
+        const shouldUpdateB = isPlaying || state.progress.deckB !== lastUpdate;
+
+        if (shouldUpdateA) {
+          drawWaveform(
+            waveformCanvasA.current,
+            currentTrack,
+            state.progress.deckA,
+            'green',
+            waveformDataA.current
+          );
+        }
+
+        if (shouldUpdateB) {
+          drawWaveform(
+            waveformCanvasB.current,
+            nextTrack,
+            state.progress.deckB,
+            'purple',
+            waveformDataB.current
+          );
+        }
+
+        lastUpdate = timestamp;
+      }
+
+      animationId = requestAnimationFrame(animate);
+    };
+
+    animationId = requestAnimationFrame(animate);
+
+    addCleanup(() => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
       }
     });
 
-    // Auto-play if enabled
-    if (state.settings.autoPlay) {
-      handlePlayPause();
-    }
-  }, [playlist, state.settings.autoPlay, handlePlayPause]);
-
-  // Sync prop changes with internal state
-  useEffect(() => {
-    if (propIsPlaying !== state.isPlaying) {
-      handlePlayPause();
-    }
-  }, [propIsPlaying, state.isPlaying, handlePlayPause]);
-
-  // Cleanup on unmount
-  useEffect(() => {
     return () => {
-      // Cleanup audio elements
-      audioARef.current?.pause();
-      audioBRef.current?.pause();
-      youtubeARef.current?.pauseVideo();
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
     };
-  }, [audioARef, audioBRef, youtubeARef]);
+  }, [currentTrack, nextTrack, state.progress, isPlaying, addCleanup]);
+
+  // Enhanced waveform drawing function
+  const drawWaveform = useCallback((
+    canvas: HTMLCanvasElement | null,
+    track: Track | undefined,
+    progress: number,
+    color: 'green' | 'purple',
+    waveformData: number[]
+  ) => {
+    if (!canvas || !track || waveformData.length === 0) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const { width, height } = canvas;
+    const centerY = height / 2;
+    const progressWidth = (width * progress) / 100;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+
+    // Draw background grid
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < width; i += 20) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i, height);
+      ctx.stroke();
+    }
+
+    // Animation timing
+    const time = Date.now() * 0.001;
+    const energyMultiplier = isPlaying ? (track.energy ?? 0.5) : 0.3;
+
+    // Draw waveform bars
+    for (let i = 0; i < waveformData.length; i++) {
+      const x = i * 3;
+      const baseAmplitude = waveformData[i];
+      const animatedAmplitude = baseAmplitude * energyMultiplier *
+        (1 + Math.sin(time * 2 + i * 0.1) * 0.1);
+      const barHeight = (height * animatedAmplitude) / 2;
+
+      // Determine colors
+      const isPlayed = x < progressWidth;
+      let fillColor, shadowColor;
+
+      if (color === 'green') {
+        fillColor = isPlayed ? '#e879f9' : 'rgba(232, 121, 249, 0.3)';
+        shadowColor = isPlayed ? 'rgba(232, 121, 249, 0.8)' : 'rgba(232, 121, 249, 0.2)';
+      } else {
+        fillColor = isPlayed ? '#22d3ee' : 'rgba(34, 211, 238, 0.3)';
+        shadowColor = isPlayed ? 'rgba(34, 211, 238, 0.8)' : 'rgba(34, 211, 238, 0.2)';
+      }
+
+      // Draw bar with glow
+      ctx.shadowColor = shadowColor;
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = fillColor;
+      ctx.fillRect(x, centerY - barHeight / 2, 2, barHeight);
+      ctx.shadowBlur = 0;
+    }
+
+    // Draw cue points
+    const cuePoints = color === 'green' ? state.cuePoints.deckA : state.cuePoints.deckB;
+    cuePoints.forEach(cuePosition => {
+      const cueX = (width * cuePosition) / 100;
+      ctx.strokeStyle = color === 'green' ? '#fbbf24' : '#f59e0b';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(Math.round(cueX), 0);
+      ctx.lineTo(Math.round(cueX), height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+
+    // Draw playhead
+    ctx.strokeStyle = color === 'green' ? '#e879f9' : '#22d3ee';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = color === 'green' ? 'rgba(232, 121, 249, 1)' : 'rgba(34, 211, 238, 1)';
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.moveTo(Math.round(progressWidth), 0);
+    ctx.lineTo(Math.round(progressWidth), height);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Draw BPM markers with safety checks
+    const trackBpm = track.bpm;
+    if (trackBpm && trackBpm > 0) {
+      const trackDuration = track.duration || 180;
+      const beatInterval = (60 / trackBpm) * (width / trackDuration);
+
+      if (beatInterval > 0 && beatInterval < width && !isNaN(beatInterval)) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 1;
+
+        for (let beat = 0; beat < width; beat += beatInterval) {
+          if (beat <= width) {
+            ctx.beginPath();
+            ctx.moveTo(Math.round(beat), height - 10);
+            ctx.lineTo(Math.round(beat), height);
+            ctx.stroke();
+          }
+        }
+      }
+    }
+  }, [isPlaying, state.cuePoints]);
+
+  // Enhanced auto transition with proper cleanup
+  const handleAutoTransition = useCallback(() => {
+    const audioB = audioBRef.current;
+    if (!nextTrack || !audioB) return;
+
+    // Clear any existing fade interval
+    if (fadeIntervalRef.current) {
+      clearInterval(fadeIntervalRef.current);
+    }
+
+    audioB.play().catch(e => {
+      logger.error('Next track play failed', e);
+    });
+
+    fadeIntervalRef.current = window.setInterval(() => {
+      dispatch({
+        type: 'SET_VOLUME', payload: {
+          deck: 'crossfader',
+          value: Math.min(50, state.volumes.crossfader + 15)
+        }
+      });
+
+      if (state.volumes.crossfader >= 50) {
+        if (fadeIntervalRef.current) {
+          clearInterval(fadeIntervalRef.current);
+        }
+        dispatch({ type: 'SET_TRACK_INDEX', payload: state.currentTrackIndex + 1 });
+        dispatch({ type: 'SET_VOLUME', payload: { deck: 'crossfader', value: -50 } });
+        dispatch({ type: 'SET_PROGRESS', payload: { deck: 'deckB', value: 0 } });
+      }
+    }, 150);
+
+    addCleanup(() => {
+      if (fadeIntervalRef.current) {
+        clearInterval(fadeIntervalRef.current);
+      }
+    });
+  }, [nextTrack, state.volumes.crossfader, state.currentTrackIndex, addCleanup]);
+
+  // Throttled callbacks for better performance
+  const throttledOnPlayPause = useMemo(() =>
+    throttle((playing: boolean) => {
+      onPlayPause(playing);
+    }, 250)
+    , [onPlayPause]);
+
+  // Handler functions
+  const handleSeek = useCallback((percentage: number) => {
+    const audio = audioARef.current;
+    const maxDuration = state.duration || (currentTrack?.duration ?? 180);
+
+    if (audio && maxDuration > 0 && audio.readyState >= 2) {
+      const newTime = (percentage / 100) * maxDuration;
+      const clampedTime = Math.min(newTime, maxDuration);
+      audio.currentTime = clampedTime;
+      dispatch({ type: 'SET_TIME', payload: { currentTime: clampedTime } });
+    }
+  }, [state.duration, currentTrack]);
+
+  const handleSkipForward = useCallback(() => {
+    if (state.currentTrackIndex < (playlist?.tracks.length ?? 0) - 1) {
+      const newIndex = state.currentTrackIndex + 1;
+      logger.info('ProfessionalMagicPlayer', 'Skipping forward', {
+        from: state.currentTrackIndex,
+        to: newIndex,
+        currentTrack: currentTrack?.title,
+        nextTrack: playlist?.tracks[newIndex]?.title,
+      });
+      dispatch({ type: 'SET_TRACK_INDEX', payload: newIndex });
+    }
+  }, [state.currentTrackIndex, playlist, currentTrack]);
+
+  const handleSkipBack = useCallback(() => {
+    if (state.currentTrackIndex > 0) {
+      dispatch({ type: 'SET_TRACK_INDEX', payload: state.currentTrackIndex - 1 });
+    }
+  }, [state.currentTrackIndex]);
+
+  const handleUnmute = useCallback(() => {
+    dispatch({ type: 'SET_UI', payload: { key: 'showUnmuteOverlay', value: false } });
+    onPlayPause(true);
+  }, [onPlayPause]);
+
+  const handleTrackSelect = useCallback((index: number) => {
+    dispatch({ type: 'SET_TRACK_INDEX', payload: index });
+  }, []);
+
+  const handleTrackRemove = useCallback((index: number) => {
+    if (!playlist) return;
+
+    const newTracks = playlist.tracks.filter((_, i) => i !== index);
+    const updatedPlaylist = { ...playlist, tracks: newTracks };
+
+    // Propagate changes to parent
+    handlePlaylistUpdate(updatedPlaylist);
+
+    if (index < state.currentTrackIndex) {
+      dispatch({ type: 'SET_TRACK_INDEX', payload: state.currentTrackIndex - 1 });
+    } else if (index === state.currentTrackIndex && index >= newTracks.length) {
+      dispatch({ type: 'SET_TRACK_INDEX', payload: Math.max(0, newTracks.length - 1) });
+    }
+  }, [playlist, state.currentTrackIndex]);
+
+  const handleTrackReorder = useCallback((fromIndex: number, toIndex: number) => {
+    if (!playlist) return;
+
+    const newTracks = [...playlist.tracks];
+    const [movedTrack] = newTracks.splice(fromIndex, 1);
+    newTracks.splice(toIndex, 0, movedTrack);
+
+    const updatedPlaylist = { ...playlist, tracks: newTracks };
+    handlePlaylistUpdate(updatedPlaylist);
+
+    if (fromIndex === state.currentTrackIndex) {
+      dispatch({ type: 'SET_TRACK_INDEX', payload: toIndex });
+    } else if (fromIndex < state.currentTrackIndex && toIndex >= state.currentTrackIndex) {
+      dispatch({ type: 'SET_TRACK_INDEX', payload: state.currentTrackIndex - 1 });
+    } else if (fromIndex > state.currentTrackIndex && toIndex <= state.currentTrackIndex) {
+      dispatch({ type: 'SET_TRACK_INDEX', payload: state.currentTrackIndex + 1 });
+    }
+  }, [playlist, state.currentTrackIndex]);
+
+  const handlePlaylistUpdate = useCallback((updatedPlaylist: Playlist) => {
+    // In a real app this would update the parent state
+    logger.info('Playlist updated', { playlistId: updatedPlaylist.id });
+  }, []);
+
+  const addCuePoint = useCallback((deck: 'deckA' | 'deckB', position: number) => {
+    dispatch({ type: 'ADD_CUE_POINT', payload: { deck, position } });
+    logger.info('Cue point added', { deck, position });
+  }, []);
+
+  const clearCuePoints = useCallback((deck: 'deckA' | 'deckB') => {
+    dispatch({ type: 'CLEAR_CUE_POINTS', payload: { deck } });
+  }, []);
+
+  const jumpToCue = useCallback((deck: 'deckA' | 'deckB', position: number) => {
+    if (deck === 'deckA') {
+      handleSeek(position);
+    }
+    // For deck B, we would need to implement seek functionality
+  }, [handleSeek]);
+
+  // Early return for loading state
+  if (!playlist || !currentTrack) {
+    return (
+      <div className="min-h-screen gradient-bg-primary flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-fuchsia-400 border-t-transparent rounded-full animate-spin mx-auto mb-4 shadow-neon-pink"></div>
+          <p className="text-white font-orbitron">Loading playlist...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen gradient-bg-primary overflow-hidden font-orbitron relative">
-      {/* Header */}
+      {/* Enhanced Header */}
       <div className="flex items-center justify-between p-4 lg:p-6 border-b border-glass nav-sticky">
         <div className="flex items-center space-x-4">
           <button
             onClick={onBack}
-            className="p-2 rounded-full hover:bg-gray-800 transition-colors"
-            aria-label="Go back"
-            title="Go back"
+            aria-label="Go back to playlist selection"
+            className="glass-button hover-lift flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12"
           >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-xl font-bold">
-            {playlist?.name || 'Professional Magic Player'}
-          </h1>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => dispatch({ type: 'TOGGLE_SETTINGS' })}
-            className={`p-2 rounded-full ${state.ui.showSettings ? 'bg-gray-800' : 'hover:bg-gray-800'} transition-colors`}
-            aria-label="Settings"
-            title="Settings"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
-        {/* Progress Bar */}
-        <div className="mb-4">
-          <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-purple-600 transition-all duration-300"
-              style={{
-                width: `${(state.currentTime / (state.duration || 1)) * 100}%`,
-                minWidth: '0.5rem',
-                maxWidth: '100%'
-              } as React.CSSProperties}
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={state.duration || 1}
-              aria-valuenow={state.currentTime}
-              aria-valuetext={`${Math.floor(state.currentTime)} seconds`}
-              aria-label="Playback progress"
-            />
-          </div>
-          <div className="flex justify-between text-sm text-gray-400 mt-1">
-            <span>{formatTime(state.currentTime)}</span>
-            <span>{formatTime(state.duration)}</span>
-          </div>
-        </div>
-
-        {/* Track Info */}
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold">
-            {playlist?.tracks[state.currentTrackIndex]?.title || 'No track selected'}
-          </h2>
-          <p className="text-gray-400">
-            {playlist?.tracks[state.currentTrackIndex]?.artist || 'Unknown artist'}
-          </p>
-        </div>
-
-        {/* Controls */}
-        <div className="flex justify-center items-center space-x-6 mb-8">
-          <button
-            onClick={() => handleTrackChange(Math.max(0, state.currentTrackIndex - 1))}
-            className="p-3 rounded-full hover:bg-gray-800 transition-colors"
-            disabled={!playlist?.tracks.length || state.currentTrackIndex === 0}
-            aria-label="Previous track"
-            title="Previous track"
-          >
-            <SkipBack className="w-6 h-6" />
+            <ArrowLeft className="w-5 h-5 lg:w-6 lg:h-6 text-fuchsia-400" />
           </button>
 
           <button
-            onClick={handlePlayPause}
-            className="p-4 bg-purple-600 rounded-full hover:bg-purple-700 transition-colors"
-            disabled={!playlist?.tracks.length}
-            aria-label={state.isPlaying ? 'Pause' : 'Play'}
-            title={state.isPlaying ? 'Pause' : 'Play'}
+            onClick={() => dispatch({ type: 'SET_UI', payload: { key: 'mobileMenuOpen', value: !state.ui.mobileMenuOpen } })}
+            aria-label={state.ui.mobileMenuOpen ? 'Close mobile menu' : 'Open mobile menu'}
+            className="lg:hidden glass-button hover-lift flex items-center justify-center w-10 h-10"
           >
-            {state.isPlaying ? (
-              <Pause className="w-8 h-8" />
+            {state.ui.mobileMenuOpen ? (
+              <X className="w-5 h-5 text-fuchsia-400" />
             ) : (
-              <Play className="w-8 h-8" />
+              <Menu className="w-5 h-5 text-fuchsia-400" />
             )}
           </button>
 
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 glass-card flex items-center justify-center shadow-neon-pink animate-pulse-glow">
+              <Radio className="w-7 h-7 text-fuchsia-400" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h1 className="text-xl lg:text-2xl font-bold text-white tracking-wide font-orbitron">
+                  PROFESSIONAL PLAYER
+                </h1>
+                {state.error.isDegraded && (
+                  <span className="text-xs px-2 py-1 bg-yellow-900/50 border border-yellow-400 text-yellow-400 rounded font-orbitron">
+                    DEMO
+                  </span>
+                )}
+              </div>
+              <p className="text-sm lg:text-base text-fuchsia-400 font-orbitron truncate max-w-48 lg:max-w-none">
+                {playlist.name}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-3 lg:space-x-4">
           <button
-            onClick={() => handleTrackChange(Math.min(
-              (playlist?.tracks.length || 1) - 1,
-              state.currentTrackIndex + 1
-            ))}
-            className="p-3 rounded-full hover:bg-gray-800 transition-colors"
-            disabled={!playlist?.tracks.length || state.currentTrackIndex === (playlist?.tracks.length || 1) - 1}
-            aria-label="Next track"
-            title="Next track"
+            onClick={() => dispatch({ type: 'SET_UI', payload: { key: 'showSettings', value: !state.ui.showSettings } })}
+            aria-label={state.ui.showSettings ? 'Hide settings' : 'Show settings'}
+            className={`btn-accent px-3 lg:px-4 py-2 flex items-center space-x-2 text-sm lg:text-base ${state.ui.showSettings ? 'shadow-neon-yellow' : ''
+              }`}
           >
-            <SkipForward className="w-6 h-6" />
+            <Settings className="w-4 h-4 lg:w-5 lg:h-5" />
+            <span className="hidden sm:inline">SETTINGS</span>
+          </button>
+
+          <button
+            onClick={() => dispatch({ type: 'SET_UI', payload: { key: 'showPlaylistEditor', value: !state.ui.showPlaylistEditor } })}
+            aria-label={state.ui.showPlaylistEditor ? 'Hide playlist editor' : 'Show playlist editor'}
+            className={`btn-primary px-3 lg:px-4 py-2 flex items-center space-x-2 text-sm lg:text-base ${state.ui.showPlaylistEditor ? 'shadow-neon-pink' : ''
+              }`}
+          >
+            <List className="w-4 h-4 lg:w-5 lg:h-5" />
+            <span className="hidden sm:inline">PLAYLIST</span>
+          </button>
+
+          <button
+            onClick={() => dispatch({ type: 'SET_UI', payload: { key: 'showMagicDancer', value: !state.ui.showMagicDancer } })}
+            aria-label={state.ui.showMagicDancer ? 'Hide magic dancer' : 'Show magic dancer'}
+            className={`btn-secondary px-3 lg:px-4 py-2 flex items-center space-x-2 text-sm lg:text-base ${state.ui.showMagicDancer ? 'shadow-neon-blue' : ''
+              }`}
+          >
+            <Activity className="w-4 h-4 lg:w-5 lg:h-5" />
+            <span className="hidden sm:inline">DANCER</span>
+          </button>
+
+          {state.error.message ? (
+            <div className="flex items-center space-x-2 px-3 lg:px-4 py-2 glass-card border-yellow-400 shadow-yellow-400/20">
+              <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
+              <span className="text-xs lg:text-sm font-bold tracking-wider text-yellow-400">
+                {state.error.message}
+              </span>
+            </div>
+          ) : (
+            <div className="hidden sm:flex items-center space-x-2 px-3 lg:px-4 py-2 glass-card shadow-neon-cyan">
+              <div className="w-3 h-3 bg-cyan-400 rounded-full animate-pulse-glow"></div>
+              <span className="text-xs lg:text-sm font-bold tracking-wider">
+                LIVE
+              </span>
+            </div>
+          )}
+
+          <button
+            onClick={onSessionEnd}
+            aria-label="End DJ session"
+            className="btn-primary px-3 lg:px-4 py-2 flex items-center space-x-2 text-sm lg:text-base"
+          >
+            <Square className="w-4 h-4 lg:w-5 lg:h-5" />
+            <span className="hidden sm:inline">END</span>
           </button>
         </div>
+      </div>
 
-        {/* Volume Control */}
-        <div className="flex items-center justify-center space-x-4 mb-8">
-          <label htmlFor="volume-control" className="sr-only">Volume</label>
-          <input
-            id="volume-control"
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={state.volume}
-            onChange={(e) => dispatch({ type: 'SET_VOLUME', payload: parseFloat(e.target.value) })}
-            className="w-32 accent-purple-600"
-            aria-valuemin={0}
-            aria-valuemax={1}
-            aria-valuenow={state.volume}
-            aria-valuetext={`${Math.round(state.volume * 100)}%`}
-            aria-label="Volume control"
-            title="Volume control"
-          />
-          <div className="flex justify-between text-sm text-gray-400 mt-1">
-            <span>{formatTime(state.currentTime)}</span>
-            <span>{formatTime(state.duration)}</span>
+      {/* Mobile Compact Player */}
+      <div className="lg:hidden bg-glass border-b border-glass">
+        <div className="p-4">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-14 h-14 glass-card flex items-center justify-center shadow-neon-pink animate-pulse-glow">
+              <Play className="w-7 h-7 text-fuchsia-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-bold truncate text-white text-lg font-orbitron">
+                {currentTrack.title}
+              </h3>
+              <p className="text-sm text-fuchsia-400 truncate font-orbitron">
+                {currentTrack.artist}
+              </p>
+              <div className="flex items-center space-x-3 text-xs text-slate-400 mt-1">
+                <span className="font-orbitron">{currentTrack.bpm ?? 128} BPM</span>
+                <span className="font-orbitron">{currentTrack.key ?? 'C'}</span>
+              </div>
+            </div>
+            {state.isLoading && (
+              <div className="w-8 h-8 border-3 border-fuchsia-400 border-t-transparent rounded-sm animate-spin shadow-neon-pink"></div>
+            )}
           </div>
-        </div>
 
-        {/* Audio Elements (hidden) */}
-        <audio ref={audioARef} />
-        <audio ref={audioBRef} />
-
-        {/* Error Message */}
-        {state.error.message && (
-          <div className="fixed bottom-4 left-4 right-4 bg-red-900 text-white p-4 rounded-lg shadow-lg z-50 flex justify-between items-center">
-            <span>{state.error.message}</span>
-            <button
-              onClick={() => dispatch({ type: 'SET_ERROR', payload: { message: null } })}
-              className="text-white hover:text-gray-300"
-              aria-label="Dismiss error"
-              title="Dismiss error"
+          <div className="mb-4">
+            <div
+              className="w-full h-3 bg-glass border border-glass rounded-lg cursor-pointer overflow-hidden"
+              onClick={e => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const percentage = Math.min(100, Math.max(0, ((e.clientX - rect.left) / rect.width) * 100));
+                handleSeek(percentage);
+              }}
+              role="slider"
+              aria-label="Seek track position"
+              aria-valuenow={state.progress.deckA}
+              aria-valuemin={0}
+              aria-valuemax={100}
             >
-              <X className="w-5 h-5" />
+              <div
+                className="h-3 bg-gradient-to-r from-fuchsia-600 to-cyan-400 rounded-lg transition-all duration-300"
+                style={{ width: `${state.progress.deckA}%` }}
+              ></div>
+            </div>
+            <div className="flex justify-between text-xs text-slate-400 mt-2 font-orbitron">
+              <span>{formatTimeClock(state.currentTime)}</span>
+              <span>{formatTimeClock(state.duration)}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center space-x-6">
+            <button
+              onClick={handleSkipBack}
+              aria-label="Skip to previous track"
+              className="w-12 h-12 glass-button hover-lift flex items-center justify-center transition-all duration-300"
+            >
+              <SkipBack className="w-6 h-6 text-fuchsia-400" />
+            </button>
+            <button
+              onClick={() => throttledOnPlayPause(!isPlaying)}
+              disabled={state.isLoading}
+              aria-label={isPlaying ? 'Pause playback' : 'Start playback'}
+              className="w-16 h-16 glass-button hover-lift flex items-center justify-center transition-all duration-300 disabled:opacity-50"
+            >
+              {state.isLoading ? (
+                <div className="w-8 h-8 border-3 border-fuchsia-400 border-t-transparent rounded-sm animate-spin"></div>
+              ) : isPlaying ? (
+                <Pause className="w-8 h-8 text-fuchsia-400" />
+              ) : (
+                <Play className="w-8 h-8 text-fuchsia-400" />
+              )}
+            </button>
+            <button
+              onClick={handleSkipForward}
+              aria-label="Skip to next track"
+              className="w-12 h-12 glass-button hover-lift flex items-center justify-center transition-all duration-300"
+            >
+              <SkipForward className="w-6 h-6 text-fuchsia-400" />
             </button>
           </div>
-        )}
+        </div>
       </div>
-    </div>
-  );
-};
-
-// Helper function to format time (mm:ss)
-const formatTime = (seconds: number): string => {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.floor(seconds % 60);
-  return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
-};
-
-export default ProfessionalMagicPlayer;
