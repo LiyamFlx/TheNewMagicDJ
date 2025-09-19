@@ -20,13 +20,47 @@ class AudioSourceService {
    * Create a simple working audio blob
    */
   private createWorkingAudio(): string {
-    // Use a known working base64 audio that's longer than the fallback
-    // This is a 30-second sine wave encoded as base64 WAV
-    const longAudioBase64 = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUe';
+    // Create a proper WAV file programmatically without AudioContext
+    // This generates a 5-second 440Hz sine wave
+    const sampleRate = 22050;
+    const duration = 5; // 5 seconds
+    const numSamples = sampleRate * duration;
 
-    // For now, return the reliable base64 audio instead of generating
-    // This avoids WebAudio context issues entirely
-    return longAudioBase64;
+    // Create WAV header
+    const buffer = new ArrayBuffer(44 + numSamples * 2);
+    const view = new DataView(buffer);
+
+    // WAV header
+    const writeString = (offset: number, string: string) => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    };
+
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + numSamples * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);  // PCM
+    view.setUint16(22, 1, true);  // mono
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, numSamples * 2, true);
+
+    // Generate audio data (440Hz sine wave)
+    let offset = 44;
+    for (let i = 0; i < numSamples; i++) {
+      const sample = Math.sin(2 * Math.PI * 440 * i / sampleRate) * 0.3;
+      view.setInt16(offset, sample * 32767, true);
+      offset += 2;
+    }
+
+    const blob = new Blob([buffer], { type: 'audio/wav' });
+    return URL.createObjectURL(blob);
   }
 
 
@@ -65,17 +99,19 @@ class AudioSourceService {
         type: 'demo',
         url: workingAudio,
         title: `${track.title} (Demo)`,
-        duration: 30,
+        duration: 5,
         quality: 'medium',
         metadata: { generated: true }
       });
     } catch (error) {
-      // Fallback to base64 audio if generation fails
+      // Fallback - create a minimal working WAV if blob creation fails
+      console.warn('Audio generation failed, using minimal fallback');
+      // Use a simple silence as final fallback
       sources.push({
         type: 'demo',
-        url: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUe',
-        title: `${track.title} (Fallback)`,
-        duration: 30,
+        url: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=',
+        title: `${track.title} (Silence)`,
+        duration: 1,
         quality: 'medium',
         metadata: { fallback: true }
       });
