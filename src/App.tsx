@@ -113,10 +113,7 @@ function AppContent() {
 
   // Spotify token
   const {
-    token: spotifyToken,
     isLoading: tokenLoading,
-    error: tokenError,
-    refetch: refetchToken,
     fetchLazy: fetchSpotifyTokenLazy,
   } = useSpotifyToken();
 
@@ -135,7 +132,8 @@ function AppContent() {
   // Removed automatic initialization to improve startup performance
 
   // Provide lazy Spotify initialization function for services
-  const initializeSpotifyLazy = useCallback(async (): Promise<boolean> => {
+  // @ts-ignore - Function reserved for future lazy initialization
+  const _initializeSpotifyLazy = useCallback(async (): Promise<boolean> => {
     try {
       const token = await fetchSpotifyTokenLazy();
       if (token) {
