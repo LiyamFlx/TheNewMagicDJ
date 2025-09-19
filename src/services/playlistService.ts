@@ -229,7 +229,8 @@ function validateTrack(track: Track): PlaylistServiceError | null {
  * validation, and error handling
  */
 class PlaylistService {
-  private readonly musicService = productionSpotifyService;
+  private readonly primaryMusicService = youtubeService;
+  private readonly fallbackMusicService = productionSpotifyService;
   private readonly cache = new Map<string, CacheEntry<any>>();
 
   // ===========================================================================
@@ -1017,11 +1018,26 @@ class PlaylistService {
             const seed_tracks = baseTrack.spotify_id
               ? [baseTrack.spotify_id]
               : [];
-            tracks = await this.musicService.getRecommendations({
-              seed_tracks,
-              seed_genres: seed_tracks.length > 0 ? [] : ['electronic'],
-              limit: 15,
-            });
+            // Try YouTube first for track-based recommendations
+            try {
+              tracks = await this.primaryMusicService.getRecommendations({
+                seed_genres: ['electronic'],
+                vibe: 'electronic',
+                energy: 'medium',
+                limit: 15,
+              }) || [];
+
+              if (tracks.length === 0) {
+                throw new Error('YouTube returned no tracks');
+              }
+            } catch (ytError) {
+              // Fallback to Spotify with seed tracks
+              tracks = await this.fallbackMusicService.getRecommendations({
+                seed_tracks,
+                seed_genres: seed_tracks.length > 0 ? [] : ['electronic'],
+                limit: 15,
+              });
+            }
           } catch (error) {
             logger.warn(
               'PlaylistService',
@@ -1033,10 +1049,25 @@ class PlaylistService {
 
         if (tracks.length === 0) {
           try {
-            tracks = await this.musicService.getRecommendations({
-              seed_genres: ['electronic'],
-              limit: 15,
-            });
+            // Try YouTube first for genre-based recommendations
+            try {
+              tracks = await this.primaryMusicService.getRecommendations({
+                seed_genres: ['electronic'],
+                vibe: 'electronic',
+                energy: 'medium',
+                limit: 15,
+              }) || [];
+
+              if (tracks.length === 0) {
+                throw new Error('YouTube returned no tracks');
+              }
+            } catch (ytError) {
+              // Fallback to Spotify
+              tracks = await this.fallbackMusicService.getRecommendations({
+                seed_genres: ['electronic'],
+                limit: 15,
+              });
+            }
           } catch (error) {
             logger.warn(
               'PlaylistService',
@@ -1128,40 +1159,36 @@ class PlaylistService {
 
         let tracks: Track[] = [];
 
+        // Try YouTube first (primary source)
         try {
-          tracks = await this.musicService.getRecommendations({
+          logger.info('PlaylistService', 'Attempting YouTube recommendations first');
+          tracks = await this.primaryMusicService.getRecommendations({
             seed_genres: genres,
+            vibe: params.vibe,
+            energy: params.energyLevel,
             limit: 20,
-            target_energy: energy,
-          });
-        } catch (error) {
-          logger.warn(
-            'PlaylistService',
-            'Primary service failed, trying YouTube',
-            error
-          );
+          }) || [];
 
+          if (tracks.length > 0) {
+            logger.info('PlaylistService', 'YouTube recommendations successful', { count: tracks.length });
+          } else {
+            throw new Error('YouTube returned no tracks');
+          }
+        } catch (error) {
+          logger.warn('PlaylistService', 'YouTube recommendations failed, trying Spotify fallback', error);
+
+          // Fallback to Spotify
           try {
-            if (youtubeService.isConfigured()) {
-              const ytTracks = await youtubeService.getRecommendations({
-                seed_genres: genres,
-                limit: 20,
-                energy: energy.toString(),
-              });
-              tracks = ytTracks || [];
-            } else {
-              throw new Error('YouTube service not configured');
-            }
-          } catch (youtubeError) {
-            logger.warn(
-              'PlaylistService',
-              'YouTube service failed, using mock service',
-              youtubeError
-            );
-            tracks = await productionSpotifyService.getRecommendations({
+            tracks = await this.fallbackMusicService.getRecommendations({
               seed_genres: genres,
               limit: 20,
+              target_energy: energy,
             });
+            logger.info('PlaylistService', 'Spotify fallback successful', { count: tracks.length });
+          } catch (fallbackError) {
+            logger.warn('PlaylistService', 'Both YouTube and Spotify failed, using demo tracks', fallbackError);
+            // This will be handled by the fallback generation in ProductionSpotifyService
+            tracks = [];
           }
         }
 
