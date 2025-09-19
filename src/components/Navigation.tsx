@@ -176,13 +176,22 @@ const Navigation: React.FC<NavigationProps> = ({
                     return (
                       <div
                         key={item.path}
-                        className="nav-item opacity-50 cursor-not-allowed"
-                        title={`${item.description} (${item.path === '/play' ? 'Requires playlist' : 'Requires session data'})`}
+                        className="nav-item opacity-50 cursor-not-allowed relative group"
+                        title={`${item.description} (${item.path === '/play' ? 'Create a playlist first' : 'Start a session first'})`}
                       >
                         <Icon className="w-4 h-4" />
                         <span className="text-sm font-semibold font-orbitron">
                           {item.label}
                         </span>
+                        {/* Enhanced tooltip */}
+                        <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 hidden group-hover:block z-50">
+                          <div className="glass-card px-3 py-2 text-xs whitespace-nowrap">
+                            <p className="text-white">{item.description}</p>
+                            <p className="text-yellow-400 mt-1">
+                              {item.path === '/play' ? '→ Create playlist in Studio first' : '→ Start playing a set first'}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     );
                   }
@@ -240,28 +249,30 @@ const Navigation: React.FC<NavigationProps> = ({
           </div>
         </div>
 
-        {/* Breadcrumbs */}
+        {/* Breadcrumbs - Enhanced for mobile */}
         {breadcrumbs.length > 0 && (
           <div className="border-t border-glass bg-glass backdrop-blur-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center space-x-2 py-3 text-sm font-orbitron">
+              <div className="flex items-center space-x-2 py-3 text-sm font-orbitron overflow-x-auto">
                 <Link
                   to="/"
-                  className="flex items-center text-slate-400 hover:text-fuchsia-400 transition-colors"
+                  className="flex items-center text-slate-400 hover:text-fuchsia-400 transition-colors flex-shrink-0"
+                  aria-label="Go to homepage"
                 >
                   <Home className="w-4 h-4" />
+                  <span className="sr-only">Home</span>
                 </Link>
                 {breadcrumbs.map((crumb, index) => (
                   <React.Fragment key={index}>
-                    <ChevronRight className="w-4 h-4 text-slate-500" />
+                    <ChevronRight className="w-4 h-4 text-slate-500 flex-shrink-0" />
                     {crumb.isLast ? (
-                      <span className="text-white font-semibold">
+                      <span className="text-white font-semibold whitespace-nowrap">
                         {crumb.label}
                       </span>
                     ) : (
                       <Link
                         to={crumb.path}
-                        className="text-fuchsia-400 hover:text-cyan-400 transition-colors font-medium"
+                        className="text-fuchsia-400 hover:text-cyan-400 transition-colors font-medium whitespace-nowrap"
                       >
                         {crumb.label}
                       </Link>

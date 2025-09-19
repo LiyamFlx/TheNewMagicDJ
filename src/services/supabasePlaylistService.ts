@@ -1,190 +1,238 @@
-// Supabase playlist service
+// Supabase playlist service - Improved version
 import { supabase } from '../lib/supabase';
 import { AppError } from '../utils/errors';
 
-// simple in-memory cache for a short TTL to reduce DB pressure
-const cache = new Map<string, { data: any; expiry: number }>();
-const TTL_MS = 15_000; // 15 seconds
-function getCached(key: string) {
-  const entry = cache.get(key);
-  if (entry && Date.now() < entry.expiry) return entry.data;
-  if (entry) cache.delete(key);
-  return null;
+// Types for better type safety
+interface Track {
+  id?: string;
+  title: string;
+  artist: string;
+  bpm?: number;
+  energy?: number;
+  duration?: number;
+  url?: string;
+  source_url?: string;
 }
-function setCached(key: string, data: any) {
-  cache.set(key, { data, expiry: Date.now() + TTL_MS });
+
+interface Playlist {
+  id?: string;
+  name: string;
+  user_id?: string;
+  description?: string;
+  tracks?: Track[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface CacheEntry {
+  data: any;
+  expiry: number;
+}
+
+// Enhanced cache management
+class PlaylistCache {
+  private cache = new Map<string, CacheEntry>();
+  private readonly TTL_MS = 15_000; // 15 seconds
+
+  get(key: string): any | null {
+    const entry = this.cache.get(key);
+    if (entry && Date.now() < entry.expiry) {
+      return entry.data;
+    }
+    if (entry) {
+      this.cache.delete(key);
+    }
+    return null;
+  }
+
+  set(key: string, data: any): void {
+    this.cache.set(key, { 
+      data, 
+      expiry: Date.now() + this.TTL_MS 
+    });
+  }
+
+  delete(key: string): void {
+    this.cache.delete(key);
+  }
+
+  // Bust all playlist caches for a user
+  bustUserCache(userId: string): void {
+    const userKey = this.getUserPlaylistsKey(userId);
+    this.delete(userKey);
+  }
+
+  // Bust all playlist caches (when we don't know the user)
+  bustAllPlaylistCaches(): void {
+    for (const key of this.cache.keys()) {
+      if (key.startsWith('playlists:')) {
+        this.cache.delete(key);
+      }
+    }
+  }
+
+  private getUserPlaylistsKey(userId: string): string {
+    return `playlists:${userId}`;
+  }
+}
+
+const cache = new PlaylistCache();
+
+// Authentication helper
+class AuthHelper {
+  static async checkAuthentication(): Promise<{ isAuthenticated: boolean; session: any }> {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
+      const isAuthenticated = !!(session?.access_token);
+      
+      return { isAuthenticated, session };
+    } catch (error) {
+      console.error('Authentication check failed:', error);
+      return { isAuthenticated: false, session: null };
+    }
+  }
+
+  static handleUnauthenticated(operation: string, fallbackValue: any = null) {
+    console.warn(`Supabase not authenticated; skipping ${operation}.`);
+    return fallbackValue;
+  }
+}
+
+// Data validation helpers
+class ValidationHelper {
+  static validatePlaylist(playlist: Partial<Playlist>): void {
+    if (!playlist.name || !playlist.name.trim()) {
+      throw new AppError('BAD_REQUEST', 'Playlist name is required');
+    }
+  }
+
+  static validateUserId(userId: string): void {
+    if (!userId) {
+      throw new AppError('BAD_REQUEST', 'User ID is required');
+    }
+  }
+
+  static sanitizeTrackData(tracks: Track[], playlistId: string) {
+    return tracks
+      .map(track => ({
+        playlist_id: playlistId,
+        title: track.title || 'Untitled',
+        artist: track.artist || 'Unknown Artist',
+        bpm: track.bpm ? Number(track.bpm) : null,
+        energy: track.energy ? Number(track.energy) : null,
+        duration: track.duration ? Number(track.duration) : 180,
+        source_url: track.url || track.source_url || null,
+      }))
+      .filter(track => track.title && track.artist);
+  }
 }
 
 export const supabasePlaylistService = {
-  async savePlaylist(playlist: any, userId: string) {
+  async savePlaylist(playlist: Playlist, userId: string): Promise<Playlist> {
     try {
-      // If not authenticated with Supabase, no-op to avoid 401s
-      const { data: sessionData } = await supabase.auth.getSession();
-      const hasSession = !!sessionData?.session?.access_token;
-      if (!hasSession) {
-        console.warn(
-          'Supabase not authenticated; skipping remote save. Caching locally.'
-        );
-        cache.delete(`playlists:${userId}`);
-        return { ...playlist };
+      ValidationHelper.validateUserId(userId);
+      ValidationHelper.validatePlaylist(playlist);
+
+      const { isAuthenticated } = await AuthHelper.checkAuthentication();
+      
+      if (!isAuthenticated) {
+        return AuthHelper.handleUnauthenticated('remote save', { ...playlist });
       }
+
       console.log('Saving playlist:', {
         playlistId: playlist.id,
         name: playlist.name,
         userId,
-        trackCount: playlist.tracks?.length,
+        trackCount: playlist.tracks?.length || 0,
       });
 
-      const { id: playlistId, name, tracks } = playlist;
-
-      if (!userId) {
-        throw new AppError('BAD_REQUEST', 'User ID is required');
-      }
-
-      if (!name || !name.trim()) {
-        throw new AppError('BAD_REQUEST', 'Playlist name is required');
-      }
-
-      // 1. Insert/Update the playlist (use insert with conflict resolution)
-      const playlistPayload = {
-        id: playlistId || undefined, // Let Supabase generate UUID if not provided
-        name: name.trim(),
-        user_id: userId,
-        description: playlist.description || null,
-      };
-
-      const { data: playlistData, error: playlistError } = await supabase
-        .from('playlists')
-        .insert(playlistPayload)
-        .select()
-        .single();
-
-      if (playlistError) {
-        console.error('Supabase playlist save error:', playlistError);
-        throw new AppError('UPSTREAM_ERROR', 'Failed to save playlist', {
-          details: { playlistError },
-        });
-      }
-
-      console.log('Playlist saved:', playlistData);
-
-      // 2. Insert tracks if provided
-      if (tracks && tracks.length > 0) {
-        const trackData = tracks
-          .map((track: any) => ({
-            playlist_id: playlistData.id,
-            title: track.title || 'Untitled',
-            artist: track.artist || 'Unknown Artist',
-            bpm: track.bpm ? Number(track.bpm) : null,
-            energy: track.energy ? Number(track.energy) : null,
-            duration: track.duration ? Number(track.duration) : 180,
-            source_url: track.url || track.source_url || null,
-          }))
-          .filter((track: any) => track.title && track.artist); // Filter out invalid tracks
-
-        if (trackData.length > 0) {
-          const { error: tracksError } = await supabase
-            .from('tracks')
-            .insert(trackData);
-
-          if (tracksError) {
-            console.error('Supabase tracks save error:', tracksError);
-            // Don't fail the whole operation for track errors
-            console.warn('Failed to save some tracks, but playlist was saved');
-          } else {
-            console.log(`Saved ${trackData.length} tracks`);
-          }
-        }
-      }
-
-      // Bust cache
-      cache.delete(`playlists:${userId}`);
-
-      return { ...playlistData, tracks: tracks || [] };
+      const result = await this._savePlaylistToDatabase(playlist, userId);
+      cache.bustUserCache(userId);
+      
+      return result;
     } catch (error) {
       console.error('SavePlaylist error:', error);
       throw error;
     }
   },
 
-  async getUserPlaylists(userId: string) {
-    return supabasePlaylistService.getPlaylists(userId);
+  async _savePlaylistToDatabase(playlist: Playlist, userId: string): Promise<Playlist> {
+    const { id: playlistId, name, tracks = [] } = playlist;
+
+    // Save playlist
+    const playlistPayload = {
+      id: playlistId || undefined,
+      name: name.trim(),
+      user_id: userId,
+      description: playlist.description || null,
+    };
+
+    const { data: playlistData, error: playlistError } = await supabase
+      .from('playlists')
+      .insert(playlistPayload)
+      .select()
+      .single();
+
+    if (playlistError) {
+      console.error('Supabase playlist save error:', playlistError);
+      throw new AppError('UPSTREAM_ERROR', 'Failed to save playlist', {
+        details: { playlistError },
+      });
+    }
+
+    console.log('Playlist saved:', playlistData);
+
+    // Save tracks if provided
+    if (tracks.length > 0) {
+      await this._saveTracksToDatabase(tracks, playlistData.id);
+    }
+
+    return { ...playlistData, tracks };
   },
-  async getPlaylists(userId: string) {
-    const key = `playlists:${userId}`;
-    const fromCache = getCached(key);
-    if (fromCache) return fromCache;
+
+  async _saveTracksToDatabase(tracks: Track[], playlistId: string): Promise<void> {
+    const trackData = ValidationHelper.sanitizeTrackData(tracks, playlistId);
+
+    if (trackData.length === 0) {
+      return;
+    }
+
+    const { error: tracksError } = await supabase
+      .from('tracks')
+      .insert(trackData);
+
+    if (tracksError) {
+      console.error('Supabase tracks save error:', tracksError);
+      console.warn('Failed to save some tracks, but playlist was saved');
+    } else {
+      console.log(`Saved ${trackData.length} tracks`);
+    }
+  },
+
+  async getPlaylists(userId: string): Promise<Playlist[]> {
+    const cacheKey = `playlists:${userId}`;
+    const cached = cache.get(cacheKey);
+    
+    if (cached) {
+      return cached;
+    }
 
     try {
-      // If not authenticated with Supabase, return empty to avoid 401s
-      const { data: sessionData } = await supabase.auth.getSession();
-      const hasSession = !!sessionData?.session?.access_token;
-      if (!hasSession) {
-        console.warn('Supabase not authenticated; returning empty playlists.');
-        setCached(key, []);
-        return [];
-      }
-      // First, get playlists
-      const { data: playlists, error: playlistError } = await supabase
-        .from('playlists')
-        .select('id, user_id, name, created_at, updated_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (playlistError) {
-        console.error('Supabase playlist query error:', playlistError);
-        throw new AppError('UPSTREAM_ERROR', 'Failed to fetch playlists', {
-          details: { playlistError },
-        });
+      ValidationHelper.validateUserId(userId);
+      
+      const { isAuthenticated } = await AuthHelper.checkAuthentication();
+      
+      if (!isAuthenticated) {
+        const emptyResult = AuthHelper.handleUnauthenticated('playlist fetch', []);
+        cache.set(cacheKey, emptyResult);
+        return emptyResult;
       }
 
-      if (!playlists || playlists.length === 0) {
-        setCached(key, []);
-        return [];
-      }
-
-      // Then, get tracks for each playlist
-      const playlistIds = playlists.map(p => p.id);
-      const { data: tracks, error: tracksError } = await supabase
-        .from('tracks')
-        .select('id, playlist_id, title, artist, bpm, energy, duration')
-        .in('playlist_id', playlistIds)
-        .order('created_at', { ascending: true });
-
-      if (tracksError) {
-        console.error('Supabase tracks query error:', tracksError);
-        // Return playlists without tracks rather than failing completely
-        const playlistsWithoutTracks = playlists.map(p => ({
-          ...p,
-          tracks: [],
-        }));
-        setCached(key, playlistsWithoutTracks);
-        return playlistsWithoutTracks;
-      }
-
-      // Group tracks by playlist
-      const tracksByPlaylist = (tracks || []).reduce((acc: any, track: any) => {
-        if (!acc[track.playlist_id]) acc[track.playlist_id] = [];
-        acc[track.playlist_id].push({
-          id: track.id,
-          title: track.title,
-          artist: track.artist,
-          bpm: track.bpm ?? undefined,
-          energy:
-            typeof track.energy === 'number' ? Number(track.energy) : undefined,
-          duration: track.duration ?? 180,
-        });
-        return acc;
-      }, {});
-
-      // Combine playlists with their tracks
-      const hydrated = playlists.map((playlist: any) => ({
-        ...playlist,
-        tracks: tracksByPlaylist[playlist.id] || [],
-      }));
-
-      setCached(key, hydrated);
-      return hydrated;
+      const playlists = await this._fetchPlaylistsFromDatabase(userId);
+      cache.set(cacheKey, playlists);
+      
+      return playlists;
     } catch (error) {
       console.error('Supabase getPlaylists error:', error);
       throw new AppError('UPSTREAM_ERROR', 'Failed to fetch playlists', {
@@ -193,46 +241,193 @@ export const supabasePlaylistService = {
     }
   },
 
-  async createPlaylist(userId: string, name: string) {
-    // If not authenticated with Supabase, no-op:
-    const { data: sessionData } = await supabase.auth.getSession();
-    const hasSession = !!sessionData?.session?.access_token;
-    if (!hasSession) {
-      console.warn('Supabase not authenticated; skipping remote create.');
-      return {
-        id: `local-${Date.now()}`,
-        user_id: userId,
-        name,
-        created_at: new Date().toISOString(),
-      };
+  async _fetchPlaylistsFromDatabase(userId: string): Promise<Playlist[]> {
+    // Fetch playlists
+    const { data: playlists, error: playlistError } = await supabase
+      .from('playlists')
+      .select('id, user_id, name, created_at, updated_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (playlistError) {
+      console.error('Supabase playlist query error:', playlistError);
+      throw new AppError('UPSTREAM_ERROR', 'Failed to fetch playlists', {
+        details: { playlistError },
+      });
     }
 
-    const { data, error } = await supabase
-      .from('playlists')
-      .insert([{ user_id: userId, name }])
-      .select()
-      .single();
-    if (error)
-      throw new AppError('UPSTREAM_ERROR', 'Failed to create playlist', {
-        details: { error },
-      });
-    // bust cache for user
-    cache.delete(`playlists:${userId}`);
-    return data;
+    if (!playlists || playlists.length === 0) {
+      return [];
+    }
+
+    // Fetch tracks for all playlists
+    const tracks = await this._fetchTracksForPlaylists(playlists.map(p => p.id));
+    
+    // Combine playlists with tracks
+    return this._combinePlaylistsWithTracks(playlists, tracks);
   },
 
-  async deletePlaylist(playlistId: string) {
-    const { error } = await supabase
-      .from('playlists')
-      .delete()
-      .eq('id', playlistId);
-    if (error)
-      throw new AppError('UPSTREAM_ERROR', 'Failed to delete playlist', {
-        details: { error },
+  async _fetchTracksForPlaylists(playlistIds: string[]): Promise<Track[]> {
+    const { data: tracks, error: tracksError } = await supabase
+      .from('tracks')
+      .select('id, playlist_id, title, artist, bpm, energy, duration')
+      .in('playlist_id', playlistIds)
+      .order('created_at', { ascending: true });
+
+    if (tracksError) {
+      console.error('Supabase tracks query error:', tracksError);
+      return []; // Return empty array rather than failing
+    }
+
+    return tracks || [];
+  },
+
+  _combinePlaylistsWithTracks(playlists: any[], tracks: Track[]): Playlist[] {
+    // Group tracks by playlist ID
+    const tracksByPlaylist = tracks.reduce((acc: Record<string, Track[]>, track: any) => {
+      if (!acc[track.playlist_id]) {
+        acc[track.playlist_id] = [];
+      }
+      
+      acc[track.playlist_id].push({
+        id: track.id,
+        title: track.title,
+        artist: track.artist,
+        bpm: track.bpm ?? undefined,
+        energy: typeof track.energy === 'number' ? Number(track.energy) : undefined,
+        duration: track.duration ?? 180,
       });
-    // best-effort cache bust: we don't know userId here, so clear all playlist caches
-    for (const key of cache.keys())
-      if (key.startsWith('playlists:')) cache.delete(key);
-    return true;
+      
+      return acc;
+    }, {});
+
+    // Combine playlists with their tracks
+    return playlists.map(playlist => ({
+      ...playlist,
+      tracks: tracksByPlaylist[playlist.id] || [],
+    }));
+  },
+
+  async createPlaylist(userId: string, name: string): Promise<Playlist> {
+    try {
+      ValidationHelper.validateUserId(userId);
+      
+      if (!name || !name.trim()) {
+        throw new AppError('BAD_REQUEST', 'Playlist name is required');
+      }
+
+      const { isAuthenticated } = await AuthHelper.checkAuthentication();
+      
+      if (!isAuthenticated) {
+        return AuthHelper.handleUnauthenticated('remote create', {
+          id: `local-${Date.now()}`,
+          user_id: userId,
+          name: name.trim(),
+          created_at: new Date().toISOString(),
+          tracks: [],
+        });
+      }
+
+      const { data, error } = await supabase
+        .from('playlists')
+        .insert([{ user_id: userId, name: name.trim() }])
+        .select()
+        .single();
+
+      if (error) {
+        throw new AppError('UPSTREAM_ERROR', 'Failed to create playlist', {
+          details: { error },
+        });
+      }
+
+      cache.bustUserCache(userId);
+      return { ...data, tracks: [] };
+    } catch (error) {
+      console.error('Create playlist error:', error);
+      throw error;
+    }
+  },
+
+  async deletePlaylist(playlistId: string, userId?: string): Promise<boolean> {
+    try {
+      if (!playlistId) {
+        throw new AppError('BAD_REQUEST', 'Playlist ID is required');
+      }
+
+      const { isAuthenticated } = await AuthHelper.checkAuthentication();
+      
+      if (!isAuthenticated) {
+        return AuthHelper.handleUnauthenticated('remote delete', false);
+      }
+
+      const { error } = await supabase
+        .from('playlists')
+        .delete()
+        .eq('id', playlistId);
+
+      if (error) {
+        throw new AppError('UPSTREAM_ERROR', 'Failed to delete playlist', {
+          details: { error },
+        });
+      }
+
+      // Efficient cache busting
+      if (userId) {
+        cache.bustUserCache(userId);
+      } else {
+        cache.bustAllPlaylistCaches();
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Delete playlist error:', error);
+      throw error;
+    }
+  },
+
+  // Utility methods
+  async updatePlaylist(playlistId: string, updates: Partial<Playlist>, userId: string): Promise<Playlist> {
+    try {
+      ValidationHelper.validateUserId(userId);
+      
+      if (!playlistId) {
+        throw new AppError('BAD_REQUEST', 'Playlist ID is required');
+      }
+
+      const { isAuthenticated } = await AuthHelper.checkAuthentication();
+      
+      if (!isAuthenticated) {
+        throw new AppError('UNAUTHORIZED', 'Authentication required for playlist updates');
+      }
+
+      const { data, error } = await supabase
+        .from('playlists')
+        .update({
+          name: updates.name?.trim(),
+          description: updates.description,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', playlistId)
+        .eq('user_id', userId) // Ensure user owns the playlist
+        .select()
+        .single();
+
+      if (error) {
+        throw new AppError('UPSTREAM_ERROR', 'Failed to update playlist', {
+          details: { error },
+        });
+      }
+
+      cache.bustUserCache(userId);
+      return data;
+    } catch (error) {
+      console.error('Update playlist error:', error);
+      throw error;
+    }
+  },
+
+  // Clear all caches (useful for logout)
+  clearCache(): void {
+    cache.bustAllPlaylistCaches();
   },
 };

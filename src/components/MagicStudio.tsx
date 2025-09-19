@@ -544,9 +544,28 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
             </span>
           </h1>
           <p className="text-lg lg:text-xl text-gray-300 max-w-3xl mx-auto px-4 font-inter leading-relaxed">
-            AI-assisted creation, playback, and analysis of DJ sets with
-            real-time crowd sensing
+            Create AI-powered DJ sets in seconds. Match any track or generate from scratch.
           </p>
+
+          {/* Quick start guide */}
+          <div className="mt-8 glass-card p-6 max-w-2xl mx-auto">
+            <div className="flex items-center justify-center space-x-4 text-sm text-gray-400">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 flex items-center justify-center text-white text-xs font-bold">1</div>
+                <span>Pick method</span>
+              </div>
+              <div className="w-8 h-px bg-gray-600"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">2</div>
+                <span>AI processes</span>
+              </div>
+              <div className="w-8 h-px bg-gray-600"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-r from-green-400 to-cyan-400 flex items-center justify-center text-white text-xs font-bold">3</div>
+                <span>Edit & play</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Glass Mode Selection */}
@@ -562,9 +581,15 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
                 MAGICMATCH
               </h2>
               <p className="text-base lg:text-lg text-gray-300 text-center mb-8 leading-relaxed font-inter">
-                Recognize what's playing and let AI create the perfect
-                continuation playlist
+                Recognize what's playing and let AI create the perfect continuation playlist.
               </p>
+
+              <div className="mb-6 glass-card p-4 bg-blue-500/10 border-blue-500/20">
+                <div className="flex items-center space-x-2 text-sm text-blue-300">
+                  <Zap className="w-4 h-4" />
+                  <span>AI listens for 8 seconds, then generates 20-30 matching tracks</span>
+                </div>
+              </div>
 
               <div className="space-y-4">
                 <button
@@ -605,9 +630,37 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
                 MAGICSET
               </h2>
               <p className="text-base lg:text-lg text-gray-300 text-center mb-8 leading-relaxed font-inter">
-                Generate an AI-curated playlist from scratch based on your vibe
-                and energy preferences
+                Generate an AI-curated playlist from scratch. Choose style + energy, or click quick presets below.
               </p>
+
+              {/* Quick preset buttons */}
+              <div className="mb-6 space-y-2">
+                <p className="text-sm text-gray-400 text-center font-orbitron">QUICK PRESETS</p>
+                <div className="grid grid-cols-1 gap-2">
+                  <button
+                    onClick={() => handleMagicSet('electronic', 'high')}
+                    className="btn-accent py-3 px-4 text-sm font-bold hover-lift"
+                  >
+                    🔥 HIGH-ENERGY ELECTRONIC
+                  </button>
+                  <button
+                    onClick={() => handleMagicSet('house', 'medium')}
+                    className="glass-button py-3 px-4 text-sm font-bold hover-lift"
+                  >
+                    🎵 GROOVY HOUSE VIBES
+                  </button>
+                  <button
+                    onClick={() => handleMagicSet('hip-hop', 'low')}
+                    className="glass-button py-3 px-4 text-sm font-bold hover-lift"
+                  >
+                    😎 CHILL HIP-HOP
+                  </button>
+                </div>
+              </div>
+
+              <div className="text-center mb-4">
+                <span className="text-xs text-gray-500 font-mono">OR CUSTOMIZE YOUR SET</span>
+              </div>
 
               <div className="space-y-6">
                 {/* Glass Vibe Selection */}

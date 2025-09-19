@@ -72,28 +72,31 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStartMixing }) => {
         className="relative z-10 max-w-7xl mx-auto px-6 py-20 text-center"
         aria-labelledby="hero-heading"
       >
-        {/* Stats moved higher for credibility */}
+        {/* Trust indicators with context */}
         <div className="glass-card hover-lift mb-16 max-w-4xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-8">
             <div className="text-center">
               <div className="text-4xl font-bold text-gradient-primary mb-2 font-orbitron">
                 10M+
               </div>
-              <div className="text-gray-400 font-inter">Tracks Analyzed</div>
+              <div className="text-gray-400 font-inter">Tracks Analyzed Daily</div>
+              <div className="text-xs text-gray-500 mt-1">Live music database</div>
             </div>
             <div className="text-center">
               <div className="text-4xl font-bold text-gradient-accent mb-2 font-orbitron">
                 50K+
               </div>
-              <div className="text-gray-400 font-inter">AI Sets Created</div>
+              <div className="text-gray-400 font-inter">DJ Sets Created</div>
+              <div className="text-xs text-gray-500 mt-1">By artists worldwide</div>
             </div>
             <div className="text-center">
               <div className="text-4xl font-bold text-gradient-primary mb-2 font-orbitron">
                 99.8%
               </div>
               <div className="text-gray-400 font-inter">
-                Recognition Accuracy
+                AI Accuracy
               </div>
+              <div className="text-xs text-gray-500 mt-1">Shazam-level precision</div>
             </div>
           </div>
         </div>
@@ -121,21 +124,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStartMixing }) => {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button
               onClick={onStartMixing}
-              className="btn-primary flex items-center space-x-3 text-xl hover-lift px-8 py-4 font-bold"
-              aria-label="Start creating your AI DJ set"
+              className="btn-primary flex items-center space-x-3 text-xl hover-lift px-8 py-4 font-bold group"
+              aria-label="Start creating your AI DJ set - Free trial"
             >
-              <Play className="w-7 h-7" />
-              <span>Create Your AI DJ Set</span>
+              <Play className="w-7 h-7 group-hover:scale-110 transition-transform" />
+              <span>Start Free Trial</span>
             </button>
-            <button
-              className="glass-button text-xl font-semibold px-8 py-4 border-2 border-white/20 hover:border-cyan-400/50"
-              aria-label="Watch product demonstration"
-            >
-              <span>Watch Demo</span>
-            </button>
+            <div className="flex flex-col items-center">
+              <button
+                className="glass-button text-lg font-semibold px-6 py-3 border-2 border-white/20 hover:border-cyan-400/50"
+                aria-label="Watch 60-second demo video"
+              >
+                <span>Watch 60s Demo</span>
+              </button>
+              <span className="text-xs text-gray-500 mt-1">No signup required</span>
+            </div>
           </div>
         </div>
 
@@ -175,19 +181,35 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStartMixing }) => {
           })}
         </section>
 
-        {/* Final CTA Section */}
-        <section className="text-center mt-20" aria-labelledby="cta-heading">
-          <h2 id="cta-heading" className="sr-only">
-            Get Started
-          </h2>
-          <button
-            onClick={onStartMixing}
-            className="btn-primary flex items-center space-x-3 text-lg hover-lift mx-auto"
-            aria-label="Start mixing now"
-          >
-            <Play className="w-6 h-6" />
-            <span>Start Mixing</span>
-          </button>
+        {/* Social Proof & Final CTA */}
+        <section className="mt-20 space-y-12" aria-labelledby="cta-heading">
+          <div className="text-center">
+            <p className="text-gray-400 mb-6 font-inter">Trusted by DJs from</p>
+            <div className="flex flex-wrap justify-center items-center gap-8 opacity-60">
+              <span className="text-lg font-bold text-gradient-accent">Beatport</span>
+              <span className="text-lg font-bold text-gradient-primary">SoundCloud</span>
+              <span className="text-lg font-bold text-gradient-accent">Mixcloud</span>
+              <span className="text-lg font-bold text-gradient-primary">Spotify</span>
+            </div>
+          </div>
+
+          <div className="text-center">
+            <h2 id="cta-heading" className="text-3xl font-bold text-white mb-4 font-orbitron">
+              Ready to Create Magic?
+            </h2>
+            <p className="text-gray-400 mb-8 max-w-2xl mx-auto">
+              Join thousands of DJs using AI to create unforgettable sets. Start your free trial today.
+            </p>
+            <button
+              onClick={onStartMixing}
+              className="btn-primary flex items-center space-x-3 text-lg hover-lift mx-auto"
+              aria-label="Start your free trial now"
+            >
+              <Play className="w-6 h-6" />
+              <span>Start Free Trial</span>
+            </button>
+            <p className="text-xs text-gray-500 mt-3">No credit card required • Instant access</p>
+          </div>
         </section>
       </section>
     </main>

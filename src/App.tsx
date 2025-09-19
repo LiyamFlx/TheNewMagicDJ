@@ -205,21 +205,25 @@ function AppContent() {
 
     try {
       Logger.info('loadUserData', 'Loading playlists for user', { userId });
-      const playlists = await supabasePlaylistService.getUserPlaylists(userId);
+      const playlists = await supabasePlaylistService.getPlaylists(userId);
 
-      // Ensure playlists is an array
-      const safePlayists = Array.isArray(playlists) ? playlists : [];
-      dispatch({ type: 'SET_PLAYLISTS', payload: safePlayists });
+      // Ensure playlists is an array and all have required properties
+      const safePlaylists: Playlist[] = Array.isArray(playlists)
+        ? (playlists as Playlist[]).filter(
+            (p): p is Playlist => !!p && typeof p.id === 'string' && !!p.name
+          )
+        : [];
+      dispatch({ type: 'SET_PLAYLISTS', payload: safePlaylists });
 
       // Restore last playlist with additional safety checks
-      if (safePlayists.length > 0) {
+      if (safePlaylists.length > 0) {
         const candidate = lastPlaylistId
-          ? safePlayists.find((p: Playlist) => p && p.id === lastPlaylistId)
+          ? safePlaylists.find((p: Playlist) => p && p.id === lastPlaylistId)
           : null;
 
         const playlistToRestore =
           candidate ||
-          safePlayists
+          safePlaylists
             .filter((p: Playlist) => p && p.updated_at) // Filter out invalid playlists
             .sort(
               (a: Playlist, b: Playlist) =>
@@ -299,9 +303,12 @@ function AppContent() {
             updatedPlaylists.push(saved);
           }
 
+          // Ensure updatedPlaylists is filtered to only valid Playlist objects with defined id
           dispatch({
             type: 'SET_PLAYLISTS',
-            payload: updatedPlaylists,
+            payload: updatedPlaylists.filter(
+              (p): p is Playlist => !!p && typeof p.id === 'string'
+            ),
           });
 
           if (userPreferences.notifications) {
@@ -469,18 +476,40 @@ function AppContent() {
       />
 
       {state.error && (
-        <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-2 mx-4 mt-4 rounded-lg">
-          {state.error}
-          <button
-            onClick={() => dispatch({ type: 'SET_ERROR', payload: null })}
-            className="ml-2"
-          >
-            ✕
-          </button>
+        <div className="mx-4 mt-4">
+          <div className="glass-card p-4 bg-red-500/10 border-red-500/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center">
+                  <span className="text-red-400 text-sm">⚠</span>
+                </div>
+                <div>
+                  <p className="text-red-400 font-medium">Something went wrong</p>
+                  <p className="text-red-300 text-sm">{state.error}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => dispatch({ type: 'SET_ERROR', payload: null })}
+                className="glass-button w-8 h-8 flex items-center justify-center text-red-400 hover:bg-red-500/20"
+                aria-label="Dismiss error"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      <Suspense fallback={<LoadingSpinner text="Loading..." />}>
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center gradient-bg-primary">
+          <LoadingSpinner
+            variant="futuristic"
+            size="large"
+            text="Loading MagicDJ..."
+            subtext="Preparing your AI studio"
+          />
+        </div>
+      }>
         <Routes>
           <Route
             path="/"
