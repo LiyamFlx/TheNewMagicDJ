@@ -226,7 +226,7 @@ export class YouTubeService {
    */
   public async getRecommendations(
     params: YouTubeRecommendationParams
-  ): Promise<Track[] | null> {
+  ): Promise<Track[]> {
     const searchTerms = [
       ...(params.seed_genres || []),
       params.vibe || '',
@@ -237,11 +237,13 @@ export class YouTubeService {
     const query =
       searchTerms.length > 0 ? searchTerms.join(' ') : 'electronic music mix';
 
-    return this.searchTracks({
+    const result = await this.searchTracks({
       query,
       maxResults: params.limit || 15,
       videoDuration: 'medium', // Prefer medium-length tracks for DJ sets
     });
+
+    return result || []; // Always return array, never null
   }
 
   /**
