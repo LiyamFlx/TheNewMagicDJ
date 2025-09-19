@@ -66,13 +66,13 @@ const Navigation: React.FC<NavigationProps> = ({
     },
     {
       path: '/create',
-      label: 'Create',
+      label: 'Studio',
       icon: Wand2,
       description: 'AI Magic Studio',
     },
     {
       path: '/play',
-      label: 'Play',
+      label: 'Player',
       icon: Play,
       description: 'DJ Player & Controls',
       requiresData: true, // Requires playlist
@@ -211,11 +211,16 @@ const Navigation: React.FC<NavigationProps> = ({
             {/* User Profile & Mobile Menu */}
             <div className="flex items-center space-x-3">
               {user && (
-                <div className="hidden sm:flex items-center space-x-2 px-3 py-1 glass-card">
-                  <User className="w-4 h-4 text-gradient-primary" />
-                  <span className="text-sm text-white font-mono max-w-24 truncate">
-                    {user.email.split('@')[0]}
-                  </span>
+                <div className="hidden sm:flex items-center space-x-2 px-3 py-1 glass-card group hover:bg-white/10 transition-all cursor-pointer">
+                  <div className="w-8 h-8 gradient-bg-secondary rounded-full flex items-center justify-center">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm text-white font-mono truncate">
+                      {user.email.split('@')[0]}
+                    </span>
+                    <span className="text-xs text-gray-400">Profile</span>
+                  </div>
                 </div>
               )}
 
@@ -368,33 +373,6 @@ const Navigation: React.FC<NavigationProps> = ({
         </div>
       )}
 
-      {/* Quick Actions Bar (Desktop) */}
-      <div className="hidden lg:block bg-glass border-b border-glass backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-2">
-            <div className="flex items-center space-x-4 text-sm font-orbitron">
-              <span className="text-slate-500">Quick Actions:</span>
-              <Link
-                to="/create"
-                className="text-fuchsia-400 hover:text-cyan-400 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-fuchsia-400 focus:ring-offset-2 focus:ring-offset-slate-900 rounded px-1"
-              >
-                + New Mix
-              </Link>
-              <Link
-                to="/library"
-                className="text-cyan-400 hover:text-fuchsia-400 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-900 rounded px-1"
-              >
-                Browse Library
-              </Link>
-            </div>
-            <div className="text-xs text-slate-500 font-orbitron">
-              Current:{' '}
-              {navigationItems.find(item => item.path === location.pathname)
-                ?.description || 'Home'}
-            </div>
-          </div>
-        </div>
-      </div>
     </>
   );
 };

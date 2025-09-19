@@ -17,34 +17,76 @@ export interface AudioSource {
 class AudioSourceService {
 
   /**
-   * Generate a demo audio URL using Web Audio API
+   * Create a simple working audio blob
    */
-  private generateDemoAudio(_track: Track): string {
-    // Simple silent audio data URL for fallback
-    return 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUe';
+  private createWorkingAudio(): string {
+    // Create a very short working WAV file
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const duration = 1; // 1 second
+    const sampleRate = 22050; // Lower sample rate for smaller file
+    const buffer = audioContext.createBuffer(1, duration * sampleRate, sampleRate);
+
+    // Generate a simple sine wave
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = Math.sin(2 * Math.PI * 440 * i / sampleRate) * 0.1; // Quiet 440Hz tone
+    }
+
+    // Convert to WAV
+    const arrayBuffer = this.encodeWAV(buffer);
+    const blob = new Blob([arrayBuffer], { type: 'audio/wav' });
+    return URL.createObjectURL(blob);
   }
 
   /**
-   * Create a simple beep audio using Web Audio API
+   * Encode AudioBuffer to WAV format
    */
-  private createBeepAudio(): string {
-    // Return a working base64 audio file instead of trying to generate
-    return 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUeCjiMzPPaeSwFJXfH8N2QQAoUXrTp66hVFApGn+DyvmUeBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcCjiMzPPaeSwFJXfH8N2QQAoUXrTp66hVFApGn+DyvmUe';
+  private encodeWAV(buffer: AudioBuffer): ArrayBuffer {
+    const length = buffer.length;
+    const arrayBuffer = new ArrayBuffer(44 + length * 2);
+    const view = new DataView(arrayBuffer);
+
+    // WAV header
+    const writeString = (offset: number, string: string) => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    };
+
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + length * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, buffer.sampleRate, true);
+    view.setUint32(28, buffer.sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, length * 2, true);
+
+    // Convert float32 to int16
+    const data = buffer.getChannelData(0);
+    let offset = 44;
+    for (let i = 0; i < length; i++) {
+      const sample = Math.max(-1, Math.min(1, data[i]));
+      view.setInt16(offset, sample * 0x7FFF, true);
+      offset += 2;
+    }
+
+    return arrayBuffer;
   }
-
-
 
   /**
    * Get audio sources for a track
    */
   async getAudioSourcesForTrack(track: Track): Promise<AudioSource[]> {
-    console.log('🎵 AUDIO SERVICE CALLED - Getting audio sources for track:', track.title);
-    window.alert('Audio service called for: ' + track.title); // Temporary debug alert
     const sources: AudioSource[] = [];
 
     // If track has a URL property, try to use it directly
     if (track.url) {
-      console.log('📎 Adding track URL:', track.url);
       sources.push({
         type: 'demo',
         url: track.url,
@@ -56,7 +98,6 @@ class AudioSourceService {
 
     // If track has a preview_url that's a direct audio URL, use it
     if (track.preview_url && (track.preview_url.includes('.mp3') || track.preview_url.includes('.wav') || track.preview_url.includes('.m4a'))) {
-      console.log('🎧 Adding preview URL:', track.preview_url);
       sources.push({
         type: 'demo',
         url: track.preview_url,
@@ -66,35 +107,29 @@ class AudioSourceService {
       });
     }
 
-    // Create a simple beep audio using Web Audio API
+    // Add working generated audio
     try {
-      const beepAudio = this.createBeepAudio();
-      console.log('🔊 Created beep audio URL:', beepAudio.substring(0, 50) + '...');
+      const workingAudio = this.createWorkingAudio();
       sources.push({
         type: 'demo',
-        url: beepAudio,
-        title: `${track.title} (Beep)`,
-        duration: 5,
+        url: workingAudio,
+        title: `${track.title} (Demo)`,
+        duration: 1,
         quality: 'medium',
         metadata: { generated: true }
       });
     } catch (error) {
-      console.error('❌ Failed to create beep audio:', error);
+      // Fallback to base64 audio if generation fails
+      sources.push({
+        type: 'demo',
+        url: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUe',
+        title: `${track.title} (Fallback)`,
+        duration: 1,
+        quality: 'medium',
+        metadata: { fallback: true }
+      });
     }
 
-    // Always provide a demo audio fallback
-    const fallbackAudio = this.generateDemoAudio(track);
-    console.log('🔇 Adding fallback audio URL:', fallbackAudio.substring(0, 50) + '...');
-    sources.push({
-      type: 'demo',
-      url: fallbackAudio,
-      title: `${track.title} (Silent)`,
-      duration: track.duration || 5,
-      quality: 'medium',
-      metadata: { fallback: true }
-    });
-
-    console.log(`✅ Total ${sources.length} audio sources created for ${track.title}`);
     return sources;
   }
 
