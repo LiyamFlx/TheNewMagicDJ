@@ -75,7 +75,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [youtubeAReady, setYoutubeAReady] = useState(false);
+  const [_youtubeAReady, setYoutubeAReady] = useState(false);
   const [_youtubeBReady, setYoutubeBReady] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showPlaylistEditor, setShowPlaylistEditor] = useState(false);
@@ -528,10 +528,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     isTransitioning: boolean;
     pendingAction: boolean | null;
     lastKnownState: boolean | null;
+    retryCount: number;
   }>({
     isTransitioning: false,
     pendingAction: null,
-    lastKnownState: null
+    lastKnownState: null,
+    retryCount: 0
   });
 
   // Atomic audio control function to prevent race conditions
@@ -570,34 +572,57 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
       // Handle YouTube source
       if (currentSource?.type === 'youtube' && youtubePlayer) {
-        // Check if YouTube player is ready before attempting control
-        if (!youtubePlayer.isReady() || !youtubeAReady) {
-          logger.warn('ProfessionalMagicPlayer', 'YouTube player not ready - queuing action');
-          // Retry after a short delay
-          setTimeout(() => {
-            if (youtubePlayer.isReady() && youtubeAReady) {
-              logger.info('ProfessionalMagicPlayer', 'YouTube player ready on retry');
-              if (shouldPlay) {
-                youtubePlayer.play().catch(error => {
-                  logger.error('ProfessionalMagicPlayer', 'YouTube play failed on retry', error);
-                });
-              } else {
-                youtubePlayer.pause();
-              }
-            } else {
-              logger.error('ProfessionalMagicPlayer', 'YouTube player still not ready after retry');
-            }
-          }, 100);
+        try {
+          // Wait for player to be ready with proper promise-based approach
+          if (!youtubePlayer.isReady()) {
+            logger.info('ProfessionalMagicPlayer', 'Waiting for YouTube player readiness');
+            await youtubePlayer.waitForReady();
+            logger.info('ProfessionalMagicPlayer', 'YouTube player is now ready');
+          }
+
+          // Player is ready, execute action
+          if (shouldPlay) {
+            await youtubePlayer.play();
+            logger.debug('ProfessionalMagicPlayer', 'YouTube playback started');
+          } else {
+            youtubePlayer.pause();
+            logger.debug('ProfessionalMagicPlayer', 'YouTube playback paused');
+          }
+
+          // Reset retry counter on success
+          audioStateRef.current.retryCount = 0;
+          return;
+        } catch (error) {
+          logger.error('ProfessionalMagicPlayer', 'YouTube player operation failed', {
+            action: shouldPlay ? 'play' : 'pause',
+            error: error instanceof Error ? error.message : String(error)
+          });
+
+          // Increment retry counter and retry with exponential backoff (max 3 retries)
+          audioStateRef.current.retryCount++;
+          const maxRetries = 3;
+
+          if (shouldPlay && audioStateRef.current.retryCount <= maxRetries) {
+            // Queue a retry after exponential backoff
+            const retryDelay = Math.min(1000 * Math.pow(2, audioStateRef.current.retryCount - 1), 5000);
+            logger.info('ProfessionalMagicPlayer', 'Retrying YouTube operation after error', {
+              retryDelay,
+              retryCount: audioStateRef.current.retryCount,
+              maxRetries
+            });
+
+            setTimeout(() => {
+              handlePlayPauseAtomic(shouldPlay);
+            }, retryDelay);
+          } else {
+            logger.error('ProfessionalMagicPlayer', 'YouTube operation failed after max retries', {
+              retryCount: audioStateRef.current.retryCount,
+              maxRetries
+            });
+            audioStateRef.current.retryCount = 0; // Reset for next operation
+          }
           return;
         }
-
-        // Player is ready, execute action
-        if (shouldPlay) {
-          await youtubePlayer.play();
-        } else {
-          youtubePlayer.pause();
-        }
-        return;
       }
 
       // Handle HTML audio source

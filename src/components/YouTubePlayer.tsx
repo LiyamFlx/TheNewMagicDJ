@@ -87,6 +87,7 @@ export interface YouTubePlayerRef {
   getDuration(): number;
   getState(): YouTubePlayerState;
   isReady(): boolean;
+  waitForReady(): Promise<void>;
 }
 
 const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
@@ -106,9 +107,33 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const [playerError, setPlayerError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const readyPromiseRef = useRef<{
+    promise: Promise<void>;
+    resolve: () => void;
+    reject: (error: Error) => void;
+  } | null>(null);
 
   const MAX_RETRIES = 3;
   const playerId = `youtube-player-${Math.random().toString(36).substr(2, 9)}`;
+
+  // Create a new ready promise when player is being initialized
+  const createReadyPromise = useCallback(() => {
+    let resolve: () => void;
+    let reject: (error: Error) => void;
+
+    const promise = new Promise<void>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+
+    readyPromiseRef.current = {
+      promise,
+      resolve: resolve!,
+      reject: reject!
+    };
+
+    return promise;
+  }, []);
 
   // Load YouTube IFrame API
   useEffect(() => {
@@ -154,6 +179,9 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
     if (!isAPIReady || !containerRef.current || !videoId) {
       return;
     }
+
+    // Create ready promise for this initialization
+    createReadyPromise();
 
     // Clear any existing player
     if (playerRef.current) {
@@ -206,6 +234,11 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
               logger.warn('YouTubePlayer', 'Failed to set initial volume', error);
             }
 
+            // Resolve the ready promise
+            if (readyPromiseRef.current) {
+              readyPromiseRef.current.resolve();
+            }
+
             onReady?.();
           },
           onStateChange: (event: any) => {
@@ -243,6 +276,12 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
 
             logger.error('YouTubePlayer', 'Player error', { errorCode, errorMessage, videoId });
             setPlayerError(errorMessage);
+
+            // Reject the ready promise
+            if (readyPromiseRef.current) {
+              readyPromiseRef.current.reject(new Error(errorMessage));
+            }
+
             onError?.(errorCode);
 
             // Retry on certain errors
@@ -262,8 +301,13 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
     } catch (error) {
       logger.error('YouTubePlayer', 'Failed to initialize player', { error, videoId });
       setPlayerError('Failed to initialize YouTube player');
+
+      // Reject the ready promise on initialization failure
+      if (readyPromiseRef.current) {
+        readyPromiseRef.current.reject(new Error('Failed to initialize YouTube player'));
+      }
     }
-  }, [isAPIReady, videoId, autoplay]);
+  }, [isAPIReady, videoId, autoplay, createReadyPromise]);
 
   const initializePlayer = useCallback(() => {
     // Force re-initialization by updating a dummy state
@@ -410,7 +454,19 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
       }
       return YouTubePlayerState.UNSTARTED;
     },
-    isReady: () => isPlayerReady
+    isReady: () => isPlayerReady,
+    waitForReady: async () => {
+      if (isPlayerReady) {
+        return Promise.resolve();
+      }
+
+      if (readyPromiseRef.current) {
+        return readyPromiseRef.current.promise;
+      }
+
+      // If no promise exists, player might not be initializing
+      throw new Error('YouTube player not initializing');
+    }
   }), [isPlayerReady]);
 
   if (!videoId) {
