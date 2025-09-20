@@ -12,6 +12,8 @@ import {
   ChevronRight,
   User,
   ArrowLeft,
+  LogIn,
+  UserPlus,
 } from 'lucide-react';
 
 interface NavigationItem {
@@ -26,12 +28,14 @@ interface NavigationProps {
   user?: { email: string } | null;
   hasPlaylist?: boolean;
   hasSession?: boolean;
+  onAuthClick?: (isSignUp: boolean) => void;
 }
 
 const Navigation: React.FC<NavigationProps> = ({
   user,
   hasPlaylist = false,
   hasSession = false,
+  onAuthClick,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
@@ -219,7 +223,7 @@ const Navigation: React.FC<NavigationProps> = ({
 
             {/* User Profile & Mobile Menu */}
             <div className="flex items-center space-x-3">
-              {user && (
+              {user ? (
                 <div className="hidden sm:flex items-center space-x-2 px-3 py-1 glass-card group hover:bg-white/10 transition-all cursor-pointer">
                   <div className="w-8 h-8 gradient-bg-secondary rounded-full flex items-center justify-center">
                     <User className="w-4 h-4 text-white" />
@@ -230,6 +234,24 @@ const Navigation: React.FC<NavigationProps> = ({
                     </span>
                     <span className="text-xs text-gray-400">Profile</span>
                   </div>
+                </div>
+              ) : (
+                <div className="hidden sm:flex items-center space-x-2">
+                  <button
+                    onClick={() => onAuthClick?.(false)}
+                    className="flex items-center gap-2 px-3 py-2 glass-button hover:bg-white/10 transition-all"
+                  >
+                    <LogIn size={16} />
+                    <span className="text-sm">Sign In</span>
+                  </button>
+                  <button
+                    onClick={() => onAuthClick?.(true)}
+                    className="flex items-center gap-2 px-3 py-2 gradient-bg-secondary hover:bg-fuchsia-600/80
+                             transition-all rounded-lg shadow-neon-pink"
+                  >
+                    <UserPlus size={16} />
+                    <span className="text-sm">Sign Up</span>
+                  </button>
                 </div>
               )}
 

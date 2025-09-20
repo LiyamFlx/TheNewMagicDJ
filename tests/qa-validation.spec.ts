@@ -58,7 +58,7 @@ test.describe('🤖 CI/CD QA Validation - MagicDJ Platform', () => {
         // Element might not exist, continue test
       });
 
-      await page.waitForTimeout(2000);
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // All audio should be data: URLs or same-origin
       const externalAudio = audioRequests.filter(url =>
@@ -74,8 +74,9 @@ test.describe('🤖 CI/CD QA Validation - MagicDJ Platform', () => {
     await test.step('Load app and check for React errors', async () => {
       await navigateWithBypass(page);
 
-      // Wait for React to stabilize
-      await page.waitForTimeout(3000);
+      // Wait for React to stabilize deterministically
+      await page.waitForLoadState('domcontentloaded');
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       const errors = (page as any).errors as string[];
       const reactErrors = errors.filter(error =>
@@ -121,7 +122,7 @@ test.describe('🤖 CI/CD QA Validation - MagicDJ Platform', () => {
       // Try to trigger music generation to activate degraded mode
       try {
         await page.click('[data-testid="generate-playlist"], .btn-primary', { timeout: 5000 });
-        await page.waitForTimeout(3000);
+        await page.waitForLoadState('networkidle').catch(() => {});
       } catch {
         // Button might not be available immediately
       }
@@ -167,7 +168,7 @@ test.describe('🤖 CI/CD QA Validation - MagicDJ Platform', () => {
       // Try to trigger audio playback
       try {
         await page.click('[data-testid="play-button"], button[aria-label*="play"], .play-button').catch(() => {});
-        await page.waitForTimeout(2000);
+        await page.waitForSelector('audio', { timeout: 5000 }).catch(() => {});
       } catch {
         // Play button might not be immediately available
       }
@@ -209,8 +210,8 @@ test.describe('🤖 CI/CD QA Validation - MagicDJ Platform', () => {
       // Check for loading spinners that should resolve
       const loadingSpinners = page.locator('.animate-spin, [data-testid="loading"]');
 
-      // Wait for initial load
-      await page.waitForTimeout(3000);
+      // Wait for initial load deterministically
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       // Count persistent loading states
       const persistentLoading = await loadingSpinners.count();
@@ -242,8 +243,8 @@ test.describe('🤖 CI/CD QA Validation - MagicDJ Platform', () => {
     await test.step('Check for API error handling', async () => {
       await navigateWithBypass(page);
 
-      // Wait for API calls to complete
-      await page.waitForTimeout(5000);
+      // Wait for API calls to complete deterministically
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       const errors = (page as any).errors as string[];
       const unhandledAPIErrors = errors.filter(error =>
@@ -334,7 +335,7 @@ test.describe('🤖 CI/CD QA Validation - MagicDJ Platform', () => {
   test('10. Regression Guardrails @qa-validation', async ({ page }) => {
     await test.step('Verify previous issues are resolved', async () => {
       await navigateWithBypass(page);
-      await page.waitForTimeout(5000);
+      await page.waitForLoadState('networkidle').catch(() => {});
 
       const errors = (page as any).errors as string[];
 

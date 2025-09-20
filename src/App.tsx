@@ -12,11 +12,13 @@ import LandingPage from './components/LandingPage';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
 import AuthSaveBanner from './components/AuthSaveBanner';
+import AuthModal from './components/AuthModal';
 import NotFound from './components/NotFound';
 
 import { Playlist, User, Session } from './types/index';
 import { supabasePlaylistService } from './services/supabasePlaylistService';
 import { spotifyService } from './services/spotifyService';
+import { supabase } from './lib/supabase';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useSpotifyToken } from './hooks/useSpotifyToken';
 import { useToast } from './hooks/useToast';
@@ -50,23 +52,22 @@ interface AppState {
   isEditingPlaylist: boolean;
   isLoading: boolean;
   error: string | null;
+  showAuthModal: boolean;
+  authModalMode: 'signin' | 'signup';
 }
 
 const initialState: AppState = {
-  user: {
-    id: 'default-user',
-    email: 'user@magicdjapp.com',
-    name: 'Magic DJ User',
-    created_at: new Date().toISOString(),
-  },
+  user: null, // Start without user to enable authentication
   savedPlaylists: [],
   recentSessions: [],
   currentPlaylist: null,
   currentSession: null,
   isPlaying: false,
   isEditingPlaylist: false,
-  isLoading: false, // Guest mode - skip auth for testing
+  isLoading: false,
   error: null,
+  showAuthModal: false,
+  authModalMode: 'signin',
 };
 
 type Action =
@@ -78,7 +79,8 @@ type Action =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'SET_PLAYING'; payload: boolean }
-  | { type: 'SET_EDITING'; payload: boolean };
+  | { type: 'SET_EDITING'; payload: boolean }
+  | { type: 'SHOW_AUTH_MODAL'; payload: { show: boolean; mode?: 'signin' | 'signup' } };
 
 function appReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -100,6 +102,12 @@ function appReducer(state: AppState, action: Action): AppState {
       return { ...state, isPlaying: action.payload };
     case 'SET_EDITING':
       return { ...state, isEditingPlaylist: action.payload };
+    case 'SHOW_AUTH_MODAL':
+      return {
+        ...state,
+        showAuthModal: action.payload.show,
+        authModalMode: action.payload.mode || state.authModalMode
+      };
     default:
       return state;
   }
@@ -155,6 +163,27 @@ function AppContent() {
       dispatch({ type: 'SET_ERROR', payload: null });
 
       try {
+        // Check if user is already authenticated
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session?.user) {
+          const supabaseUser = sessionData.session.user;
+          const appUser: User = {
+            id: supabaseUser.id,
+            email: supabaseUser.email || '',
+            name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
+            created_at: supabaseUser.created_at
+          };
+          dispatch({ type: 'SET_USER', payload: appUser });
+          Logger.info('User already authenticated');
+        } else {
+          // Set up popup timer for unauthenticated users on homepage
+          if (window.location.pathname === '/') {
+            setTimeout(() => {
+              dispatch({ type: 'SHOW_AUTH_MODAL', payload: { show: true, mode: 'signup' } });
+            }, 5000); // 5 seconds
+          }
+        }
+
         // Mock sessions (replace with Supabase)
         const mockSessions: Session[] = [
           {
@@ -162,7 +191,7 @@ function AppContent() {
             name: 'Electronic Night',
             tracks: 15,
             duration: 3600,
-            user_id: 'default-user',
+            user_id: state.user?.id || 'guest',
             playlist_id: 'mock',
             started_at: new Date().toISOString(),
             status: 'completed' as const,
@@ -171,7 +200,7 @@ function AppContent() {
           },
         ];
         dispatch({ type: 'SET_SESSIONS', payload: mockSessions });
-        Logger.info('MagicDJ initialized without authentication');
+        Logger.info('MagicDJ initialized');
       } catch (err) {
         Logger.error('Init error', err);
         dispatch({
@@ -184,6 +213,29 @@ function AppContent() {
       }
     };
     initializeApp();
+
+    // Listen for auth state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const supabaseUser = session.user;
+        const appUser: User = {
+          id: supabaseUser.id,
+          email: supabaseUser.email || '',
+          name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
+          created_at: supabaseUser.created_at
+        };
+        dispatch({ type: 'SET_USER', payload: appUser });
+        dispatch({ type: 'SHOW_AUTH_MODAL', payload: { show: false } });
+        Logger.info('User signed in');
+      } else if (event === 'SIGNED_OUT') {
+        dispatch({ type: 'SET_USER', payload: null });
+        Logger.info('User signed out');
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   // Separate effect for user data loading
@@ -341,7 +393,14 @@ function AppContent() {
     ]
   );
 
-  // Authentication removed - no login handlers needed
+  // --- Auth handlers ---
+  const handleAuthClick = (isSignUp: boolean) => {
+    dispatch({ type: 'SHOW_AUTH_MODAL', payload: { show: true, mode: isSignUp ? 'signup' : 'signin' } });
+  };
+
+  const handleAuthModalClose = () => {
+    dispatch({ type: 'SHOW_AUTH_MODAL', payload: { show: false } });
+  };
 
   // --- Playlist handlers ---
   const handlePlaylistGenerated = (pl: Playlist) => {
@@ -473,6 +532,7 @@ function AppContent() {
         user={state.user}
         hasPlaylist={!!state.currentPlaylist}
         hasSession={!!state.currentSession}
+        onAuthClick={handleAuthClick}
       />
 
       {state.error && (
@@ -614,6 +674,13 @@ function AppContent() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={state.showAuthModal}
+        onClose={handleAuthModalClose}
+        initialMode={state.authModalMode}
+      />
     </div>
   );
 }

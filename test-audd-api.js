@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 
 // Test if Audd API is working for audio recognition
-const API_TOKEN = '65eda6d85f7f9156f06f9c8593b8f94';
+const API_TOKEN = process.env.AUDD_API_TOKEN;
 
 async function testAuddAPI() {
     console.log('🎵 Testing Audd API for audio recognition...');
 
     try {
+        if (!API_TOKEN) {
+            console.log('Skipping Audd test: AUDD_API_TOKEN not set');
+            process.exit(0);
+        }
         // Test with a known audio URL
         const testAudioUrl = 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav';
 

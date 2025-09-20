@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Music, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface LoginPageProps {
   onLogin: (user: any) => void;
@@ -29,32 +30,36 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         throw new Error('Password must be at least 6 characters');
       }
 
-      // Simulate authentication with error handling
-      setTimeout(() => {
-        try {
-          // Additional validation for email format
-          const emailParts = formData.email.split('@');
-          if (emailParts.length !== 2 || !emailParts[0] || !emailParts[1]) {
-            throw new Error('Invalid email format');
+      // Use real Supabase authentication
+      let result;
+      if (isLogin) {
+        // Sign in existing user
+        result = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+      } else {
+        // Sign up new user
+        result = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              name: formData.name || formData.email.split('@')[0],
+            }
           }
+        });
+      }
 
-          const user = {
-            id: Date.now().toString(),
-            email: formData.email,
-            name: formData.name || emailParts[0],
-            created_at: new Date().toISOString(),
-          };
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
 
-          onLogin(user);
-        } catch (error) {
-          console.error('Authentication failed:', error);
-          alert(
-            error instanceof Error ? error.message : 'Authentication failed'
-          );
-        } finally {
-          setIsLoading(false);
-        }
-      }, 1500);
+      if (result.data.user) {
+        onLogin(result.data.user);
+      } else if (!isLogin) {
+        alert('Check your email for the confirmation link!');
+      }
     } catch (error) {
       console.error('Form validation failed:', error);
       alert(error instanceof Error ? error.message : 'Please check your input');

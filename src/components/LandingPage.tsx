@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Play, Music, Zap, BarChart3, Users, ChevronRight, Star } from 'lucide-react';
+import { Play, Music, Zap, BarChart3, Users, ChevronRight, Star, Database, Disc3, Target } from 'lucide-react';
 
 interface LandingPageProps {
   onStartMixing: () => void;
@@ -27,6 +27,7 @@ interface StatItem {
   label: string;
   sublabel: string;
   gradient: 'primary' | 'accent' | 'secondary';
+  icon?: React.ComponentType<any>;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ 
@@ -50,19 +51,22 @@ const LandingPage: React.FC<LandingPageProps> = ({
       value: '10M+',
       label: 'Tracks Analyzed Daily',
       sublabel: 'Live music database',
-      gradient: 'primary'
+      gradient: 'primary',
+      icon: Database
     },
     {
       value: '50K+',
       label: 'DJ Sets Created',
       sublabel: 'By artists worldwide',
-      gradient: 'accent'
+      gradient: 'accent',
+      icon: Disc3
     },
     {
       value: '99.8%',
       label: 'AI Accuracy',
       sublabel: 'Shazam-level precision',
-      gradient: 'secondary'
+      gradient: 'secondary',
+      icon: Target
     }
   ], []);
 
@@ -237,90 +241,139 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onStartMixing, onWatchDemo, s
       aria-labelledby="hero-heading"
     >
       {/* Stats Cards */}
-      <div className="glass-card hover-lift mb-16 max-w-5xl mx-auto" role="region" aria-label="Platform statistics">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-8">
-          {stats.map((stat, index) => (
-            <div key={index} className="text-center group">
-              <div className={`text-3xl md:text-4xl font-bold ${getGradientClass(stat.gradient)} mb-2 font-orbitron group-hover:scale-110 transition-transform duration-300`}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16 max-w-5xl mx-auto" role="region" aria-label="Platform statistics">
+        {stats.map((stat, index) => {
+          const IconComponent = stat.icon;
+          return (
+            <div key={index} className="glass-card hover-lift text-center group p-8 rounded-2xl
+                                        border border-purple-500/20 hover:border-purple-400/40 transition-all duration-300
+                                        hover:shadow-[0_0_40px_rgba(139,92,246,0.2)] animate-count-up"
+                 style={{ animationDelay: `${index * 0.2}s` }}>
+              {IconComponent && (
+                <div className={`w-16 h-16 mx-auto mb-4 rounded-full ${getGradientClass(stat.gradient)}
+                               bg-gradient-to-r from-purple-600/20 to-fuchsia-600/20 backdrop-blur-sm
+                               flex items-center justify-center group-hover:scale-110 transition-transform duration-300
+                               border border-purple-400/30 group-hover:border-fuchsia-400/50`}>
+                  <IconComponent className="w-8 h-8" />
+                </div>
+              )}
+              <div className={`text-4xl md:text-5xl font-bold ${getGradientClass(stat.gradient)} mb-3 font-orbitron
+                             group-hover:scale-110 transition-transform duration-300
+                             [text-shadow:0_0_20px_rgba(139,92,246,0.5)]`}>
                 {stat.value}
               </div>
-              <div className="text-gray-400 font-inter font-medium">{stat.label}</div>
-              <div className="text-xs text-gray-500 mt-1">{stat.sublabel}</div>
+              <div className="text-gray-300 font-inter font-semibold text-lg mb-1">{stat.label}</div>
+              <div className="text-sm text-gray-400">{stat.sublabel}</div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
       {/* Hero Content */}
       <div className="mb-16 space-y-8">
         <h1
           id="hero-heading"
-          className="text-6xl md:text-8xl lg:text-9xl font-bold leading-tight font-orbitron"
+          className="text-5xl md:text-7xl lg:text-8xl font-bold leading-tight font-orbitron"
         >
-          <span className="text-white block mb-4 animate-fade-in">The Future of</span>
-          <span className="block text-gradient-primary font-black animate-fade-in-delay">
+          <span className="text-white/90 block mb-2 md:mb-4 animate-fade-in text-4xl md:text-6xl lg:text-7xl">
+            The Future of
+          </span>
+          <span className="block text-gradient-primary font-black animate-fade-in-delay
+                         bg-gradient-to-r from-fuchsia-400 via-purple-500 to-cyan-400
+                         bg-clip-text text-transparent animate-gradient-x
+                         text-6xl md:text-8xl lg:text-9xl
+                         [text-shadow:0_0_30px_rgba(236,72,153,0.5),0_0_60px_rgba(139,92,246,0.3)]">
             AI DJing
           </span>
         </h1>
-        
-        <p className="text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed font-inter animate-fade-in-delay-2">
+
+        <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed font-inter animate-fade-in-delay-2">
           Transform your music with AI-powered tools that create, perform, and analyze your perfect DJ set.
-          <span className="block mt-2 text-lg text-cyan-400">Join the revolution that's changing how DJs perform.</span>
+        </p>
+        <p className="text-base md:text-lg text-cyan-400 max-w-2xl mx-auto animate-fade-in-delay-3 font-medium">
+          Join the revolution that's changing how DJs perform.
         </p>
 
         {/* Interactive Waveform */}
         <div className="flex justify-center mb-8" aria-hidden="true">
-          <div className="flex items-end space-x-1 h-16 hover:scale-105 transition-transform cursor-pointer" 
-               role="img" 
+          <div className="flex items-end space-x-1 h-16 hover:scale-105 transition-all duration-300 cursor-pointer
+                          rounded-xl p-3 hover:bg-purple-900/20 backdrop-blur-sm"
+               role="img"
                aria-label="Interactive audio waveform animation"
                onClick={onWatchDemo}>
             {Array.from({ length: 16 }).map((_, i) => (
-              <div 
-                key={i} 
-                className="waveform-bar hover:bg-cyan-400 transition-colors"
-                style={{ animationDelay: `${i * 0.1}s` }}
+              <div
+                key={i}
+                className="waveform-bar hover:bg-cyan-400 transition-all duration-300 animate-pulse-glow
+                          hover:shadow-[0_0_15px_rgba(34,211,238,0.6)]"
+                style={{
+                  animationDelay: `${i * 0.1}s`,
+                  height: `${20 + Math.sin(i * 0.5) * 20}%`
+                }}
               />
             ))}
           </div>
         </div>
 
         {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+        <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mobile-cta-stack">
           <button
             onClick={onStartMixing}
-            className="btn-primary flex items-center space-x-3 text-xl hover-lift px-10 py-5 font-bold group shadow-neon-pink hover:shadow-neon-pink-lg transition-all duration-300"
+            className="relative text-xl font-bold px-10 py-5 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-fuchsia-600
+                     text-white rounded-xl hover:scale-105 transition-all duration-300 shadow-2xl
+                     shadow-fuchsia-500/50 group hover-lift animate-button-glow
+                     border border-fuchsia-500/50 backdrop-blur-sm
+                     hover:shadow-[0_0_50px_rgba(236,72,153,0.8)] font-orbitron"
             aria-label="Start your free AI DJ trial - No credit card required"
           >
-            <Play className="w-7 h-7 group-hover:scale-110 transition-transform" />
-            <span>Start Free Trial</span>
-            <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <div className="flex items-center space-x-3">
+              <Play className="w-7 h-7 group-hover:scale-110 transition-transform" />
+              <span className="tracking-wide">START FREE TRIAL</span>
+              <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-400 to-purple-400 rounded-xl
+                          opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
           </button>
-          
+
           <div className="flex flex-col items-center">
             <button
               onClick={onWatchDemo}
-              className="glass-button text-lg font-semibold px-8 py-4 border-2 border-white/20 hover:border-cyan-400/50 hover:bg-cyan-400/10 transition-all duration-300 group"
+              className="glass-button text-lg font-semibold px-8 py-4 border-2 border-purple-400/30
+                       hover:border-cyan-400/60 hover:bg-cyan-400/10 transition-all duration-300
+                       group backdrop-blur-md rounded-xl hover:scale-105
+                       hover:shadow-[0_0_25px_rgba(34,211,238,0.4)]"
               aria-label="Watch 60-second product demo"
             >
               <span className="flex items-center space-x-2">
-                <Play className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                <span>Watch 60s Demo</span>
+                <Play className="w-5 h-5 group-hover:scale-110 transition-transform text-cyan-400" />
+                <span className="text-gray-200">Watch 60s Demo</span>
               </span>
             </button>
-            <span className="text-xs text-gray-500 mt-2">No signup required • 2M+ views</span>
+            <span className="text-xs text-gray-400 mt-2 font-medium">No signup required • 2M+ views</span>
           </div>
         </div>
 
         {/* Trust Indicators */}
-        <div className="flex flex-wrap justify-center items-center gap-4 mt-8 text-sm text-gray-500">
-          <div className="flex items-center space-x-1">
-            <Star className="w-4 h-4 text-yellow-500 fill-current" />
-            <span>4.9/5 (2,000+ reviews)</span>
+        <div className="flex flex-wrap justify-center items-center gap-6 mt-8 trust-indicators-mobile">
+          <div className="flex items-center space-x-2 px-4 py-2 glass-card rounded-full
+                         border border-yellow-500/20 hover:border-yellow-400/40 transition-colors">
+            <div className="flex">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
+              ))}
+            </div>
+            <span className="text-sm text-gray-300 font-medium">4.9/5 (2,000+ reviews)</span>
           </div>
-          <span>•</span>
-          <span>30-day money-back guarantee</span>
-          <span>•</span>
-          <span>Used by 50K+ DJs worldwide</span>
+
+          <div className="flex items-center space-x-2 px-4 py-2 glass-card rounded-full
+                         border border-green-500/20 hover:border-green-400/40 transition-colors">
+            <span className="text-sm text-green-400 font-medium">✓ 30-day money-back guarantee</span>
+          </div>
+
+          <div className="flex items-center space-x-2 px-4 py-2 glass-card rounded-full
+                         border border-blue-500/20 hover:border-blue-400/40 transition-colors">
+            <span className="text-sm text-blue-400 font-medium">🎧 Used by 50K+ DJs worldwide</span>
+          </div>
         </div>
       </div>
     </section>
