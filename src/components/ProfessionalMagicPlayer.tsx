@@ -1209,11 +1209,11 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center space-x-3 lg:space-x-4">
+        <div className="flex-end space-md">
           <button
             onClick={() => dispatch({ type: 'SET_UI', payload: { key: 'showAudioDebugger', value: !state.ui.showAudioDebugger } })}
             aria-label={state.ui.showAudioDebugger ? 'Hide audio debugger' : 'Show audio debugger'}
-            className={`btn-accent px-3 lg:px-4 py-2 flex items-center space-x-2 text-sm lg:text-base ${state.ui.showAudioDebugger ? 'shadow-neon-yellow' : ''
+            className={`btn-accent btn-sm flex-center space-sm ease-smooth ${state.ui.showAudioDebugger ? 'shadow-neon-hard' : ''
               }`}
           >
             <Headphones className="w-4 h-4 lg:w-5 lg:h-5" />
@@ -1223,7 +1223,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           <button
             onClick={() => dispatch({ type: 'SET_UI', payload: { key: 'showSettings', value: !state.ui.showSettings } })}
             aria-label={state.ui.showSettings ? 'Hide settings' : 'Show settings'}
-            className={`btn-accent px-3 lg:px-4 py-2 flex items-center space-x-2 text-sm lg:text-base ${state.ui.showSettings ? 'shadow-neon-yellow' : ''
+            className={`btn-ghost btn-sm flex-center space-sm ease-smooth ${state.ui.showSettings ? 'shadow-neon-medium' : ''
               }`}
           >
             <Settings className="w-4 h-4 lg:w-5 lg:h-5" />
@@ -1233,7 +1233,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           <button
             onClick={() => dispatch({ type: 'SET_UI', payload: { key: 'showPlaylistEditor', value: !state.ui.showPlaylistEditor } })}
             aria-label={state.ui.showPlaylistEditor ? 'Hide playlist editor' : 'Show playlist editor'}
-            className={`btn-primary px-3 lg:px-4 py-2 flex items-center space-x-2 text-sm lg:text-base ${state.ui.showPlaylistEditor ? 'shadow-neon-pink' : ''
+            className={`btn-primary btn-sm flex-center space-sm ease-elastic ${state.ui.showPlaylistEditor ? 'shadow-neon-hard' : ''
               }`}
           >
             <List className="w-4 h-4 lg:w-5 lg:h-5" />
@@ -1243,7 +1243,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           <button
             onClick={() => dispatch({ type: 'SET_UI', payload: { key: 'showMagicDancer', value: !state.ui.showMagicDancer } })}
             aria-label={state.ui.showMagicDancer ? 'Hide magic dancer' : 'Show magic dancer'}
-            className={`btn-secondary px-3 lg:px-4 py-2 flex items-center space-x-2 text-sm lg:text-base ${state.ui.showMagicDancer ? 'shadow-neon-blue' : ''
+            className={`btn-secondary btn-sm flex-center space-sm ease-elastic ${state.ui.showMagicDancer ? 'shadow-neon-medium' : ''
               }`}
           >
             <Activity className="w-4 h-4 lg:w-5 lg:h-5" />
@@ -1316,7 +1316,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               aria-valuemax={100}
             >
               <div
-                className="h-3 bg-gradient-to-r from-fuchsia-600 to-cyan-400 rounded-lg transition-all duration-300"
+                className="progress-fill gradient-bg-secondary transition-all duration-300"
                 style={{ width: `${state.progress.deckA}%` }}
               ></div>
             </div>
@@ -1326,11 +1326,11 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center justify-center space-x-6">
+          <div className="flex-center space-lg">
             <button
               onClick={handleSkipBack}
               aria-label="Skip to previous track"
-              className="w-12 h-12 glass-button hover-lift flex items-center justify-center transition-all duration-300"
+              className="btn-icon-square btn-ghost ease-elastic"
             >
               <SkipBack className="w-6 h-6 text-fuchsia-400" />
             </button>
@@ -1338,20 +1338,20 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
               onClick={() => throttledOnPlayPause(!isPlaying)}
               disabled={state.isLoading}
               aria-label={isPlaying ? 'Pause playback' : 'Start playback'}
-              className="w-16 h-16 glass-button hover-lift flex items-center justify-center transition-all duration-300 disabled:opacity-50"
+              className="btn-primary w-16 h-16 flex-center ease-bounce shadow-neon-hard disabled:opacity-50"
             >
               {state.isLoading ? (
                 <div className="w-8 h-8 border-3 border-fuchsia-400 border-t-transparent rounded-sm animate-spin"></div>
               ) : isPlaying ? (
-                <Pause className="w-8 h-8 text-fuchsia-400" />
+                <Pause className="w-8 h-8 text-white" />
               ) : (
-                <Play className="w-8 h-8 text-fuchsia-400" />
+                <Play className="w-8 h-8 text-white" />
               )}
             </button>
             <button
               onClick={handleSkipForward}
               aria-label="Skip to next track"
-              className="w-12 h-12 glass-button hover-lift flex items-center justify-center transition-all duration-300"
+              className="btn-icon-square btn-ghost ease-elastic"
             >
               <SkipForward className="w-6 h-6 text-fuchsia-400" />
             </button>

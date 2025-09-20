@@ -316,54 +316,62 @@ Analytics:
 
   if (!analytics) {
     return (
-      <div className="min-h-screen bg-cyber-black flex items-center justify-center">
+      <div className="min-h-screen gradient-bg-primary flex-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-neon-green border-t-transparent rounded-none animate-spin mx-auto mb-4 neon-glow-green"></div>
-          <p className="text-cyber-gray">Analyzing your set...</p>
+          <div className="w-16 h-16 glass-card flex-center animate-pulse-glow shadow-neon-cyan mx-auto mb-4">
+            <BarChart3 className="w-8 h-8 text-gradient-primary" />
+          </div>
+          <p className="text-xl text-gray-300 font-orbitron">Analyzing your set...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-cyber-black">
+    <div className="min-h-screen gradient-bg-primary relative overflow-hidden">
       {/* Header */}
-      <div className="px-4 lg:px-6 py-4 lg:py-6 border-b border-neon-green">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+      <div className="relative z-10 px-4 lg:px-6 py-4 lg:py-6 nav-sticky">
+        <div className="max-w-7xl mx-auto flex-between">
+          <div className="flex-start space-md">
             <button
               onClick={onBack}
-              className="w-8 h-8 lg:w-10 lg:h-10 rounded-none bg-cyber-dark border border-neon-green hover:neon-glow-green flex items-center justify-center transition-all"
+              className="btn-icon-square btn-ghost ease-smooth"
+              aria-label="Go back"
+              title="Go back"
             >
-              <ArrowLeft className="w-4 h-4 lg:w-5 lg:h-5 neon-text-green" />
+              <ArrowLeft className="w-5 h-5 text-fuchsia-400" />
             </button>
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-cyber-dark border-2 border-neon-purple rounded-none flex items-center justify-center neon-glow-purple">
-                <BarChart3 className="w-6 h-6 neon-text-purple" />
+            <div className="flex-start space-md">
+              <div className="w-12 h-12 glass-card flex-center animate-pulse-glow shadow-neon-pink">
+                <BarChart3 className="w-7 h-7 text-gradient-primary" />
               </div>
               <div>
-                <h1 className="text-xl lg:text-2xl font-bold text-cyber-white">
-                  Set Analytics
+                <h1 className="text-xl lg:text-2xl font-bold text-gradient-primary font-orbitron tracking-wide">
+                  SET ANALYTICS
                 </h1>
-                <p className="text-sm text-cyber-gray">{playlist.name}</p>
+                <p className="text-sm text-gradient-accent font-mono">{playlist.name}</p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 lg:space-x-4">
+          <div className="flex-center space-md">
             <button
               onClick={() => onSaveToLibrary(playlist)}
-              className="cyber-button px-3 lg:px-4 py-2 rounded-none flex items-center space-x-2 text-sm"
+              className="btn-accent btn-lg flex-center space-sm ease-bounce shadow-neon-medium"
+              aria-label="Save to library"
+              title="Save to library"
             >
-              <Save className="w-4 h-4 neon-text-green" />
-              <span className="hidden sm:inline">Save to Library</span>
+              <Save className="w-5 h-5" />
+              <span className="hidden sm:inline">SAVE</span>
             </button>
             <button
               onClick={onEditAgain}
-              className="cyber-button cyber-button-purple px-3 lg:px-4 py-2 rounded-none flex items-center space-x-2 text-sm"
+              className="btn-secondary btn-lg flex-center space-sm ease-elastic shadow-neon-hard"
+              aria-label="Edit again"
+              title="Edit again"
             >
-              <Music className="w-4 h-4 neon-text-purple" />
-              <span className="hidden sm:inline">Edit Again</span>
+              <Music className="w-5 h-5" />
+              <span className="hidden sm:inline">EDIT</span>
             </button>
           </div>
         </div>
@@ -372,35 +380,45 @@ Analytics:
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8">
         {/* Overview Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
-          <div className="cyber-card rounded-none p-4 lg:p-6 text-center">
-            <div
-              className={`text-2xl lg:text-3xl font-bold mb-2 ${getEnergyColor(analytics.averageEnergy)}`}
-            >
+        <div className="grid-4 mb-8">
+          <div className="glass-card p-lg text-center hover-lift ease-smooth group">
+            <div className={`text-3xl font-bold text-gradient-accent mb-3 font-orbitron group-hover:scale-110 ease-bounce animate-count-up ${getEnergyColor(analytics.averageEnergy)}`}>
               {analytics.averageEnergy.toFixed(1)}%
             </div>
-            <div className="text-sm text-cyber-gray">Average Energy</div>
+            <div className="text-sm text-gray-400 font-inter tracking-wide">AVERAGE ENERGY</div>
+            <div className="progress-bar h-2 max-w-16 mx-auto mt-3">
+              <div className="progress-fill gradient-bg-accent" style={{width: `${analytics.averageEnergy}%`}}></div>
+            </div>
           </div>
 
-          <div className="cyber-card rounded-none p-4 lg:p-6 text-center">
-            <div className="text-2xl lg:text-3xl font-bold neon-text-green mb-2">
+          <div className="glass-card p-lg text-center hover-lift ease-smooth group">
+            <div className="text-3xl font-bold text-gradient-primary mb-3 font-orbitron group-hover:scale-110 ease-bounce animate-count-up">
               {analytics.peakMoments.length}
             </div>
-            <div className="text-sm text-cyber-gray">Peak Moments</div>
+            <div className="text-sm text-gray-400 font-inter tracking-wide">PEAK MOMENTS</div>
+            <div className="progress-bar h-2 max-w-16 mx-auto mt-3">
+              <div className="progress-fill gradient-bg-secondary"></div>
+            </div>
           </div>
 
-          <div className="cyber-card rounded-none p-4 lg:p-6 text-center">
-            <div className="text-2xl lg:text-3xl font-bold neon-text-purple mb-2">
+          <div className="glass-card p-lg text-center hover-lift ease-smooth group">
+            <div className="text-3xl font-bold text-gradient-accent mb-3 font-orbitron group-hover:scale-110 ease-bounce animate-count-up">
               {formatTime(analytics.totalDuration)}
             </div>
-            <div className="text-sm text-cyber-gray">Total Duration</div>
+            <div className="text-sm text-gray-400 font-inter tracking-wide">TOTAL DURATION</div>
+            <div className="progress-bar h-2 max-w-16 mx-auto mt-3">
+              <div className="progress-fill gradient-bg-accent"></div>
+            </div>
           </div>
 
-          <div className="cyber-card rounded-none p-4 lg:p-6 text-center">
-            <div className="text-2xl lg:text-3xl font-bold neon-text-green mb-2">
+          <div className="glass-card p-lg text-center hover-lift ease-smooth group">
+            <div className="text-3xl font-bold text-gradient-primary mb-3 font-orbitron group-hover:scale-110 ease-bounce animate-count-up">
               {analytics.tracksPlayed}
             </div>
-            <div className="text-sm text-cyber-gray">Tracks Played</div>
+            <div className="text-sm text-gray-400 font-inter tracking-wide">TRACKS PLAYED</div>
+            <div className="progress-bar h-2 max-w-16 mx-auto mt-3">
+              <div className="progress-fill gradient-bg-secondary"></div>
+            </div>
           </div>
         </div>
 

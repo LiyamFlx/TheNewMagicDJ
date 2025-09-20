@@ -375,10 +375,10 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
             )}
           </div>
 
-          {/* Glass Progress Bar */}
-          <div className="w-full glass-card h-4 mb-8 overflow-hidden relative">
+          {/* Enhanced Progress Bar with neon styling */}
+          <div className="progress-bar mb-8">
             <div
-              className={`h-full transition-all duration-500 ${activeMode === 'match' ? 'gradient-bg-accent' : 'gradient-bg-secondary'}`}
+              className={`progress-fill transition-all duration-500 ${activeMode === 'match' ? 'gradient-bg-accent' : 'gradient-bg-secondary'}`}
               style={{ width: `${progress}%` }}
             ></div>
           </div>
@@ -454,10 +454,10 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
               </div>
             </div>
           </div>
-          <div className="flex items-center space-x-3 lg:space-x-4">
+          <div className="flex-end space-md">
             <button
               onClick={() => setShowRecentSessions(!showRecentSessions)}
-              className="glass-button px-3 py-2 flex items-center space-x-2 text-sm font-inter"
+              className="btn-ghost btn-sm flex-center space-sm ease-smooth"
             >
               <History className="w-4 h-4" />
               <span className="hidden sm:inline">RECENT</span>
@@ -465,7 +465,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
             {onLibraryAccess && (
               <button
                 onClick={onLibraryAccess}
-                className="btn-secondary px-3 py-2 flex items-center space-x-2 text-sm"
+                className="btn-secondary btn-sm flex-center space-sm ease-smooth shadow-neon-medium"
               >
                 <Save className="w-4 h-4" />
                 <span className="hidden sm:inline">LIBRARY</span>
@@ -594,7 +594,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
               <div className="space-y-4">
                 <button
                   onClick={() => handleMagicMatch('mic')}
-                  className="btn-accent w-full py-4 lg:py-5 px-6 flex items-center justify-center space-x-3 text-base lg:text-lg font-bold hover-lift"
+                  className="btn-accent btn-lg w-full flex-center space-md ease-smooth"
                 >
                   <Mic className="w-6 h-6" />
                   <span>LISTEN VIA MICROPHONE</span>
@@ -602,7 +602,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
 
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="glass-button w-full py-4 lg:py-5 px-6 flex items-center justify-center space-x-3 text-base lg:text-lg font-bold hover-lift"
+                  className="btn-secondary btn-lg w-full flex-center space-md ease-smooth"
                 >
                   <Upload className="w-6 h-6" />
                   <span>UPLOAD AUDIO FILE</span>
@@ -610,7 +610,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
 
                 <button
                   onClick={() => handleMagicMatch('stream')}
-                  className="glass-button w-full py-4 lg:py-5 px-6 flex items-center justify-center space-x-3 text-base lg:text-lg font-bold hover-lift"
+                  className="btn-ghost btn-lg w-full flex-center space-md ease-smooth"
                 >
                   <Radio className="w-6 h-6" />
                   <span>CAPTURE FROM STREAM</span>
@@ -634,24 +634,24 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
               </p>
 
               {/* Quick preset buttons */}
-              <div className="mb-6 space-y-2">
+              <div className="mb-6 space-y-3">
                 <p className="text-sm text-gray-400 text-center font-orbitron">QUICK PRESETS</p>
-                <div className="grid grid-cols-1 gap-2">
+                <div className="grid grid-cols-1 gap-3">
                   <button
                     onClick={() => handleMagicSet('electronic', 'high')}
-                    className="btn-accent py-3 px-4 text-sm font-bold hover-lift"
+                    className="btn-accent btn-sm w-full flex-center space-sm ease-bounce"
                   >
                     🔥 HIGH-ENERGY ELECTRONIC
                   </button>
                   <button
                     onClick={() => handleMagicSet('house', 'medium')}
-                    className="glass-button py-3 px-4 text-sm font-bold hover-lift"
+                    className="btn-secondary btn-sm w-full flex-center space-sm ease-bounce"
                   >
                     🎵 GROOVY HOUSE VIBES
                   </button>
                   <button
                     onClick={() => handleMagicSet('hip-hop', 'low')}
-                    className="glass-button py-3 px-4 text-sm font-bold hover-lift"
+                    className="btn-ghost btn-sm w-full flex-center space-sm ease-bounce"
                   >
                     😎 CHILL HIP-HOP
                   </button>
@@ -668,7 +668,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
                   <label className="block text-sm lg:text-base font-bold text-gray-300 mb-4 tracking-wide font-orbitron">
                     CHOOSE YOUR VIBE
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid-2 gap-3">
                     {vibes.map(vibe => {
                       const Icon = vibe.icon;
                       const isSelected =
@@ -685,8 +685,8 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
                               );
                             }
                           }}
-                          className={`py-3 lg:py-4 px-4 text-sm lg:text-base font-bold flex items-center justify-center space-x-2 transition-all hover-lift ${
-                            isSelected ? 'btn-primary' : 'glass-button'
+                          className={`btn-md flex-center space-sm ease-elastic ${
+                            isSelected ? 'btn-primary shadow-neon-hard' : 'btn-ghost'
                           }`}
                         >
                           <Icon className="w-4 h-4" />
@@ -702,7 +702,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
                   <label className="block text-sm lg:text-base font-bold text-gray-300 mb-4 tracking-wide font-orbitron">
                     ENERGY LEVEL
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid-3 gap-2">
                     {energyLevels.map(({ level, label }) => {
                       const isSelected = selectedEnergy === level;
                       return (
@@ -719,8 +719,8 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
                               );
                             }
                           }}
-                          className={`py-3 lg:py-4 px-3 text-sm lg:text-base font-bold transition-all hover-lift ${
-                            isSelected ? 'btn-secondary' : 'glass-button'
+                          className={`btn-sm flex-center ease-elastic ${
+                            isSelected ? 'btn-secondary shadow-neon-medium' : 'btn-ghost'
                           }`}
                         >
                           {label.toUpperCase()}
@@ -734,9 +734,10 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
                 {selectedVibe && selectedEnergy && (
                   <button
                     onClick={() => handleMagicSet(selectedVibe, selectedEnergy)}
-                    className="btn-primary w-full py-4 px-6 text-lg font-bold hover-lift animate-pulse-glow"
+                    className="btn-primary btn-lg w-full flex-center space-md ease-bounce animate-pulse-glow shadow-neon-hard"
                   >
-                    GENERATE {selectedVibe.toUpperCase()} SET
+                    <Wand2 className="w-5 h-5" />
+                    <span>GENERATE {selectedVibe.toUpperCase()} SET</span>
                   </button>
                 )}
               </div>
@@ -744,34 +745,40 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
           </div>
         </div>
 
-        {/* Glass Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
-          <div className="text-center p-6 lg:p-8 glass-card hover-lift group">
-            <div className="text-3xl lg:text-4xl font-bold text-gradient-accent mb-3 font-orbitron group-hover:scale-110 transition-transform">
+        {/* Enhanced Stats Section */}
+        <div className="grid-3 max-w-5xl mx-auto">
+          <div className="glass-card p-lg text-center hover-lift group ease-elastic">
+            <div className="text-3xl lg:text-4xl font-bold text-gradient-accent mb-3 font-orbitron group-hover:scale-110 ease-bounce animate-count-up">
               99.8%
             </div>
-            <div className="text-sm lg:text-base text-gray-400 font-inter tracking-wide">
+            <div className="text-sm lg:text-base text-gray-400 font-inter tracking-wide mb-3">
               RECOGNITION ACCURACY
             </div>
-            <div className="w-12 h-1 gradient-bg-accent mx-auto mt-2 rounded-full"></div>
+            <div className="progress-bar h-2 max-w-16 mx-auto">
+              <div className="progress-fill w-full gradient-bg-accent"></div>
+            </div>
           </div>
-          <div className="text-center p-6 lg:p-8 glass-card hover-lift group">
-            <div className="text-3xl lg:text-4xl font-bold text-gradient-primary mb-3 font-orbitron group-hover:scale-110 transition-transform">
+          <div className="glass-card p-lg text-center hover-lift group ease-elastic">
+            <div className="text-3xl lg:text-4xl font-bold text-gradient-primary mb-3 font-orbitron group-hover:scale-110 ease-bounce animate-count-up">
               &lt;3s
             </div>
-            <div className="text-sm lg:text-base text-gray-400 font-inter tracking-wide">
+            <div className="text-sm lg:text-base text-gray-400 font-inter tracking-wide mb-3">
               AVERAGE PROCESSING TIME
             </div>
-            <div className="w-12 h-1 gradient-bg-secondary mx-auto mt-2 rounded-full"></div>
+            <div className="progress-bar h-2 max-w-16 mx-auto">
+              <div className="progress-fill w-full gradient-bg-secondary"></div>
+            </div>
           </div>
-          <div className="text-center p-6 lg:p-8 glass-card hover-lift group">
-            <div className="text-3xl lg:text-4xl font-bold text-gradient-accent mb-3 font-orbitron group-hover:scale-110 transition-transform">
+          <div className="glass-card p-lg text-center hover-lift group ease-elastic">
+            <div className="text-3xl lg:text-4xl font-bold text-gradient-accent mb-3 font-orbitron group-hover:scale-110 ease-bounce animate-count-up">
               10M+
             </div>
-            <div className="text-sm lg:text-base text-gray-400 font-inter tracking-wide">
+            <div className="text-sm lg:text-base text-gray-400 font-inter tracking-wide mb-3">
               TRACKS IN DATABASE
             </div>
-            <div className="w-12 h-1 gradient-bg-accent mx-auto mt-2 rounded-full"></div>
+            <div className="progress-bar h-2 max-w-16 mx-auto">
+              <div className="progress-fill w-full gradient-bg-accent"></div>
+            </div>
           </div>
         </div>
       </div>

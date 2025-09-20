@@ -161,12 +161,12 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
           </div>
           <div>
             {editingName ? (
-              <div className="flex items-center space-x-2">
+              <div className="flex-start space-sm">
                 <input
                   type="text"
                   value={playlistName}
                   onChange={e => setPlaylistName(e.target.value)}
-                  className="glass-card px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-secondary-400 text-gradient-accent font-inter"
+                  className="input-neon text-gradient-accent font-inter"
                   onKeyPress={e =>
                     e.key === 'Enter' && handleSavePlaylistName()
                   }
@@ -176,7 +176,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
                 />
                 <button
                   onClick={handleSavePlaylistName}
-                  className="w-8 h-8 btn-accent flex items-center justify-center hover-lift"
+                  className="btn-icon-square btn-accent ease-bounce"
                   title="Save changes"
                 >
                   <Save className="w-4 h-4 text-white" />
@@ -186,23 +186,23 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
                     setEditingName(false);
                     setPlaylistName(playlist.name);
                   }}
-                  className="w-8 h-8 glass-button flex items-center justify-center hover-lift border border-red-400"
+                  className="btn-icon-square btn-danger ease-bounce"
                   title="Cancel editing"
                 >
-                  <X className="w-4 h-4 text-red-400" />
+                  <X className="w-4 h-4 text-white" />
                 </button>
               </div>
             ) : (
-              <div className="flex items-center space-x-2 group">
+              <div className="flex-start space-sm group">
                 <h3 className="text-xl font-bold text-gradient-accent tracking-wider font-orbitron">
                   {playlist.name}
                 </h3>
                 <button
                   onClick={() => setEditingName(true)}
-                  className="w-8 h-8 btn-secondary flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover-lift"
+                  className="btn-icon-square btn-ghost opacity-0 group-hover:opacity-100 ease-elastic"
                   title="Edit playlist name"
                 >
-                  <Edit3 className="w-4 h-4 text-white" />
+                  <Edit3 className="w-4 h-4" />
                 </button>
               </div>
             )}
@@ -212,11 +212,11 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex-end space-md">
           {onSendToPlayer && (
             <button
               onClick={onSendToPlayer}
-              className="btn-accent px-4 py-3 flex items-center space-x-2 text-base font-bold tracking-wider hover-lift"
+              className="btn-accent btn-lg flex-center space-sm ease-bounce shadow-neon-medium"
             >
               <Music className="w-5 h-5" />
               <span className="hidden sm:inline">SEND TO PLAYER</span>
@@ -224,7 +224,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
           )}
           <button
             onClick={shufflePlaylist}
-            className="btn-primary px-4 py-3 flex items-center space-x-2 text-base font-bold tracking-wider hover-lift"
+            className="btn-primary btn-lg flex-center space-sm ease-elastic shadow-neon-hard"
           >
             <Shuffle className="w-5 h-5" />
             <span className="hidden sm:inline">SHUFFLE</span>
@@ -233,7 +233,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
       </div>
 
       {/* Enhanced Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid-4 mb-8">
         <div className="text-center p-4 glass-card shadow-neon-cyan hover-lift">
           <div className="text-2xl font-bold text-gradient-accent font-orbitron">
             {playlist.tracks.length}
@@ -269,15 +269,15 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
       </div>
 
       {/* Enhanced Search */}
-      <div className="relative mb-6">
-        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gradient-accent" />
+      <div className="input-with-icon mb-6">
         <input
           type="text"
           placeholder="SEARCH TRACKS..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          className="w-full pl-12 pr-4 py-3 glass-card focus:outline-none focus:ring-2 focus:ring-secondary-400 text-gradient-accent placeholder-gray-500 font-inter text-base tracking-wider"
+          className="input-neon text-gradient-accent font-inter text-base tracking-wider"
         />
+        <Search className="input-icon w-5 h-5" />
       </div>
 
       {/* Track List */}
@@ -351,16 +351,16 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-all">
+                <div className="flex-center space-sm opacity-0 group-hover:opacity-100 transition-all">
                   <button
                     onClick={e => {
                       e.stopPropagation();
                       onTrackRemove(originalIndex);
                     }}
-                    className="w-10 h-10 glass-button flex items-center justify-center hover:scale-110 transition-all border border-red-400 hover:border-red-300"
+                    className="btn-icon-square btn-danger ease-bounce"
                     title="Remove track"
                   >
-                    <Trash2 className="w-5 h-5 text-red-400" />
+                    <Trash2 className="w-5 h-5 text-white" />
                   </button>
                 </div>
               </div>
@@ -376,12 +376,12 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
           <span>DRAG TO REORDER • CLICK TO PLAY</span>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <button className="btn-secondary px-4 py-3 flex items-center space-x-2 text-base font-bold tracking-wider hover-lift">
+        <div className="flex-end space-md">
+          <button className="btn-secondary btn-lg flex-center space-sm ease-elastic">
             <Plus className="w-5 h-5" />
             <span className="hidden sm:inline">ADD TRACKS</span>
           </button>
-          <button className="btn-primary px-4 py-3 flex items-center space-x-2 text-base font-bold tracking-wider hover-lift">
+          <button className="btn-warning btn-lg flex-center space-sm ease-bounce">
             <RotateCcw className="w-5 h-5" />
             <span className="hidden sm:inline">RESET</span>
           </button>
