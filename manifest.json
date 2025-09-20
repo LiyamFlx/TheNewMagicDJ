@@ -1,0 +1,27 @@
+{
+  "manifest_version": "0.1",
+  "name": "the-new-magic-dj",
+  "version": "1.0.0",
+  "description": "AI-powered DJ platform with futuristic glass morphism design and Spotify integration",
+  "author": {
+    "name": "LiyamFlx",
+    "url": "https://the-new-magic-dj.vercel.app/"
+  },
+  "homepage": "https://the-new-magic-dj.vercel.app/",
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/server/index.js"
+      ],
+      "env": {}
+    }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LiyamFlx/TheNewMagicDJ.git"
+  }
+}
