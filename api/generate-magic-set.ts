@@ -321,6 +321,11 @@ async function magicSetHandler(req: VercelRequest, res: VercelResponse) {
     const { vibe, energyLevel, trackCount } = validateMagicSet(req.body || {});
 
     const playlist = await generateMagicSetPlaylist(vibe, energyLevel, trackCount);
+    // Simple response validation
+    const { isPlaylistDTO } = await import('../shared/dto.js');
+    if (!isPlaylistDTO(playlist)) {
+      throw new AppError('INTERNAL_ERROR', 'Generated playlist response invalid', { httpStatus: 500 });
+    }
 
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('Content-Type', 'application/json');
