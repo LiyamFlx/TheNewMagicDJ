@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useReducer, useMemo } from 'react';
+import { useEffect, useRef, useCallback, useReducer, useMemo, useState } from 'react';
 import {
   Play,
   Pause,
@@ -1148,6 +1148,75 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     dispatch({ type: 'CLEAR_CUE_POINTS', payload: { deck } });
   }, []);
 
+  // Deck B Control Handlers
+  const [deckBPlaying, setDeckBPlaying] = useState(false);
+
+  const handleDeckBSkipBack = useCallback(() => {
+    const { deckB, deckBIndex } = state.sources;
+    if (deckBIndex > 0 && deckB.length > 0) {
+      dispatch({ type: 'SET_SOURCE_INDEX', payload: { deck: 'deckB', index: deckBIndex - 1 } });
+      dispatch({ type: 'SET_PROGRESS', payload: { deck: 'deckB', value: 0 } });
+      setDeckBPlaying(false);
+      logger.info('ProfessionalMagicPlayer', 'Deck B skip back', {
+        from: deckBIndex,
+        to: deckBIndex - 1,
+        total: deckB.length
+      });
+    }
+  }, [state.sources]);
+
+  const handleDeckBSkipForward = useCallback(() => {
+    const { deckB, deckBIndex } = state.sources;
+    if (deckBIndex < deckB.length - 1 && deckB.length > 0) {
+      dispatch({ type: 'SET_SOURCE_INDEX', payload: { deck: 'deckB', index: deckBIndex + 1 } });
+      dispatch({ type: 'SET_PROGRESS', payload: { deck: 'deckB', value: 0 } });
+      setDeckBPlaying(false);
+      logger.info('ProfessionalMagicPlayer', 'Deck B skip forward', {
+        from: deckBIndex,
+        to: deckBIndex + 1,
+        total: deckB.length
+      });
+    }
+  }, [state.sources]);
+
+  const handleDeckBPlayPause = useCallback((shouldPlay: boolean) => {
+    const { deckBCurrent } = state.sources;
+    if (!deckBCurrent) return;
+
+    try {
+      if (deckBCurrent.type === 'youtube' && youtubeBRef.current) {
+        if (shouldPlay) {
+          youtubeBRef.current.play();
+        } else {
+          youtubeBRef.current.pause();
+        }
+        setDeckBPlaying(shouldPlay);
+        logger.info('ProfessionalMagicPlayer', 'Deck B YouTube playback', { shouldPlay });
+      } else if (deckBCurrent.type === 'audio' && audioBRef.current) {
+        if (shouldPlay) {
+          audioBRef.current.play().catch(error => {
+            handleSourceError('B', error);
+            setDeckBPlaying(false);
+          });
+        } else {
+          audioBRef.current.pause();
+        }
+        setDeckBPlaying(shouldPlay);
+        logger.info('ProfessionalMagicPlayer', 'Deck B audio playback', { shouldPlay });
+      }
+    } catch (error) {
+      logger.error('ProfessionalMagicPlayer', 'Deck B playback error', error);
+      handleSourceError('B', error);
+      setDeckBPlaying(false);
+    }
+  }, [state.sources, handleSourceError]);
+
+  const throttledDeckBPlayPause = useMemo(() =>
+    throttle((playing: boolean) => {
+      handleDeckBPlayPause(playing);
+    }, 250)
+    , [handleDeckBPlayPause]);
+
   // Note: jumpToCue function removed as it was unused
 
   // Early return for loading state
@@ -1762,20 +1831,34 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-center space-x-4">
                 <button
+                  onClick={handleDeckBSkipBack}
+                  disabled={!state.sources.deckBCurrent || state.sources.deckBIndex <= 0}
                   aria-label="Deck B previous"
-                  className="w-12 h-12 lg:w-14 lg:h-14 glass-button hover-lift flex items-center justify-center transition-all duration-300"
+                  className="w-12 h-12 lg:w-14 lg:h-14 glass-button hover-lift flex items-center justify-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <SkipBack className="w-6 h-6 lg:w-7 lg:h-7 text-cyan-400" />
                 </button>
                 <button
-                  aria-label="Play deck B"
-                  className="w-16 h-16 lg:w-20 lg:h-20 glass-button hover-lift flex items-center justify-center transition-all duration-300 shadow-neon-cyan"
+                  onClick={() => {
+                    const newPlaying = !deckBPlaying;
+                    setDeckBPlaying(newPlaying);
+                    throttledDeckBPlayPause(newPlaying);
+                  }}
+                  disabled={!state.sources.deckBCurrent}
+                  aria-label={deckBPlaying ? 'Pause deck B' : 'Play deck B'}
+                  className="w-16 h-16 lg:w-20 lg:h-20 glass-button hover-lift flex items-center justify-center transition-all duration-300 shadow-neon-cyan active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Play className="w-8 h-8 lg:w-10 lg:h-10 text-cyan-400" />
+                  {deckBPlaying ? (
+                    <Pause className="w-8 h-8 lg:w-10 lg:h-10 text-cyan-400" />
+                  ) : (
+                    <Play className="w-8 h-8 lg:w-10 lg:h-10 text-cyan-400" />
+                  )}
                 </button>
                 <button
+                  onClick={handleDeckBSkipForward}
+                  disabled={!state.sources.deckBCurrent || state.sources.deckBIndex >= state.sources.deckB.length - 1}
                   aria-label="Deck B next"
-                  className="w-12 h-12 lg:w-14 lg:h-14 glass-button hover-lift flex items-center justify-center transition-all duration-300"
+                  className="w-12 h-12 lg:w-14 lg:h-14 glass-button hover-lift flex items-center justify-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <SkipForward className="w-6 h-6 lg:w-7 lg:h-7 text-cyan-400" />
                 </button>
