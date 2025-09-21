@@ -9,7 +9,14 @@ export type AppErrorCode =
   | 'UPSTREAM_ERROR'
   | 'INTERNAL_ERROR'
   | 'INVALID_CREDENTIALS'
-  | 'SPOTIFY_API_ERROR';
+  | 'MISSING_CREDENTIALS'
+  | 'SPOTIFY_API_ERROR'
+  | 'SPOTIFY_AUTH_FAILED'
+  | 'SPOTIFY_SEARCH_FAILED'
+  | 'YOUTUBE_API_ERROR'
+  | 'YOUTUBE_SEARCH_FAILED'
+  | 'QUOTA_EXCEEDED'
+  | 'MAGIC_SET_ERROR';
 
 export interface NormalizedError {
   code: AppErrorCode;

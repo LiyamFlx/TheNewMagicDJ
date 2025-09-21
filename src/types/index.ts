@@ -15,6 +15,13 @@ export interface Track {
   images?: { url: string; height: number; width: number }[];
   external_urls?: { [key: string]: string };
   spotify_id?: string;
+  youtube_id?: string;
+  youtube_url?: string;
+  thumbnail?: string;
+  genre?: string;
+  energy_level?: string;
+  created_at?: string;
+  updated_at?: string;
   meta?: Record<string, any>;
 }
 

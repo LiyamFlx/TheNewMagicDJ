@@ -7,6 +7,8 @@ export const apiConfig = {
     process.env.VITA_SPOTIFY_CLIENT_SECRET ||
     process.env.SPOTIFY_CLIENT_SECRET ||
     '',
+  YOUTUBE_API_KEY:
+    process.env.VITE_YOUTUBE_API_KEY || process.env.YOUTUBE_API_KEY || '',
   ENABLE_IDEMPOTENCY: process.env.ENABLE_IDEMPOTENCY !== 'false',
   ENABLE_RATE_LIMIT: process.env.ENABLE_RATE_LIMIT !== 'false',
   DURABLE_STORE_URL: process.env.DURABLE_STORE_URL || '', // optional KV/Redis URL

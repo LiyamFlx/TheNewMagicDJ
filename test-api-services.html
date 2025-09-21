@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MagicDJ API Services Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px;
+            background: #0f0f23;
+            color: #fff;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .test-section {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .success {
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+            border-left-color: #22c55e;
+        }
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border-left-color: #ef4444;
+        }
+        .warning {
+            background: rgba(251, 191, 36, 0.1);
+            color: #fbbf24;
+            border-left-color: #fbbf24;
+        }
+        .info {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+            border-left-color: #3b82f6;
+        }
+        h1 { color: #a855f7; margin-bottom: 30px; }
+        h2 { color: #e879f9; margin-bottom: 15px; }
+        .btn {
+            background: linear-gradient(45deg, #8b5cf6, #a855f7);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .test-controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 MagicDJ API Services Diagnostic Test</h1>
+
+        <div class="test-controls">
+            <button class="btn" onclick="runAllTests()">🚀 Run All Tests</button>
+            <button class="btn" onclick="testYouTubeAPI()">🎬 Test YouTube API</button>
+            <button class="btn" onclick="testSpotifyAPI()">🎵 Test Spotify API</button>
+            <button class="btn" onclick="testPlaylistGeneration()">🎧 Test Playlist Generation</button>
+            <button class="btn" onclick="clearResults()">🗑️ Clear Results</button>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Test Results</h2>
+            <div id="results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Environment Configuration</h2>
+            <div id="env-config"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 API Response Examples</h2>
+            <div id="api-responses"></div>
+        </div>
+    </div>
+
+    <script>
+        let results = [];
+
+        function addResult(message, type = 'info', details = null) {
+            const timestamp = new Date().toLocaleTimeString();
+            const result = { message, type, details, timestamp };
+            results.push(result);
+            updateResultsDisplay();
+        }
+
+        function updateResultsDisplay() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = results.map(result => `
+                <div class="result ${result.type}">
+                    <div>[${result.timestamp}] ${result.message}</div>
+                    ${result.details ? `<pre>${JSON.stringify(result.details, null, 2)}</pre>` : ''}
+                </div>
+            `).join('');
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function clearResults() {
+            results = [];
+            updateResultsDisplay();
+            document.getElementById('api-responses').innerHTML = '';
+        }
+
+        async function testEnvironmentConfig() {
+            addResult('🔍 Checking environment configuration...', 'info');
+
+            const envConfigDiv = document.getElementById('env-config');
+            const config = {
+                youtube_api_key: 'YOUTUBE_API_KEY' in window ? '✅ Available' : '❌ Missing',
+                spotify_client_id: 'VITA_SPOTIFY_CLIENT_ID' in window ? '✅ Available' : '❌ Missing',
+                spotify_client_secret: 'VITA_SPOTIFY_CLIENT_SECRET' in window ? '✅ Available' : '❌ Missing',
+                supabase_url: 'VITE_SUPABASE_URL' in window ? '✅ Available' : '❌ Missing',
+                supabase_anon_key: 'VITE_SUPABASE_ANON_KEY' in window ? '✅ Available' : '❌ Missing'
+            };
+
+            envConfigDiv.innerHTML = `
+                <pre>${JSON.stringify(config, null, 2)}</pre>
+                <div class="result info">
+                    <strong>Note:</strong> Environment variables are not directly accessible in browser.
+                    Testing will use API endpoints to verify configuration.
+                </div>
+            `;
+
+            addResult('✅ Environment configuration check completed', 'success');
+        }
+
+        async function testYouTubeAPI() {
+            addResult('🎬 Testing YouTube API integration...', 'info');
+
+            try {
+                // Test YouTube search functionality
+                const searchQuery = 'electronic music mix';
+                const response = await fetch(`/api/youtube-search?q=${encodeURIComponent(searchQuery)}&maxResults=3`);
+
+                if (!response.ok) {
+                    throw new Error(`YouTube API responded with ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.items && data.items.length > 0) {
+                    addResult(`✅ YouTube API working - found ${data.items.length} results`, 'success');
+
+                    // Display sample results
+                    const sampleResults = data.items.map(item => ({
+                        title: item.snippet.title,
+                        channel: item.snippet.channelTitle,
+                        videoId: item.id.videoId
+                    }));
+
+                    document.getElementById('api-responses').innerHTML += `
+                        <h3>YouTube Search Results Sample:</h3>
+                        <pre>${JSON.stringify(sampleResults, null, 2)}</pre>
+                    `;
+                } else {
+                    addResult('⚠️ YouTube API returned empty results', 'warning', data);
+                }
+            } catch (error) {
+                addResult(`❌ YouTube API test failed: ${error.message}`, 'error', { error: error.toString() });
+            }
+        }
+
+        async function testSpotifyAPI() {
+            addResult('🎵 Testing Spotify API integration...', 'info');
+
+            try {
+                // Test Spotify token retrieval
+                const tokenResponse = await fetch('/api/spotify-token');
+
+                if (!tokenResponse.ok) {
+                    throw new Error(`Spotify token API responded with ${tokenResponse.status}: ${tokenResponse.statusText}`);
+                }
+
+                const tokenData = await tokenResponse.json();
+
+                if (tokenData.access_token) {
+                    addResult('✅ Spotify token retrieval successful', 'success');
+
+                    // Test Spotify search with the token
+                    const searchResponse = await fetch(`https://api.spotify.com/v1/search?q=electronic%20music&type=track&limit=3`, {
+                        headers: {
+                            'Authorization': `Bearer ${tokenData.access_token}`
+                        }
+                    });
+
+                    if (searchResponse.ok) {
+                        const searchData = await searchResponse.json();
+                        addResult(`✅ Spotify search working - found ${searchData.tracks.items.length} tracks`, 'success');
+
+                        // Display sample results
+                        const sampleTracks = searchData.tracks.items.map(track => ({
+                            name: track.name,
+                            artist: track.artists[0].name,
+                            album: track.album.name,
+                            preview_url: track.preview_url
+                        }));
+
+                        document.getElementById('api-responses').innerHTML += `
+                            <h3>Spotify Search Results Sample:</h3>
+                            <pre>${JSON.stringify(sampleTracks, null, 2)}</pre>
+                        `;
+                    } else {
+                        addResult('❌ Spotify search failed with valid token', 'error');
+                    }
+                } else {
+                    addResult('❌ Spotify token retrieval failed', 'error', tokenData);
+                }
+            } catch (error) {
+                addResult(`❌ Spotify API test failed: ${error.message}`, 'error', { error: error.toString() });
+            }
+        }
+
+        async function testPlaylistGeneration() {
+            addResult('🎧 Testing playlist generation services...', 'info');
+
+            try {
+                // Test Magic Set generation
+                const magicSetResponse = await fetch('/api/generate-magic-set', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        vibe: 'Electronic',
+                        energyLevel: 'medium',
+                        trackCount: 5
+                    })
+                });
+
+                if (magicSetResponse.ok) {
+                    const playlist = await magicSetResponse.json();
+                    addResult(`✅ Magic Set generation working - created playlist with ${playlist.tracks?.length || 0} tracks`, 'success');
+
+                    if (playlist.tracks && playlist.tracks.length > 0) {
+                        document.getElementById('api-responses').innerHTML += `
+                            <h3>Generated Magic Set Playlist Sample:</h3>
+                            <pre>${JSON.stringify({
+                                name: playlist.name,
+                                description: playlist.description,
+                                tracks: playlist.tracks.slice(0, 3).map(track => ({
+                                    title: track.title,
+                                    artist: track.artist,
+                                    duration: track.duration
+                                }))
+                            }, null, 2)}</pre>
+                        `;
+                    }
+                } else {
+                    addResult('❌ Magic Set generation failed', 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Playlist generation test failed: ${error.message}`, 'error', { error: error.toString() });
+            }
+        }
+
+        async function runAllTests() {
+            clearResults();
+            addResult('🚀 Starting comprehensive API test suite...', 'info');
+
+            await testEnvironmentConfig();
+            await testYouTubeAPI();
+            await testSpotifyAPI();
+            await testPlaylistGeneration();
+
+            addResult('🎉 All tests completed! Check results above.', 'success');
+        }
+
+        // Initialize the page
+        window.onload = function() {
+            addResult('📋 API Test Suite Ready - Click "Run All Tests" to begin', 'info');
+            testEnvironmentConfig();
+        };
+    </script>
+</body>
+</html>

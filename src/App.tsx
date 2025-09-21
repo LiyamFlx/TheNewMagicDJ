@@ -11,7 +11,6 @@ import Navigation from './components/Navigation';
 import LandingPage from './components/LandingPage';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
-import AuthSaveBanner from './components/AuthSaveBanner';
 import AuthModal from './components/AuthModal';
 import NotFound from './components/NotFound';
 
@@ -526,8 +525,6 @@ function AppContent() {
 
   return (
     <div className="min-h-screen gradient-bg-primary">
-      <AuthSaveBanner />
-
       <Navigation
         user={state.user}
         hasPlaylist={!!state.currentPlaylist}

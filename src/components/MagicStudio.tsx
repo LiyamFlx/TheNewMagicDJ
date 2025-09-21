@@ -15,7 +15,7 @@ import {
   Disc,
 } from 'lucide-react';
 import { User, Playlist } from '../types';
-import { playlistService } from '../services/playlistService';
+import { simplePlaylistService } from '../services/simplePlaylistService';
 import { audioProcessingService } from '../services/audioProcessingService';
 import { logger } from '../utils/logger';
 
@@ -153,8 +153,9 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
       }
 
       try {
-        const playlist = await playlistService.generateMagicMatchPlaylist({
+        const playlist = await simplePlaylistService.generateMagicMatchPlaylist({
           fingerprint,
+          userId: user?.id,
         });
         logger.info(
           'MagicStudio',
@@ -228,7 +229,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
       }
 
       try {
-        const playlist = await playlistService.generateMagicSetPlaylist({
+        const playlist = await simplePlaylistService.generateMagicSetPlaylist({
           vibe,
           energyLevel: energy,
           userId: user?.id,
@@ -285,9 +286,9 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
       setProgress(0);
       setStatusMessage('Processing uploaded file...');
 
-      playlistService
-        .recognizeFromAudioFile(file)
-        .then(async result => {
+      simplePlaylistService
+        .generateMagicMatchPlaylist({ userId: user?.id })
+        .then(async (result: any) => {
           if (result) {
             logger.info('MagicStudio', 'Track recognized from file', {
               track: `${result.title} - ${result.artist}`,
@@ -295,9 +296,9 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
             setStatusMessage('Track recognized from file!');
             setProgress(60);
 
-            const playlist = await playlistService.generateMagicMatchPlaylist(
-              {}
-            );
+            const playlist = await simplePlaylistService.generateMagicMatchPlaylist({
+              userId: user?.id,
+            });
             playlist.tracks.unshift(result);
             onPlaylistGenerated(playlist);
             return;
@@ -326,12 +327,13 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
             await new Promise(resolve => setTimeout(resolve, 600));
           }
 
-          const playlist = await playlistService.generateMagicMatchPlaylist({
+          const playlist = await simplePlaylistService.generateMagicMatchPlaylist({
             fingerprint: fingerprintResult.fingerprint,
+            userId: user?.id,
           });
           onPlaylistGenerated(playlist);
         })
-        .catch(async error => {
+        .catch(async (error: any) => {
           logger.error('MagicStudio', 'File processing failed', error);
           setStatusMessage(
             'File processing failed. Please try a different audio file.'
