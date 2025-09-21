@@ -1,5 +1,5 @@
 // Supabase playlist service - Improved version
-import { supabase } from '../lib/supabase';
+import { supabase, getCurrentUserId } from '../lib/supabase';
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -141,6 +141,12 @@ export const supabasePlaylistService = {
         return AuthHelper.handleUnauthenticated('remote save', { ...playlist });
       }
 
+      // Sanity check: ensure caller userId matches current auth
+      const authUserId = await getCurrentUserId();
+      if (authUserId && authUserId !== userId) {
+        logger.warn('supabasePlaylistService', 'Auth/userId mismatch detected during save', { authUserId, userId });
+      }
+
       logger.info('supabasePlaylistService', 'Saving playlist', {
         playlistId: playlist.id,
         name: playlist.name,
@@ -171,7 +177,7 @@ export const supabasePlaylistService = {
 
     const { data: playlistData, error: playlistError } = await supabase
       .from('playlists')
-      .insert(playlistPayload)
+      .upsert(playlistPayload, { onConflict: 'id' })
       .select()
       .single();
 
@@ -221,6 +227,10 @@ export const supabasePlaylistService = {
 
     try {
       ValidationHelper.validateUserId(userId);
+      const authUserId = await getCurrentUserId();
+      if (authUserId && authUserId !== userId) {
+        logger.warn('supabasePlaylistService', 'Auth/userId mismatch detected during fetch', { authUserId, userId });
+      }
       
       const { isAuthenticated } = await AuthHelper.checkAuthentication();
       
@@ -329,6 +339,11 @@ export const supabasePlaylistService = {
         });
       }
 
+      const authUserId = await getCurrentUserId();
+      if (authUserId && authUserId !== userId) {
+        logger.warn('supabasePlaylistService', 'Auth/userId mismatch detected during create', { authUserId, userId });
+      }
+
       const { data, error } = await supabase
         .from('playlists')
         .insert([{ user_id: userId, name: name.trim() }])
@@ -361,10 +376,13 @@ export const supabasePlaylistService = {
         return AuthHelper.handleUnauthenticated('remote delete', false);
       }
 
-      const { error } = await supabase
+      const query = supabase
         .from('playlists')
         .delete()
         .eq('id', playlistId);
+
+      // Scope delete to owner if userId provided (defense-in-depth with RLS)
+      const { error } = userId ? await query.eq('user_id', userId) : await query;
 
       if (error) {
         throw new AppError('UPSTREAM_ERROR', 'Failed to delete playlist', {

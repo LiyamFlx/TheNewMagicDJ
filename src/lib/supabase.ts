@@ -3,16 +3,21 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  // Provide fallback to prevent app from crashing
-  console.warn('Using placeholder Supabase client. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env for database features.');
+// Fail loudly in production if env is missing; warn and use placeholder only in dev
+if ((!supabaseUrl || !supabaseAnonKey) && !import.meta.env.DEV) {
+  console.error('Supabase configuration missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
 }
 
-// Use placeholder values if environment variables are missing to prevent crash
-const fallbackUrl = supabaseUrl || 'https://placeholder.supabase.co';
-const fallbackKey = supabaseAnonKey || 'placeholder-anon-key';
+const resolvedUrl = supabaseUrl || 'https://placeholder.supabase.co';
+const resolvedKey = supabaseAnonKey || 'placeholder-anon-key';
 
-export const supabase = createClient(fallbackUrl, fallbackKey);
+export const supabase = createClient(resolvedUrl, resolvedKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
 
 // expose the same names your app imports
 export const db: any = supabase;
@@ -48,6 +53,16 @@ const originalSignUp = supabase.auth.signUp.bind(supabase.auth);
 
 // auth.session() compatibility
 (auth as any).session = () => supabase.auth.getSession();
+
+// Utility to get current authenticated user id (or null)
+export async function getCurrentUserId(): Promise<string | null> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data?.session?.user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
 
 /* ===== Tiny DB helpers your code calls directly ===== */
 
