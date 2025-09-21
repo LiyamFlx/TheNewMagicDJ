@@ -26,6 +26,12 @@ const AuthModal: React.FC<AuthModalProps> = ({
         throw new Error('Please fill in all fields');
       }
 
+      // Better email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        throw new Error('Please enter a valid email address');
+      }
+
       if (formData.password.length < 6) {
         throw new Error('Password must be at least 6 characters');
       }
