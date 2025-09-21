@@ -371,7 +371,7 @@ function AppContent() {
         showToast('Failed to load user data', 'error');
       });
     }
-  }, [state.user?.id, loadUserData, showToast]);
+  }, [state.user?.id]); // Remove function dependencies to prevent infinite loop
 
   // --- Playlist save handler ---
   const saveCurrentPlaylist = useCallback(

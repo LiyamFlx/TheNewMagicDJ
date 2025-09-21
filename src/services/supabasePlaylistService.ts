@@ -89,17 +89,30 @@ const cache = new PlaylistCache();
 
 // Authentication helper
 class AuthHelper {
-  static async checkAuthentication(): Promise<{ isAuthenticated: boolean; session: any }> {
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const session = sessionData?.session;
-      const isAuthenticated = !!(session?.access_token);
-      
-      return { isAuthenticated, session };
-    } catch (error) {
-      logger.error('supabasePlaylistService', 'Authentication check failed', error as any);
-      return { isAuthenticated: false, session: null };
+  static async checkAuthentication(retries = 3): Promise<{ isAuthenticated: boolean; session: any }> {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const session = sessionData?.session;
+        const isAuthenticated = !!(session?.access_token && session?.user);
+
+        // If auth is ready or this is the last retry, return the result
+        if (isAuthenticated || i === retries - 1) {
+          return { isAuthenticated, session };
+        }
+
+        // Wait before retrying if authentication is not ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (error) {
+        logger.error('supabasePlaylistService', 'Authentication check failed', error as any);
+        if (i === retries - 1) {
+          return { isAuthenticated: false, session: null };
+        }
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
     }
+
+    return { isAuthenticated: false, session: null };
   }
 
   static handleUnauthenticated(operation: string, fallbackValue: any = null) {
@@ -278,29 +291,50 @@ export const supabasePlaylistService = {
   async getPlaylists(userId: string): Promise<Playlist[]> {
     const cacheKey = `playlists:${userId}`;
     const cached = cache.get(cacheKey);
-    
+
     if (cached) {
       return cached;
     }
 
     try {
       ValidationHelper.validateUserId(userId);
+
+      // Wait a bit longer for authentication to be fully established
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      const { isAuthenticated, session } = await AuthHelper.checkAuthentication();
       const authUserId = await getCurrentUserId();
+
+      logger.info('supabasePlaylistService', 'Auth check for playlists', {
+        isAuthenticated,
+        authUserId,
+        requestedUserId: userId,
+        sessionExists: !!session,
+        sessionUserId: session?.user?.id
+      });
+
       if (authUserId && authUserId !== userId) {
         logger.warn('supabasePlaylistService', 'Auth/userId mismatch detected during fetch', { authUserId, userId });
       }
-      
-      const { isAuthenticated } = await AuthHelper.checkAuthentication();
-      
-      if (!isAuthenticated) {
+
+      if (!isAuthenticated || !session?.user) {
         const emptyResult = AuthHelper.handleUnauthenticated('playlist fetch', []);
         cache.set(cacheKey, emptyResult);
         return emptyResult;
       }
 
+      // Ensure the session user ID matches the requested user ID
+      if (session.user.id !== userId) {
+        logger.error('supabasePlaylistService', 'Session user ID mismatch', {
+          sessionUserId: session.user.id,
+          requestedUserId: userId
+        });
+        throw new AppError('UNAUTHORIZED', 'Authentication mismatch - please sign in again');
+      }
+
       const playlists = await this._fetchPlaylistsFromDatabase(userId);
       cache.set(cacheKey, playlists);
-      
+
       return playlists;
     } catch (error) {
       logger.error('supabasePlaylistService', 'Supabase getPlaylists error', error as any);
@@ -320,6 +354,25 @@ export const supabasePlaylistService = {
 
     if (playlistError) {
       logger.error('supabasePlaylistService', 'Supabase playlist query error', playlistError as any);
+
+      // Provide more specific error messages for common auth issues
+      if (playlistError.code === '42501' ||
+          playlistError.message?.includes('permission denied') ||
+          playlistError.message?.includes('Row Level Security') ||
+          playlistError.code === 'PGRST301') {
+
+        // Log additional context for debugging
+        logger.error('supabasePlaylistService', 'RLS/Auth error details', {
+          errorCode: playlistError.code,
+          errorMessage: playlistError.message,
+          userId,
+        });
+
+        throw new AppError('UNAUTHORIZED', 'Access denied: Your session may have expired. Please sign out and sign in again.', {
+          details: { playlistError },
+        });
+      }
+
       throw new AppError('UPSTREAM_ERROR', 'Failed to fetch playlists', {
         details: { playlistError },
       });
