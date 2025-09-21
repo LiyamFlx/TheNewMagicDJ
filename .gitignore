@@ -99,3 +99,4 @@ final_fix.sh
 playwright-report/
 test-results/
 TheNewMagicDJ.mcpb
+*.report.html
