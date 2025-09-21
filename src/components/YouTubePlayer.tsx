@@ -67,7 +67,7 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
   className = ''
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   const {
     isReady,
     play,
@@ -96,7 +96,7 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
   // Handle autoplay
   useEffect(() => {
     if (!isReady) return;
-    
+
     if (autoplay) {
       play().catch(console.error);
     } else {
