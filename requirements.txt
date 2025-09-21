@@ -1,0 +1,12 @@
+# Audio Recognition Service Dependencies
+librosa>=0.10.0
+numpy>=1.21.0
+scikit-learn>=1.3.0
+joblib>=1.3.0
+requests>=2.31.0
+
+# Audio processing
+soundfile>=0.12.0
+
+# Optional: Additional audio analysis
+scipy>=1.11.0

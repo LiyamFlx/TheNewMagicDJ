@@ -2,6 +2,7 @@ import { AudioFingerprint } from '../types/index';
 import { logger } from '../utils/logger';
 import { acoustidService } from './acoustidService';
 import { auddService } from './auddService';
+import { advancedAudioService } from './advancedAudioService';
 
 class AudioProcessingService {
   private audioStream: MediaStream | null = null;
@@ -52,6 +53,55 @@ class AudioProcessingService {
           throw new Error('Microphone access denied or not available');
         }
       }
+    );
+  }
+
+  /**
+   * Advanced audio processing with Python service integration
+   */
+  async processAdvancedAudio(durationMs: number = 10000): Promise<AudioFingerprint> {
+    return logger.trackOperation(
+      'AudioProcessingService',
+      'processAdvancedAudio',
+      async () => {
+        try {
+          // Use the advanced audio service for better recognition
+          await advancedAudioService.initializeCapture({
+            duration: durationMs,
+            sampleRate: 44100,
+            channels: 1,
+          });
+
+          const result = await advancedAudioService.captureAndAnalyze(durationMs);
+
+          await advancedAudioService.stopCapture();
+
+          logger.info(
+            'AudioProcessingService',
+            'Advanced audio processing completed',
+            {
+              duration: result.duration,
+              confidence: result.confidence,
+              hasFeatures: !!result.features,
+              bpm: result.features?.bpm,
+              key: result.features?.key,
+              genre: result.features?.genre,
+            }
+          );
+
+          return result;
+        } catch (error) {
+          logger.error(
+            'AudioProcessingService',
+            'Advanced audio processing failed, falling back to basic processing',
+            error
+          );
+
+          // Fallback to basic processing
+          return this.processAudioFromMicrophone(durationMs);
+        }
+      },
+      { durationMs }
     );
   }
 

@@ -14,9 +14,10 @@ import {
   History,
   Disc,
 } from 'lucide-react';
-import { User, Playlist } from '../types';
+import { User, Playlist, AdvancedAudioFeatures } from '../types';
 import { simplePlaylistService } from '../services/simplePlaylistService';
 import { audioProcessingService } from '../services/audioProcessingService';
+import { advancedAudioService } from '../services/advancedAudioService';
 import { logger } from '../utils/logger';
 
 interface MagicStudioProps {
@@ -44,6 +45,14 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
     'low' | 'medium' | 'high' | ''
   >('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Advanced recognition state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [audioFeatures, setAudioFeatures] = useState<AdvancedAudioFeatures | null>(null);
+  const [realTimeAnalysis, setRealTimeAnalysis] = useState<any>(null);
+  const recordingIntervalRef = useRef<number>();
+  const analysisIntervalRef = useRef<number>();
 
   // Prefill from URL query params (?vibe=House&energy=high)
   useEffect(() => {
@@ -225,6 +234,125 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
     }
   };
 
+  // Advanced recording functions
+  const startAdvancedRecording = async () => {
+    try {
+      setIsRecording(true);
+      setRecordingTime(0);
+      setAudioFeatures(null);
+      setStatusMessage('Starting advanced audio capture...');
+
+      await advancedAudioService.initializeCapture({
+        duration: 10000,
+        sampleRate: 44100,
+        channels: 1,
+      });
+
+      // Start recording timer
+      recordingIntervalRef.current = window.setInterval(() => {
+        setRecordingTime(prev => prev + 0.1);
+      }, 100);
+
+      // Start real-time analysis updates
+      analysisIntervalRef.current = window.setInterval(() => {
+        const analysis = advancedAudioService.getRealTimeAnalysis();
+        if (analysis) {
+          setRealTimeAnalysis(analysis);
+        }
+      }, 100);
+
+      setStatusMessage('Recording... Click stop when ready');
+      logger.info('MagicStudio', 'Advanced recording started');
+    } catch (error) {
+      logger.error('MagicStudio', 'Failed to start advanced recording', error);
+      setStatusMessage('Failed to start recording. Check microphone permissions.');
+      setIsRecording(false);
+    }
+  };
+
+  const stopAdvancedRecording = async () => {
+    try {
+      setStatusMessage('Processing audio...');
+
+      // Clear intervals
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+      if (analysisIntervalRef.current) {
+        clearInterval(analysisIntervalRef.current);
+      }
+
+      // Process the recorded audio
+      const result = await advancedAudioService.captureAndAnalyze(recordingTime * 1000);
+
+      // Stop capture
+      await advancedAudioService.stopCapture();
+
+      // Update state with results
+      setAudioFeatures(result.features || null);
+
+      setIsRecording(false);
+      setStatusMessage('Audio analysis complete!');
+
+      logger.info('MagicStudio', 'Advanced recording completed', {
+        duration: recordingTime,
+        confidence: result.confidence,
+        bpm: result.features?.bpm,
+        key: result.features?.key,
+        genre: result.features?.genre,
+      });
+    } catch (error) {
+      logger.error('MagicStudio', 'Failed to process recording', error);
+      setStatusMessage('Processing failed. Please try again.');
+      setIsRecording(false);
+    }
+  };
+
+  const generatePlaylistFromFeatures = async () => {
+    if (!audioFeatures) return;
+
+    setIsProcessing(true);
+    setProgress(0);
+    setStatusMessage('Generating playlist from audio analysis...');
+
+    try {
+      const playlist = await simplePlaylistService.generateMagicMatchPlaylist({
+        fingerprint: JSON.stringify(audioFeatures),
+        userId: user?.id,
+      });
+
+      setProgress(100);
+      setStatusMessage('Playlist generated successfully!');
+
+      onPlaylistGenerated(playlist);
+
+      logger.info('MagicStudio', 'Playlist generated from advanced features', {
+        trackCount: playlist.tracks.length,
+        bpm: audioFeatures.bpm,
+        key: audioFeatures.key,
+        genre: audioFeatures.genre,
+      });
+    } catch (error) {
+      logger.error('MagicStudio', 'Failed to generate playlist from features', error);
+      setStatusMessage('Playlist generation failed. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+      if (analysisIntervalRef.current) {
+        clearInterval(analysisIntervalRef.current);
+      }
+      advancedAudioService.stopCapture().catch(() => {});
+    };
+  }, []);
+
   const handleMagicSet = async (
     vibe: string,
     energy: 'low' | 'medium' | 'high'
@@ -240,11 +368,12 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
 
     try {
       const steps = [
-        'Analyzing your preferences...',
-        'Selecting base tracks...',
-        'Applying harmonic matching...',
-        'Optimizing energy flow...',
-        'Finalizing your set...',
+        'Analyzing vibe preferences...',
+        'Searching music libraries...',
+        'Calculating BPM compatibility...',
+        'Detecting harmonic keys...',
+        'Optimizing track order...',
+        'Finalizing enhanced magic set...',
       ];
 
       for (let i = 0; i < steps.length; i++) {
@@ -264,8 +393,21 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
           energy,
           trackCount: playlist.tracks.length,
           duration: playlist.total_duration,
+          harmonicMixing: playlist.metadata?.harmonic_mixing,
+          dominantKey: playlist.metadata?.dominant_key,
+          bpmRange: playlist.metadata?.bpm_range,
         });
-        onPlaylistGenerated(playlist);
+
+        // Enhance playlist with advanced features metadata for UI display
+        const enhancedPlaylist = {
+          ...playlist,
+          tracks: playlist.tracks.map(track => ({
+            ...track,
+            recognition_source: 'magic_set' as const,
+          })),
+        };
+
+        onPlaylistGenerated(enhancedPlaylist);
       } catch (error) {
         logger.error(
           'MagicStudio',
@@ -626,6 +768,88 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
                   <Mic className="w-6 h-6" />
                   <span>LISTEN VIA MICROPHONE</span>
                 </button>
+
+                {/* Advanced Recording Section */}
+                <div className="glass-card p-4 bg-purple-500/10 border-purple-500/20">
+                  <div className="flex items-center space-x-2 mb-3 text-sm text-purple-300">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Advanced Audio Recognition</span>
+                  </div>
+
+                  {!isRecording ? (
+                    <button
+                      onClick={startAdvancedRecording}
+                      disabled={isProcessing}
+                      className="btn-primary btn-lg w-full flex-center space-md ease-smooth"
+                    >
+                      <BarChart3 className="w-6 h-6" />
+                      <span>START ADVANCED RECORDING</span>
+                    </button>
+                  ) : (
+                    <div className="space-y-3">
+                      <button
+                        onClick={stopAdvancedRecording}
+                        className="btn-danger btn-lg w-full flex-center space-md ease-pulse animate-pulse"
+                      >
+                        <Disc className="w-6 h-6 animate-spin" />
+                        <span>STOP RECORDING ({recordingTime.toFixed(1)}s)</span>
+                      </button>
+
+                      {/* Real-time analysis visualization */}
+                      {realTimeAnalysis && (
+                        <div className="glass-card p-3 bg-green-500/10 border-green-500/20">
+                          <div className="text-xs text-green-300 mb-2">Real-time Analysis</div>
+                          <div className="h-8 bg-gray-800 rounded overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-green-500 to-purple-500 transition-all duration-100"
+                              style={{ width: `${(realTimeAnalysis.volume || 0) * 100}%` }}
+                            />
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">
+                            Volume: {((realTimeAnalysis.volume || 0) * 100).toFixed(0)}%
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Audio Features Display */}
+                  {audioFeatures && (
+                    <div className="mt-4 space-y-3">
+                      <div className="glass-card p-3 bg-blue-500/10 border-blue-500/20">
+                        <div className="text-sm font-semibold text-blue-300 mb-2">Detected Features</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="text-gray-400">BPM:</span>
+                            <span className="text-white ml-1">{audioFeatures.bpm.toFixed(1)}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Key:</span>
+                            <span className="text-white ml-1">{audioFeatures.key}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Genre:</span>
+                            <span className="text-white ml-1">{audioFeatures.genre}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Energy:</span>
+                            <span className="text-white ml-1">{(audioFeatures.energy * 100).toFixed(0)}%</span>
+                          </div>
+                        </div>
+                        <div className="mt-3">
+                          <button
+                            onClick={generatePlaylistFromFeatures}
+                            disabled={isProcessing}
+                            className="btn-primary btn-sm w-full flex-center space-sm ease-smooth"
+                          >
+                            <Wand2 className="w-4 h-4" />
+                            <span>GENERATE PLAYLIST</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 <button
                   onClick={() => fileInputRef.current?.click()}

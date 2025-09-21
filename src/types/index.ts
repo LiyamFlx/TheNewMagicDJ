@@ -23,6 +23,16 @@ export interface Track {
   created_at?: string;
   updated_at?: string;
   meta?: Record<string, any>;
+
+  // Enhanced audio analysis
+  advanced_features?: AdvancedAudioFeatures;
+  compatibility_score?: number;
+  recognition_source?: 'live' | 'database' | 'api' | 'generated' | 'magic_set';
+
+  // Music theory properties
+  scale?: string[];
+  harmonic_compatibility?: KeyCompatibility[];
+  suggested_next_tracks?: TrackSuggestion[];
 }
 
 export interface Playlist {
@@ -68,11 +78,77 @@ export interface RecognitionResult {
   confidence: number;
   preview_url?: string;
   spotify_id?: string;
+  source?: 'AudD' | 'ACRCloud' | 'Shazam' | 'Mock';
 }
 
-// Audio fingerprint payloads used in processing
+// Enhanced audio fingerprint with advanced features
 export interface AudioFingerprint {
   fingerprint: string;
   confidence: number;
   duration: number;
+  features?: AdvancedAudioFeatures;
+}
+
+// Advanced audio analysis features
+export interface AdvancedAudioFeatures {
+  bpm: number;
+  key: string;
+  genre: string;
+  energy: number;
+  mfcc_features: number[];
+  spectral_centroid: number;
+  confidence: number;
+  valence?: number;
+  danceability?: number;
+  acousticness?: number;
+  instrumentalness?: number;
+}
+
+// Music theory and compatibility analysis
+export interface KeyCompatibility {
+  compatible: boolean;
+  score: number;
+  shared_notes: number;
+  reason: string;
+}
+
+// Track recommendation with compatibility scoring
+export interface TrackSuggestion {
+  title: string;
+  artist: string;
+  bpm: number;
+  key: string;
+  genre: string;
+  compatibility_score: number;
+  reason: string;
+  spotify_id?: string;
+  youtube_id?: string;
+  preview_url?: string;
+}
+
+// Audio recognition response from Python service
+export interface AudioRecognitionResponse {
+  recognition: RecognitionResult | null;
+  features: AdvancedAudioFeatures;
+  suggestions: TrackSuggestion[];
+  timestamp: string;
+}
+
+// Real-time audio capture configuration
+export interface AudioCaptureConfig {
+  sampleRate: number;
+  channels: number;
+  duration: number;
+  echoCancellation: boolean;
+  noiseSuppression: boolean;
+  autoGainControl: boolean;
+}
+
+// Musical scale and harmony analysis
+export interface MusicTheoryAnalysis {
+  scale: string[];
+  chordProgression?: string[];
+  harmonicTension?: number;
+  modalInterchange?: string[];
+  relativeKeys?: string[];
 }

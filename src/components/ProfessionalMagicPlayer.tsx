@@ -1183,6 +1183,9 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     const { deckBCurrent } = state.sources;
     if (!deckBCurrent) return;
 
+    // Update state first to ensure UI responsiveness
+    setDeckBPlaying(shouldPlay);
+
     try {
       if (deckBCurrent.type === 'youtube' && youtubeBRef.current) {
         if (shouldPlay) {
@@ -1190,9 +1193,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         } else {
           youtubeBRef.current.pause();
         }
-        setDeckBPlaying(shouldPlay);
         logger.info('ProfessionalMagicPlayer', 'Deck B YouTube playback', { shouldPlay });
-      } else if (deckBCurrent.type === 'audio' && audioBRef.current) {
+      } else if (deckBCurrent.type === 'spotify' && audioBRef.current) {
         if (shouldPlay) {
           audioBRef.current.play().catch(error => {
             handleSourceError('B', error);
@@ -1201,7 +1203,6 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         } else {
           audioBRef.current.pause();
         }
-        setDeckBPlaying(shouldPlay);
         logger.info('ProfessionalMagicPlayer', 'Deck B audio playback', { shouldPlay });
       }
     } catch (error) {
@@ -1839,11 +1840,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                   <SkipBack className="w-6 h-6 lg:w-7 lg:h-7 text-cyan-400" />
                 </button>
                 <button
-                  onClick={() => {
-                    const newPlaying = !deckBPlaying;
-                    setDeckBPlaying(newPlaying);
-                    throttledDeckBPlayPause(newPlaying);
-                  }}
+                  onClick={() => throttledDeckBPlayPause(!deckBPlaying)}
                   disabled={!state.sources.deckBCurrent}
                   aria-label={deckBPlaying ? 'Pause deck B' : 'Play deck B'}
                   className="w-16 h-16 lg:w-20 lg:h-20 glass-button hover-lift flex items-center justify-center transition-all duration-300 shadow-neon-cyan active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"

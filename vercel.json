@@ -1,1 +1,11 @@
-{ "buildCommand": "npm run build", "installCommand": "npm install", "outputDirectory": "dist" }
+{
+  "buildCommand": "npm run build",
+  "installCommand": "npm ci",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/assets/(.*)", "destination": "/assets/$1" },
+    { "source": "/(.*\\..*)", "destination": "/$1" },
+    { "source": "/(.*)", "destination": "/" }
+  ]
+}
