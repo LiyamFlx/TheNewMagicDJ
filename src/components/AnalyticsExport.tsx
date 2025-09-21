@@ -422,87 +422,74 @@ Analytics:
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+        <div className="grid-2 gap-8">
           {/* Energy Curve */}
-          <div className="cyber-card rounded-none p-6">
-            <h3 className="text-xl font-bold neon-text-green mb-4 flex items-center space-x-2">
-              <TrendingUp className="w-5 h-5" />
-              <span>Energy Curve</span>
+          <div className="glass-card p-lg shadow-neon-cyan hover-lift ease-smooth">
+            <h3 className="text-xl font-bold text-gradient-primary mb-6 flex-center space-sm font-orbitron">
+              <TrendingUp className="w-6 h-6" />
+              <span>ENERGY CURVE</span>
             </h3>
-            <div className="h-48 bg-cyber-black border border-neon-green rounded-none p-4">
-              <div className="flex items-end justify-between h-full">
+            <div className="h-48 glass-card p-md mb-4">
+              <div className="flex items-end justify-between h-full space-x-1">
                 {analytics.energyCurve.map((energy, index) => (
                   <div
                     key={index}
-                    className="w-2 bg-gradient-to-t from-neon-green to-neon-purple rounded-none"
+                    className="w-2 gradient-bg-accent rounded-sm hover-lift ease-smooth"
                     style={{ height: `${energy}%` }}
                   />
                 ))}
               </div>
             </div>
+            <div className="text-center text-sm text-gray-400 font-inter">Track progression over time</div>
           </div>
 
           {/* Crowd Feedback */}
-          <div className="cyber-card rounded-none p-6">
-            <h3 className="text-xl font-bold neon-text-purple mb-4 flex items-center space-x-2">
-              <Users className="w-5 h-5" />
-              <span>Crowd Feedback</span>
+          <div className="glass-card p-lg shadow-neon-pink hover-lift ease-smooth">
+            <h3 className="text-xl font-bold text-gradient-accent mb-6 flex-center space-sm font-orbitron">
+              <Users className="w-6 h-6" />
+              <span>CROWD FEEDBACK</span>
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-cyber-gray">Engagement</span>
-                  <span
-                    className={getEnergyColor(
-                      analytics.crowdFeedback.engagement
-                    )}
-                  >
+                <div className="flex-between mb-3">
+                  <span className="text-gray-400 font-inter font-bold">ENGAGEMENT</span>
+                  <span className={`font-bold font-mono ${getEnergyColor(analytics.crowdFeedback.engagement)}`}>
                     {analytics.crowdFeedback.engagement.toFixed(1)}%
                   </span>
                 </div>
-                <div className="w-full bg-cyber-dark border border-neon-green rounded-none h-2">
+                <div className="progress-bar h-3">
                   <div
-                    className="h-2 progress-green rounded-none"
+                    className="progress-fill gradient-bg-primary ease-smooth"
                     style={{ width: `${analytics.crowdFeedback.engagement}%` }}
                   />
                 </div>
               </div>
 
               <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-cyber-gray">Danceability</span>
-                  <span
-                    className={getEnergyColor(
-                      analytics.crowdFeedback.danceability
-                    )}
-                  >
+                <div className="flex-between mb-3">
+                  <span className="text-gray-400 font-inter font-bold">DANCEABILITY</span>
+                  <span className={`font-bold font-mono ${getEnergyColor(analytics.crowdFeedback.danceability)}`}>
                     {analytics.crowdFeedback.danceability.toFixed(1)}%
                   </span>
                 </div>
-                <div className="w-full bg-cyber-dark border border-neon-purple rounded-none h-2">
+                <div className="progress-bar h-3">
                   <div
-                    className="h-2 progress-purple rounded-none"
-                    style={{
-                      width: `${analytics.crowdFeedback.danceability}%`,
-                    }}
+                    className="progress-fill gradient-bg-accent ease-smooth"
+                    style={{ width: `${analytics.crowdFeedback.danceability}%` }}
                   />
                 </div>
               </div>
 
               <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-cyber-gray">Excitement</span>
-                  <span
-                    className={getEnergyColor(
-                      analytics.crowdFeedback.excitement
-                    )}
-                  >
+                <div className="flex-between mb-3">
+                  <span className="text-gray-400 font-inter font-bold">EXCITEMENT</span>
+                  <span className={`font-bold font-mono ${getEnergyColor(analytics.crowdFeedback.excitement)}`}>
                     {analytics.crowdFeedback.excitement.toFixed(1)}%
                   </span>
                 </div>
-                <div className="w-full bg-cyber-dark border border-neon-green rounded-none h-2">
+                <div className="progress-bar h-3">
                   <div
-                    className="h-2 progress-green rounded-none"
+                    className="progress-fill gradient-bg-secondary ease-smooth"
                     style={{ width: `${analytics.crowdFeedback.excitement}%` }}
                   />
                 </div>
@@ -511,29 +498,27 @@ Analytics:
           </div>
 
           {/* Peak Moments */}
-          <div className="cyber-card rounded-none p-6">
-            <h3 className="text-xl font-bold neon-text-green mb-4 flex items-center space-x-2">
-              <Zap className="w-5 h-5" />
-              <span>Peak Moments</span>
+          <div className="glass-card p-lg shadow-neon-cyan hover-lift ease-smooth">
+            <h3 className="text-xl font-bold text-gradient-primary mb-6 flex-center space-sm font-orbitron">
+              <Zap className="w-6 h-6" />
+              <span>PEAK MOMENTS</span>
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {analytics.peakMoments.map((moment, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 bg-cyber-dark border border-neon-green rounded-none"
+                  className="glass-card p-md flex-between group hover-lift ease-smooth"
                 >
-                  <div>
-                    <p className="font-medium text-cyber-white truncate">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-gradient-accent truncate font-inter group-hover:text-gradient-primary ease-smooth">
                       {moment.track}
                     </p>
-                    <p className="text-sm text-cyber-gray">
-                      Time: {Math.floor(moment.time / 60)}:
+                    <p className="text-sm text-gray-400 font-mono">
+                      TIME: {Math.floor(moment.time / 60)}:
                       {(moment.time % 60).toString().padStart(2, '0')}
                     </p>
                   </div>
-                  <div
-                    className={`text-lg font-bold ${getEnergyColor(moment.energy)}`}
-                  >
+                  <div className={`text-xl font-bold font-mono ${getEnergyColor(moment.energy)} group-hover:scale-110 ease-bounce`}>
                     {moment.energy.toFixed(0)}%
                   </div>
                 </div>
@@ -542,18 +527,18 @@ Analytics:
           </div>
 
           {/* Best Moments */}
-          <div className="cyber-card rounded-none p-6">
-            <h3 className="text-xl font-bold neon-text-purple mb-4 flex items-center space-x-2">
-              <Clock className="w-5 h-5" />
-              <span>Highlights</span>
+          <div className="glass-card p-lg shadow-neon-pink hover-lift ease-smooth">
+            <h3 className="text-xl font-bold text-gradient-accent mb-6 flex-center space-sm font-orbitron">
+              <Clock className="w-6 h-6" />
+              <span>HIGHLIGHTS</span>
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {analytics.bestMoments.map((moment, index) => (
                 <div
                   key={index}
-                  className="p-3 bg-cyber-dark border border-neon-purple rounded-none"
+                  className="glass-card p-md hover-lift ease-smooth group"
                 >
-                  <p className="text-cyber-white">{moment}</p>
+                  <p className="text-gradient-primary font-inter group-hover:text-gradient-accent ease-smooth">{moment}</p>
                 </div>
               ))}
             </div>
@@ -561,48 +546,50 @@ Analytics:
         </div>
 
         {/* Enhanced Export Section */}
-        <div className="mt-8 cyber-card rounded-none p-6">
-          <h3 className="text-xl font-bold neon-text-green mb-6 flex items-center space-x-2">
-            <Download className="w-5 h-5" />
+        <div className="mt-8 glass-card p-xl shadow-neon-hard">
+          <h3 className="text-2xl font-bold text-gradient-primary mb-8 flex-center space-sm font-orbitron">
+            <Download className="w-7 h-7" />
             <span>EXPORT & SHARE</span>
           </h3>
 
           {/* Flyer Section */}
-          <div className="mb-8 p-4 bg-cyber-dark border-2 border-neon-purple rounded-sm neon-glow-purple">
-            <h4 className="text-lg font-bold neon-text-purple mb-4 font-mono">
+          <div className="mb-8 glass-card p-lg shadow-neon-pink hover-lift ease-smooth">
+            <h4 className="text-xl font-bold text-gradient-accent mb-6 font-orbitron tracking-wider">
               SOCIAL MEDIA FLYER
             </h4>
-            <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4">
+            <div className="flex-center space-md flex-wrap">
               <button
                 onClick={handlePreviewFlyer}
-                className="cyber-button cyber-button-purple px-4 py-3 rounded-sm flex items-center space-x-2 font-bold tracking-wider"
+                className="btn-secondary btn-xl flex-center space-sm ease-bounce shadow-neon-medium"
               >
-                <div className="w-5 h-5 border-2 border-neon-purple rounded-sm"></div>
+                <div className="w-6 h-6 glass-card rounded-sm"></div>
                 <span>PREVIEW FLYER</span>
               </button>
               <button
                 onClick={handleShare}
-                className="cyber-button px-4 py-3 rounded-sm flex items-center space-x-2 font-bold tracking-wider"
+                className="btn-primary btn-xl flex-center space-sm ease-elastic shadow-neon-hard"
               >
-                <Share2 className="w-5 h-5" />
+                <Share2 className="w-6 h-6" />
                 <span>SHARE FLYER</span>
               </button>
             </div>
           </div>
 
           {/* Data Export Section */}
-          <div className="p-4 bg-cyber-dark border-2 border-neon-green rounded-sm neon-glow-green">
-            <h4 className="text-lg font-bold neon-text-green mb-4 font-mono">
+          <div className="glass-card p-lg shadow-neon-cyan hover-lift ease-smooth">
+            <h4 className="text-xl font-bold text-gradient-primary mb-6 font-orbitron tracking-wider">
               DATA EXPORT
             </h4>
-            <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 sm:space-x-4">
-              <div className="flex items-center space-x-4">
+            <div className="flex-between space-md flex-wrap">
+              <div className="flex-center space-md">
                 <select
                   value={exportFormat}
                   onChange={e =>
                     setExportFormat(e.target.value as 'json' | 'csv' | 'pdf')
                   }
-                  className="bg-cyber-darker border-2 border-neon-green rounded-sm px-4 py-3 text-cyber-white focus:outline-none focus:border-neon-purple font-mono text-base"
+                  className="select-neon text-gradient-accent font-mono text-base"
+                  aria-label="Export format"
+                  title="Choose export format"
                 >
                   <option value="json">JSON FORMAT</option>
                   <option value="csv">CSV FORMAT</option>
@@ -613,9 +600,11 @@ Analytics:
               <button
                 onClick={handleExport}
                 disabled={isExporting}
-                className="cyber-button px-4 py-3 rounded-sm flex items-center space-x-2 font-bold tracking-wider"
+                className={`btn-accent btn-xl flex-center space-sm ${isExporting ? 'opacity-50 cursor-not-allowed' : 'ease-bounce shadow-neon-hard'}`}
+                aria-label="Export data"
+                title="Export analytics data"
               >
-                <Download className="w-5 h-5" />
+                <Download className="w-6 h-6" />
                 <span>{isExporting ? 'EXPORTING...' : 'EXPORT DATA'}</span>
               </button>
             </div>
@@ -625,22 +614,24 @@ Analytics:
         {/* Flyer Preview Modal */}
         {showFlyerPreview && flyerCanvas && (
           <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex-center z-50"
             onClick={() => setShowFlyerPreview(false)}
           >
             <div
-              className="bg-cyber-dark border-4 border-neon-green rounded-sm p-6 max-w-lg mx-4 neon-glow-green"
+              className="glass-card p-xl max-w-lg mx-4 shadow-neon-hard animate-scale-in"
               onClick={e => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold neon-text-green font-mono">
+              <div className="flex-between mb-6">
+                <h3 className="text-2xl font-bold text-gradient-primary font-orbitron tracking-wider">
                   FLYER PREVIEW
                 </h3>
                 <button
                   onClick={() => setShowFlyerPreview(false)}
-                  className="w-8 h-8 bg-cyber-darker border-2 border-red-500 rounded-sm flex items-center justify-center hover:bg-red-900/20"
+                  className="btn-icon btn-danger ease-bounce"
+                  aria-label="Close preview"
+                  title="Close preview"
                 >
-                  <span className="text-red-400 font-bold">×</span>
+                  <span className="text-xl font-bold">×</span>
                 </button>
               </div>
 
@@ -648,21 +639,25 @@ Analytics:
                 <img
                   src={flyerCanvas.toDataURL()}
                   alt="DJ Set Flyer"
-                  className="w-full border-2 border-neon-purple rounded-sm"
+                  className="w-full glass-card shadow-neon-medium hover-lift ease-smooth"
                 />
               </div>
 
-              <div className="flex space-x-3">
+              <div className="flex-center space-md">
                 <button
                   onClick={() => downloadFlyer(flyerCanvas)}
-                  className="cyber-button flex-1 py-3 rounded-sm flex items-center justify-center space-x-2 font-bold tracking-wider"
+                  className="btn-primary btn-lg flex-1 flex-center space-sm ease-bounce shadow-neon-medium"
+                  aria-label="Download flyer"
+                  title="Download flyer"
                 >
                   <Download className="w-5 h-5" />
                   <span>DOWNLOAD</span>
                 </button>
                 <button
                   onClick={handleShare}
-                  className="cyber-button cyber-button-purple flex-1 py-3 rounded-sm flex items-center justify-center space-x-2 font-bold tracking-wider"
+                  className="btn-secondary btn-lg flex-1 flex-center space-sm ease-elastic shadow-neon-hard"
+                  aria-label="Share flyer"
+                  title="Share flyer"
                 >
                   <Share2 className="w-5 h-5" />
                   <span>SHARE</span>

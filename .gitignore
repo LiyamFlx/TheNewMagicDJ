@@ -98,3 +98,4 @@ final_fix.sh
 # Ignore Playwright outputs
 playwright-report/
 test-results/
+TheNewMagicDJ.mcpb

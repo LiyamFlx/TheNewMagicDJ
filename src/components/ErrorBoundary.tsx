@@ -95,54 +95,67 @@ class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900 flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 text-center">
-            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+        <div className="min-h-screen gradient-bg-primary flex-center p-4 relative overflow-hidden">
+          {/* Animated Background Elements */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-full blur-3xl animate-float"></div>
+            <div
+              className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-full blur-3xl animate-float"
+              style={{ animationDelay: '1s' }}
+            ></div>
+          </div>
+
+          <div className="relative z-10 max-w-md w-full glass-card p-xl text-center shadow-neon-hard animate-scale-in">
+            <div className="w-16 h-16 glass-card flex-center mx-auto mb-6 shadow-neon-pink animate-pulse-glow">
               <AlertTriangle className="w-8 h-8 text-red-400" />
             </div>
 
-            <h1 className="text-2xl font-bold mb-4 text-white">
-              Oops! Something went wrong
+            <h1 className="text-2xl font-bold mb-4 text-gradient-primary font-orbitron tracking-wide">
+              SYSTEM ERROR
             </h1>
 
-            <p className="text-gray-300 mb-6 leading-relaxed">
+            <p className="text-gray-300 mb-6 leading-relaxed font-inter">
               We encountered an unexpected error. Don't worry, our team has been
               notified and we're working on a fix.
             </p>
 
             {this.state.error && (
-              <div className="bg-gray-900/50 rounded-lg p-4 mb-6 text-left">
-                <p className="text-sm text-gray-400 mb-2">Error Details:</p>
+              <div className="glass-card p-md mb-6 text-left">
+                <p className="text-sm text-gray-400 mb-2 font-inter font-bold">ERROR DETAILS:</p>
                 <p className="text-xs text-red-300 font-mono break-all">
                   {this.state.error.message}
                 </p>
                 {this.state.errorId && (
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-gray-500 mt-2 font-mono">
                     Error ID: {this.state.errorId}
                   </p>
                 )}
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-center space-md">
               <button
                 onClick={this.handleRetry}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
+                className="btn-primary btn-lg flex-center space-sm ease-bounce shadow-neon-medium"
+                aria-label="Try again"
+                title="Try again"
               >
-                <RefreshCw className="w-4 h-4" />
-                <span>Try Again</span>
+                <RefreshCw className="w-5 h-5" />
+                <span>TRY AGAIN</span>
               </button>
 
               <button
                 onClick={this.handleGoHome}
-                className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+                className="btn-secondary btn-lg flex-center space-sm ease-elastic shadow-neon-hard"
+                aria-label="Go home"
+                title="Go home"
               >
-                <Home className="w-4 h-4" />
-                <span>Go Home</span>
+                <Home className="w-5 h-5" />
+                <span>GO HOME</span>
               </button>
             </div>
 
-            <p className="text-xs text-gray-500 mt-6">
+            <p className="text-xs text-gray-500 mt-6 font-mono">
               If this problem persists, please contact our support team.
             </p>
           </div>
