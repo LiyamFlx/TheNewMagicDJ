@@ -13,6 +13,14 @@ interface Track {
   duration?: number;
   url?: string;
   source_url?: string;
+  // Optional metadata commonly present from generators/providers
+  key?: string;
+  genre?: string;
+  position?: number;
+  spotify_id?: string | null;
+  youtube_id?: string | null;
+  preview_url?: string | null;
+  thumbnail?: string | null;
 }
 
 interface Playlist {
@@ -123,6 +131,13 @@ class ValidationHelper {
         bpm: typeof track.bpm === 'number' ? Math.floor(track.bpm) : null,
         energy: typeof track.energy === 'number' ? Math.floor(track.energy) : null,
         duration: typeof track.duration === 'number' ? Math.floor(track.duration) : 180,
+        key: (track as any).key || null,
+        genre: (track as any).genre || null,
+        position: typeof (track as any).position === 'number' ? (track as any).position : null,
+        spotify_id: (track as any).spotify_id ?? null,
+        youtube_id: (track as any).youtube_id ?? null,
+        preview_url: (track as any).preview_url ?? null,
+        thumbnail: (track as any).thumbnail ?? null,
         source_url: (track as any).source_url || track.url || (track as any).youtube_url || (track as any).preview_url || null,
       }))
       .filter(row => row.title);
@@ -201,20 +216,63 @@ export const supabasePlaylistService = {
   async _saveTracksToDatabase(tracks: Track[], playlistId: string): Promise<void> {
     const trackData = ValidationHelper.sanitizeTrackData(tracks, playlistId);
 
-    if (trackData.length === 0) {
-      return;
+    if (trackData.length === 0) return;
+
+    // Group tracks by available conflict keys for idempotent upserts
+    const spotifyGroup = trackData.filter(t => t.spotify_id);
+    const youtubeGroup = trackData.filter(t => !t.spotify_id && t.youtube_id);
+    const positionGroup = trackData.filter(t => !t.spotify_id && !t.youtube_id && typeof t.position === 'number');
+    const insertGroup = trackData.filter(t => !spotifyGroup.includes(t) && !youtubeGroup.includes(t) && !positionGroup.includes(t));
+
+    let saved = 0;
+
+    // Upsert by (playlist_id, spotify_id)
+    if (spotifyGroup.length > 0) {
+      const { error } = await supabase
+        .from('tracks')
+        .upsert(spotifyGroup, { onConflict: 'playlist_id,spotify_id' });
+      if (error) {
+        logger.error('supabasePlaylistService', 'Tracks upsert error (spotify_id)', error as any);
+      } else {
+        saved += spotifyGroup.length;
+      }
     }
 
-    const { error: tracksError } = await supabase
-      .from('tracks')
-      .insert(trackData);
-
-    if (tracksError) {
-      logger.error('supabasePlaylistService', 'Supabase tracks save error', tracksError as any);
-      logger.warn('supabasePlaylistService', 'Failed to save some tracks, but playlist was saved');
-    } else {
-      logger.info('supabasePlaylistService', `Saved ${trackData.length} tracks`);
+    // Upsert by (playlist_id, youtube_id)
+    if (youtubeGroup.length > 0) {
+      const { error } = await supabase
+        .from('tracks')
+        .upsert(youtubeGroup, { onConflict: 'playlist_id,youtube_id' });
+      if (error) {
+        logger.error('supabasePlaylistService', 'Tracks upsert error (youtube_id)', error as any);
+      } else {
+        saved += youtubeGroup.length;
+      }
     }
+
+    // Upsert by (playlist_id, position)
+    if (positionGroup.length > 0) {
+      const { error } = await supabase
+        .from('tracks')
+        .upsert(positionGroup, { onConflict: 'playlist_id,position' });
+      if (error) {
+        logger.error('supabasePlaylistService', 'Tracks upsert error (position)', error as any);
+      } else {
+        saved += positionGroup.length;
+      }
+    }
+
+    // Fallback insert for items without any conflict key
+    if (insertGroup.length > 0) {
+      const { error } = await supabase.from('tracks').insert(insertGroup);
+      if (error) {
+        logger.error('supabasePlaylistService', 'Tracks insert error (no conflict key)', error as any);
+      } else {
+        saved += insertGroup.length;
+      }
+    }
+
+    logger.info('supabasePlaylistService', `Saved/Upserted ${saved} tracks (playlist ${playlistId})`);
   },
 
   async getPlaylists(userId: string): Promise<Playlist[]> {
