@@ -238,18 +238,8 @@ function AppContent() {
     };
   }, []);
 
-  // Separate effect for user data loading
-  useEffect(() => {
-    if (state.user?.id) {
-      loadUserData(state.user.id).catch(err => {
-        Logger.error('Load user data error', err);
-        showToast('Failed to load user data', 'error');
-      });
-    }
-  }, [state.user?.id]);
-
   // --- Load user data ---
-  const loadUserData = async (userId: string) => {
+  const loadUserData = useCallback(async (userId: string) => {
     if (!userId) {
       Logger.error('loadUserData', 'No user ID provided');
       return;
@@ -307,7 +297,17 @@ function AppContent() {
         showToast('Failed to load playlists - working offline', 'warning');
       }
     }
-  };
+  }, [setLastPlaylistId, showToast]);
+
+  // Separate effect for user data loading
+  useEffect(() => {
+    if (state.user?.id) {
+      loadUserData(state.user.id).catch(err => {
+        Logger.error('Load user data error', err);
+        showToast('Failed to load user data', 'error');
+      });
+    }
+  }, [state.user?.id, loadUserData, showToast]);
 
   // --- Playlist save handler ---
   const saveCurrentPlaylist = useCallback(
