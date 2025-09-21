@@ -6,77 +6,32 @@ import { validateMagicSet } from '../shared/validators.js';
 import { checkAndConsume } from '../utils/apiRateLimiter.js';
 import { AppError, normalizeError } from '../src/utils/errors.js';
 
-type Bucket = { count: number; reset: number };
-const buckets = new Map<string, Bucket>();
-const BUCKET_MAX = 10;
-const BUCKET_WINDOW_MS = 60_000;
+import {
+  fetchWithRetry,
+  rateLimiter,
+  deduplicator,
+  ApiLogger,
+  type RequestContext
+} from '../utils/apiUtils.js';
+import {
+  createSpotifyTokenManager,
+  requestBatcher,
+  type SpotifyTokenManager
+} from '../utils/tokenCache.js';
 
-function getClientKey(req: VercelRequest): string {
-  const ip =
-    (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-    req.socket.remoteAddress ||
-    'unknown';
-  return `magicset:${ip}`;
-}
+// Initialize Spotify token manager
+const spotifyTokenManager = createSpotifyTokenManager(
+  apiConfig.SPOTIFY_CLIENT_ID,
+  apiConfig.SPOTIFY_CLIENT_SECRET
+);
 
-function checkBucket(req: VercelRequest) {
-  const key = getClientKey(req);
-  const now = Date.now();
-  const entry = buckets.get(key);
-  if (!entry || now >= entry.reset) {
-    buckets.set(key, { count: 1, reset: now + BUCKET_WINDOW_MS });
-    return { allowed: true };
-  }
-  if (entry.count >= BUCKET_MAX) {
-    return { allowed: false, retryAfter: entry.reset - now };
-  }
-  entry.count += 1;
-  return { allowed: true };
-}
-
-async function fetchWithTimeout(
-  input: RequestInfo | URL,
-  init: RequestInit = {},
-  timeoutMs = 12000
-): Promise<Response> {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(input, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(id);
-  }
-}
-
-// Get Spotify access token
+// Get Spotify access token with caching
 async function getSpotifyToken(): Promise<string> {
-  const clientId = apiConfig.SPOTIFY_CLIENT_ID;
-  const clientSecret = apiConfig.SPOTIFY_CLIENT_SECRET;
-
-  if (!clientId || !clientSecret) {
-    throw new AppError('MISSING_CREDENTIALS', 'Spotify credentials not configured');
+  try {
+    return await spotifyTokenManager.getClientToken();
+  } catch (error: any) {
+    throw new AppError('SPOTIFY_AUTH_FAILED', `Failed to get Spotify token: ${error.message}`);
   }
-
-  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-
-  const response = await fetchWithTimeout(
-    'https://accounts.spotify.com/api/token',
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Basic ${credentials}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: 'grant_type=client_credentials',
-    }
-  );
-
-  if (!response.ok) {
-    throw new AppError('SPOTIFY_AUTH_FAILED', 'Failed to get Spotify token');
-  }
-
-  const data = await response.json();
-  return data.access_token;
 }
 
 // Search for YouTube videos
@@ -96,7 +51,11 @@ async function searchYouTube(query: string, maxResults: number = 10) {
   searchUrl.searchParams.set('order', 'relevance');
   searchUrl.searchParams.set('key', apiKey);
 
-  const response = await fetchWithTimeout(searchUrl.toString());
+  const response = await fetchWithRetry(searchUrl.toString(), {}, {
+    retries: 3,
+    timeoutMs: 15000,
+    retryOn: [429, 500, 502, 503, 504]
+  });
 
   if (!response.ok) {
     throw new AppError('YOUTUBE_SEARCH_FAILED', 'YouTube search failed');
@@ -207,25 +166,33 @@ async function generateMagicSetPlaylist(vibe: Vibe, energyLevel: EnergyLevel, tr
   }
 }
 
-// Search Spotify for tracks
+// Search Spotify for tracks with batching optimization
 async function searchSpotify(token: string, query: string, limit: number = 10) {
-  const searchUrl = new URL('https://api.spotify.com/v1/search');
-  searchUrl.searchParams.set('q', query);
-  searchUrl.searchParams.set('type', 'track');
-  searchUrl.searchParams.set('limit', limit.toString());
+  const batchKey = `spotify_search:${query}:${limit}`;
 
-  const response = await fetchWithTimeout(searchUrl.toString(), {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  return requestBatcher.batch(batchKey, async () => {
+    const searchUrl = new URL('https://api.spotify.com/v1/search');
+    searchUrl.searchParams.set('q', query);
+    searchUrl.searchParams.set('type', 'track');
+    searchUrl.searchParams.set('limit', limit.toString());
 
-  if (!response.ok) {
-    throw new AppError('SPOTIFY_SEARCH_FAILED', 'Spotify search failed');
-  }
+    const response = await fetchWithRetry(searchUrl.toString(), {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }, {
+      retries: 3,
+      timeoutMs: 15000,
+      retryOn: [429, 500, 502, 503, 504]
+    });
 
-  const data = await response.json();
-  return data.tracks.items;
+    if (!response.ok) {
+      throw new AppError('SPOTIFY_SEARCH_FAILED', 'Spotify search failed');
+    }
+
+    const data = await response.json();
+    return data.tracks.items;
+  }, 100); // 100ms batching window
 }
 
 // Get genre-specific search queries
@@ -303,6 +270,8 @@ function generateFallbackTrack(vibe: string, energyLevel: string, index: number)
 }
 
 async function magicSetHandler(req: VercelRequest, res: VercelResponse) {
+  const context = ApiLogger.createContext(req);
+
   if (req.method !== 'POST') {
     res.setHeader('Content-Type', 'application/json');
     return res
@@ -310,10 +279,15 @@ async function magicSetHandler(req: VercelRequest, res: VercelResponse) {
       .json({ error: { code: 'BAD_REQUEST', message: 'Method not allowed' } });
   }
 
+  ApiLogger.logRequest(context, 'Magic Set generation request received');
+
   try {
-    const decision = await checkAndConsume(req, 'magic-set', 10, 60_000);
-    if (!decision.allowed) {
-      res.setHeader('Retry-After', Math.ceil(decision.retryAfter / 1000).toString());
+    // Use unified rate limiter
+    const clientKey = rateLimiter.getClientKey(req, 'magic-set');
+    const rateLimit = rateLimiter.check(clientKey, 10, 60_000);
+
+    if (!rateLimit.allowed) {
+      res.setHeader('Retry-After', Math.ceil((rateLimit.retryAfter || 1000) / 1000).toString());
       res.setHeader('Content-Type', 'application/json');
       return res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many requests' } });
     }
@@ -327,6 +301,12 @@ async function magicSetHandler(req: VercelRequest, res: VercelResponse) {
       throw new AppError('INTERNAL_ERROR', 'Generated playlist response invalid', { httpStatus: 500 });
     }
 
+    ApiLogger.logRequest(context, 'Magic Set generated successfully', {
+      trackCount: playlist.tracks?.length || 0,
+      vibe,
+      energyLevel
+    });
+
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('Content-Type', 'application/json');
     return res.status(200).json(playlist);
@@ -337,7 +317,7 @@ async function magicSetHandler(req: VercelRequest, res: VercelResponse) {
       message: 'Failed to generate magic set playlist',
     });
 
-    console.error('Magic Set generation error:', normalized);
+    ApiLogger.logError(context, normalized, { vibe: req.body?.vibe, energyLevel: req.body?.energyLevel });
 
     res.setHeader('Content-Type', 'application/json');
     res.status(500).json({
