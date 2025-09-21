@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { withIdempotency } from '../utils/idempotency.js';
 import apiConfig from './config.js';
+import type { PlaylistDTO, Vibe, EnergyLevel } from '../shared/dto.js';
 import { AppError, normalizeError } from '../src/utils/errors.js';
 
 type Bucket = { count: number; reset: number };
@@ -102,7 +103,7 @@ async function searchYouTube(query: string, maxResults: number = 10) {
   return await response.json();
 }
 
-function normalizeVibe(v: string): 'Electronic' | 'Hip-Hop' | 'House' | 'Techno' {
+function normalizeVibe(v: string): Vibe {
   const s = (v || '').toLowerCase();
   if (s === 'electronic') return 'Electronic';
   if (s === 'hip-hop' || s === 'hiphop' || s === 'hip hop') return 'Hip-Hop';
@@ -111,13 +112,13 @@ function normalizeVibe(v: string): 'Electronic' | 'Hip-Hop' | 'House' | 'Techno'
   return 'Electronic';
 }
 
-function normalizeEnergy(e: string): 'low' | 'medium' | 'high' {
+function normalizeEnergy(e: string): EnergyLevel {
   const s = (e || '').toLowerCase();
   return (['low', 'medium', 'high'].includes(s) ? (s as any) : 'medium');
 }
 
 // Generate Magic Set playlist
-async function generateMagicSetPlaylist(vibe: string, energyLevel: string, trackCount: number = 10) {
+async function generateMagicSetPlaylist(vibe: Vibe, energyLevel: EnergyLevel, trackCount: number = 10): Promise<PlaylistDTO> {
   try {
     // Get Spotify token for music search
     const spotifyToken = await getSpotifyToken();
@@ -191,11 +192,11 @@ async function generateMagicSetPlaylist(vibe: string, energyLevel: string, track
       tracks,
       total_duration: totalDuration,
       user_id: 'api-generated',
-      is_public: false,
       genre: canonicalVibe,
       energy_level: canonicalEnergy,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      schemaVersion: 1,
     };
 
   } catch (error) {

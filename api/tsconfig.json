@@ -26,6 +26,6 @@
     "noUncheckedIndexedAccess": false,
     "types": ["node"]
   },
-  "include": ["**/*", "../utils/**/*"],
+  "include": ["**/*", "../utils/**/*", "../shared/**/*"],
   "exclude": ["node_modules", "dist", ".vercel"]
 }

@@ -120,12 +120,12 @@ class ValidationHelper {
         playlist_id: playlistId,
         title: track.title || 'Untitled',
         artist: track.artist || 'Unknown Artist',
-        bpm: track.bpm ? Number(track.bpm) : null,
-        energy: track.energy ? Number(track.energy) : null,
-        duration: track.duration ? Number(track.duration) : 180,
-        source_url: track.url || track.source_url || null,
+        bpm: typeof track.bpm === 'number' ? Math.floor(track.bpm) : null,
+        energy: typeof track.energy === 'number' ? Math.floor(track.energy) : null,
+        duration: typeof track.duration === 'number' ? Math.floor(track.duration) : 180,
+        source_url: (track as any).source_url || track.url || (track as any).youtube_url || (track as any).preview_url || null,
       }))
-      .filter(track => track.title && track.artist);
+      .filter(row => row.title);
   }
 }
 

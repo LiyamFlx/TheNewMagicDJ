@@ -1,5 +1,6 @@
 import { Playlist, Track } from '../types/index';
 import { logger } from '../utils/logger';
+import { magicdj, type PlaylistDTO, type Vibe, type EnergyLevel } from '../sdk/magicdj';
 
 // =============================================================================
 // SIMPLIFIED PLAYLIST SERVICE FOR RELIABLE OPERATION
@@ -15,8 +16,8 @@ export class SimplePlaylistService {
    * Generates a Magic Set playlist with robust fallbacks
    */
   async generateMagicSetPlaylist(params: {
-    vibe: string;
-    energyLevel: 'low' | 'medium' | 'high';
+    vibe: Vibe | string;
+    energyLevel: EnergyLevel | string;
     userId?: string;
   }): Promise<Playlist> {
     const { vibe, energyLevel, userId } = params;
@@ -24,38 +25,62 @@ export class SimplePlaylistService {
     logger.info('SimplePlaylistService', 'Generating Magic Set playlist', { vibe, energyLevel });
 
     try {
-      // Try API endpoint first
-      const response = await fetch('/api/generate-magic-set', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          vibe,
-          energyLevel,
+      // Try typed API endpoint first via SDK
+      try {
+        const dto: PlaylistDTO = await magicdj.generateMagicSet({
+          vibe: (typeof vibe === 'string' ? (vibe as any) : vibe) as Vibe,
+          energyLevel: (typeof energyLevel === 'string' ? (energyLevel as any) : energyLevel) as EnergyLevel,
           trackCount: 10,
-        }),
-      });
-
-      if (response.ok) {
-        const playlist = await response.json();
-        if (userId) playlist.user_id = userId;
+        });
+        const playlist = this.toPlaylist(dto, userId);
 
         logger.info('SimplePlaylistService', 'Magic Set generated via API', {
           trackCount: playlist.tracks?.length || 0,
         });
 
         return playlist;
-      } else {
-        throw new Error(`API returned ${response.status}`);
+      } catch (e) {
+        throw e;
       }
 
     } catch (error) {
       logger.warn('SimplePlaylistService', 'API unavailable, using enhanced local generation', error);
 
       // Enhanced local generation with YouTube-like tracks
-      return this.generateEnhancedLocalPlaylist(vibe, energyLevel, userId);
+      return this.generateEnhancedLocalPlaylist(typeof vibe === 'string' ? vibe : (vibe as any), typeof energyLevel === 'string' ? energyLevel : (energyLevel as any), userId);
     }
+  }
+
+  private toPlaylist(dto: PlaylistDTO, userId?: string): Playlist {
+    const tracks: Track[] = (dto.tracks || []).map(t => ({
+      id: t.id,
+      title: t.title,
+      artist: t.artist,
+      album: t.album,
+      duration: t.duration,
+      preview_url: t.preview_url ?? undefined,
+      spotify_id: t.spotify_id ?? undefined,
+      youtube_id: t.youtube_id ?? undefined,
+      youtube_url: t.youtube_url ?? undefined as any,
+      thumbnail: t.thumbnail ?? undefined as any,
+      genre: t.genre,
+      bpm: t.bpm,
+      energy_level: t.energy_level,
+      created_at: t.created_at,
+      updated_at: t.updated_at,
+    }));
+
+    return {
+      id: dto.id,
+      name: dto.name,
+      description: dto.description,
+      tracks,
+      total_duration: dto.total_duration,
+      user_id: userId || dto.user_id,
+      created_at: dto.created_at,
+      updated_at: dto.updated_at,
+      metadata: { schemaVersion: dto.schemaVersion },
+    };
   }
 
   /**
