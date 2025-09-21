@@ -5,7 +5,7 @@ function readEnv(name: string, fallbacks: string[] = []): string {
   const keys = [name, ...fallbacks];
   for (const key of keys) {
     const val = (process as any)?.env?.[key];
-    if (val) return val;
+    if (val) return String(val).trim();
   }
   return '';
 }

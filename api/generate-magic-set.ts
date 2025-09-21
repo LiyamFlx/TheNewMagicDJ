@@ -312,6 +312,28 @@ async function magicSetHandler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json(playlist);
 
   } catch (e: any) {
+    const message = e?.message || '';
+    const code = e?.code || '';
+
+    // Graceful degradation for auth/config issues: serve a fallback playlist
+    if (code === 'SPOTIFY_AUTH_FAILED' || code === 'MISSING_CREDENTIALS' || message.includes('invalid_client')) {
+      try {
+        const { vibe, energyLevel, trackCount } = validateMagicSet(req.body || {});
+        const fallback = await generateFallbackPlaylist(vibe, energyLevel, trackCount);
+        ApiLogger.logRequest(context, 'Magic Set fallback generated (Spotify auth failed)', {
+          reason: code || message,
+          trackCount: fallback.tracks?.length || 0,
+          vibe,
+          energyLevel
+        });
+        res.setHeader('Cache-Control', 'no-store');
+        res.setHeader('Content-Type', 'application/json');
+        return res.status(200).json(fallback);
+      } catch (inner) {
+        // If fallback fails, return original error below
+      }
+    }
+
     const normalized = normalizeError(e, {
       code: 'MAGIC_SET_ERROR',
       message: 'Failed to generate magic set playlist',
@@ -333,3 +355,26 @@ async function magicSetHandler(req: VercelRequest, res: VercelResponse) {
 export default (apiConfig.ENABLE_IDEMPOTENCY
   ? withIdempotency(magicSetHandler)
   : magicSetHandler);
+
+async function generateFallbackPlaylist(vibe: Vibe, energyLevel: EnergyLevel, trackCount: number): Promise<PlaylistDTO> {
+  const canonicalVibe = normalizeVibe(vibe);
+  const canonicalEnergy = normalizeEnergy(energyLevel);
+  const tracks: any[] = [];
+  for (let i = 0; i < trackCount; i++) {
+    tracks.push(generateFallbackTrack(canonicalVibe, canonicalEnergy, i));
+  }
+  const total = tracks.reduce((s, t) => s + (t.duration || 180), 0);
+  return {
+    id: `fallback-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    name: `Magic ${canonicalVibe} Set (${canonicalEnergy.charAt(0).toUpperCase() + canonicalEnergy.slice(1)} Energy)`,
+    description: `Fallback ${canonicalVibe} playlist (Spotify unavailable)`,
+    tracks,
+    total_duration: total,
+    user_id: 'api-fallback',
+    genre: canonicalVibe,
+    energy_level: canonicalEnergy,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    schemaVersion: 1,
+  };
+}
