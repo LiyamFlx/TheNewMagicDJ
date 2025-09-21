@@ -98,6 +98,9 @@ final_fix.sh
 # Ignore Playwright outputs
 playwright-report/
 test-results/
+
+# Test files
+tests/
 TheNewMagicDJ.mcpb
 *.report.html
 # Environment files (never commit secrets)
