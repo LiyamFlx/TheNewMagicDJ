@@ -263,7 +263,7 @@ function generateFallbackTrack(vibe: string, energyLevel: string, index: number)
     youtube_url: null,
     thumbnail: null,
     genre: vibe,
-    energy_level: energyLevel,
+    energy_level: energyLevel as EnergyLevel,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   };

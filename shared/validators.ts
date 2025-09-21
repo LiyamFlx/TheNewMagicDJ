@@ -11,7 +11,9 @@ import type {
   UpdatePlaylistRequest,
   AddTrackRequest,
   CreateSessionRequest,
-  UpdateSessionRequest,
+  UpdateSessionRequest
+} from './dto.js';
+import {
   isValidVibe,
   isValidEnergyLevel,
   isMagicSetRequest
