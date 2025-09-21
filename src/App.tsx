@@ -21,6 +21,7 @@ import { supabase } from './lib/supabase';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useSpotifyToken } from './hooks/useSpotifyToken';
 import { useToast } from './hooks/useToast';
+import { logger } from './utils/logger';
 
 // Lazy-loaded heavy components
 const MagicStudio = React.lazy(() => import('./components/MagicStudio'));
@@ -34,10 +35,23 @@ const AnalyticsExport = React.lazy(
 const LibraryProfile = React.lazy(() => import('./components/LibraryProfile'));
 
 // --- Central Logger ---
+// Wrapper for shared logger to match prior lightweight usage in this file
 const Logger = {
-  info: (...args: any[]) => console.log('[INFO]', ...args),
-  error: (...args: any[]) => console.error('[ERROR]', ...args),
-  warn: (...args: any[]) => console.warn('[WARN]', ...args),
+  info: (...args: any[]) => {
+    const [message, ...rest] = args;
+    const data = rest.length ? (rest.length === 1 ? rest[0] : { args: rest }) : undefined;
+    logger.info('App', String(message), data);
+  },
+  warn: (...args: any[]) => {
+    const [message, ...rest] = args;
+    const data = rest.length ? (rest.length === 1 ? rest[0] : { args: rest }) : undefined;
+    logger.warn('App', String(message), data);
+  },
+  error: (...args: any[]) => {
+    const [message, ...rest] = args;
+    const err = rest.find((r: any) => r instanceof Error) ?? rest[0];
+    logger.error('App', String(message), err);
+  },
 };
 
 // --- State ---

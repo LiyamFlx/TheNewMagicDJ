@@ -1,11 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { withIdempotency } from '../utils/idempotency.js';
 import apiConfig from './config.js';
-import {
-  AppError,
-  errorFromResponse,
-  normalizeError,
-} from '../src/utils/errors.js';
+import { AppError, normalizeError } from '../src/utils/errors.js';
 
 type Bucket = { count: number; reset: number };
 const buckets = new Map<string, Bucket>();
@@ -135,19 +131,22 @@ async function youtubeSearchHandler(req: VercelRequest, res: VercelResponse) {
 
     const data = await response.json();
 
-    // Filter and clean the results
-    const cleanedItems = (data.items || []).map((item: any) => ({
-      id: {
-        videoId: item.id.videoId
-      },
-      snippet: {
-        title: item.snippet.title,
-        channelTitle: item.snippet.channelTitle,
-        description: item.snippet.description,
-        publishedAt: item.snippet.publishedAt,
-        thumbnails: item.snippet.thumbnails
-      }
-    }));
+    // Filter and clean the results with guards for shape changes
+    const cleanedItems = (Array.isArray(data.items) ? data.items : [])
+      .filter((item: any) => item && item.id && (item.id.videoId || item.id.kind === 'youtube#video'))
+      .map((item: any) => ({
+        id: {
+          videoId: item.id.videoId || item.id.videoId || null,
+        },
+        snippet: {
+          title: item.snippet?.title ?? '',
+          channelTitle: item.snippet?.channelTitle ?? '',
+          description: item.snippet?.description ?? '',
+          publishedAt: item.snippet?.publishedAt ?? '',
+          thumbnails: item.snippet?.thumbnails ?? {},
+        },
+      }))
+      .filter((i: any) => i.id.videoId);
 
     const result = {
       items: cleanedItems,

@@ -1,6 +1,7 @@
 // Supabase playlist service - Improved version
 import { supabase } from '../lib/supabase';
 import { AppError } from '../utils/errors';
+import { logger } from '../utils/logger';
 
 // Types for better type safety
 interface Track {
@@ -88,13 +89,13 @@ class AuthHelper {
       
       return { isAuthenticated, session };
     } catch (error) {
-      console.error('Authentication check failed:', error);
+      logger.error('supabasePlaylistService', 'Authentication check failed', error as any);
       return { isAuthenticated: false, session: null };
     }
   }
 
   static handleUnauthenticated(operation: string, fallbackValue: any = null) {
-    console.warn(`Supabase not authenticated; skipping ${operation}.`);
+    logger.warn('supabasePlaylistService', `Supabase not authenticated; skipping ${operation}.`);
     return fallbackValue;
   }
 }
@@ -140,7 +141,7 @@ export const supabasePlaylistService = {
         return AuthHelper.handleUnauthenticated('remote save', { ...playlist });
       }
 
-      console.log('Saving playlist:', {
+      logger.info('supabasePlaylistService', 'Saving playlist', {
         playlistId: playlist.id,
         name: playlist.name,
         userId,
@@ -152,7 +153,7 @@ export const supabasePlaylistService = {
       
       return result;
     } catch (error) {
-      console.error('SavePlaylist error:', error);
+      logger.error('supabasePlaylistService', 'SavePlaylist error', error as any);
       throw error;
     }
   },
@@ -175,13 +176,13 @@ export const supabasePlaylistService = {
       .single();
 
     if (playlistError) {
-      console.error('Supabase playlist save error:', playlistError);
+      logger.error('supabasePlaylistService', 'Supabase playlist save error', playlistError as any);
       throw new AppError('UPSTREAM_ERROR', 'Failed to save playlist', {
         details: { playlistError },
       });
     }
 
-    console.log('Playlist saved:', playlistData);
+    logger.info('supabasePlaylistService', 'Playlist saved', playlistData);
 
     // Save tracks if provided
     if (tracks.length > 0) {
@@ -203,10 +204,10 @@ export const supabasePlaylistService = {
       .insert(trackData);
 
     if (tracksError) {
-      console.error('Supabase tracks save error:', tracksError);
-      console.warn('Failed to save some tracks, but playlist was saved');
+      logger.error('supabasePlaylistService', 'Supabase tracks save error', tracksError as any);
+      logger.warn('supabasePlaylistService', 'Failed to save some tracks, but playlist was saved');
     } else {
-      console.log(`Saved ${trackData.length} tracks`);
+      logger.info('supabasePlaylistService', `Saved ${trackData.length} tracks`);
     }
   },
 
@@ -234,7 +235,7 @@ export const supabasePlaylistService = {
       
       return playlists;
     } catch (error) {
-      console.error('Supabase getPlaylists error:', error);
+      logger.error('supabasePlaylistService', 'Supabase getPlaylists error', error as any);
       throw new AppError('UPSTREAM_ERROR', 'Failed to fetch playlists', {
         details: { error },
       });
@@ -250,7 +251,7 @@ export const supabasePlaylistService = {
       .order('created_at', { ascending: false });
 
     if (playlistError) {
-      console.error('Supabase playlist query error:', playlistError);
+      logger.error('supabasePlaylistService', 'Supabase playlist query error', playlistError as any);
       throw new AppError('UPSTREAM_ERROR', 'Failed to fetch playlists', {
         details: { playlistError },
       });
@@ -275,7 +276,7 @@ export const supabasePlaylistService = {
       .order('created_at', { ascending: true });
 
     if (tracksError) {
-      console.error('Supabase tracks query error:', tracksError);
+      logger.error('supabasePlaylistService', 'Supabase tracks query error', tracksError as any);
       return []; // Return empty array rather than failing
     }
 
@@ -343,7 +344,7 @@ export const supabasePlaylistService = {
       cache.bustUserCache(userId);
       return { ...data, tracks: [] };
     } catch (error) {
-      console.error('Create playlist error:', error);
+      logger.error('supabasePlaylistService', 'Create playlist error', error as any);
       throw error;
     }
   },
@@ -380,7 +381,7 @@ export const supabasePlaylistService = {
 
       return true;
     } catch (error) {
-      console.error('Delete playlist error:', error);
+      logger.error('supabasePlaylistService', 'Delete playlist error', error as any);
       throw error;
     }
   },
@@ -421,7 +422,7 @@ export const supabasePlaylistService = {
       cache.bustUserCache(userId);
       return data;
     } catch (error) {
-      console.error('Update playlist error:', error);
+      logger.error('supabasePlaylistService', 'Update playlist error', error as any);
       throw error;
     }
   },

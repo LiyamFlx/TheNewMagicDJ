@@ -21,7 +21,7 @@ export function useSpotifyToken(): UseSpotifyTokenReturn {
     expiresAt: null,
   });
 
-  const fetchToken = useCallback(async () => {
+  const fetchToken = useCallback(async (): Promise<string | null> => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
@@ -32,12 +32,10 @@ export function useSpotifyToken(): UseSpotifyTokenReturn {
       }
 
       const data = await response.json();
-      setState({
-        token: data.access_token,
-        isLoading: false,
-        error: null,
-        expiresAt: Date.now() + data.expires_in * 1000 - 60000,
-      });
+      const accessToken: string = data.access_token;
+      const expiresAt = Date.now() + data.expires_in * 1000 - 60000;
+      setState({ token: accessToken, isLoading: false, error: null, expiresAt });
+      return accessToken;
     } catch (error) {
       setState({
         token: null,
@@ -45,6 +43,7 @@ export function useSpotifyToken(): UseSpotifyTokenReturn {
         error: error instanceof Error ? error.message : 'Unknown error',
         expiresAt: null,
       });
+      return null;
     }
   }, []);
 
@@ -59,16 +58,16 @@ export function useSpotifyToken(): UseSpotifyTokenReturn {
       return state.token;
     }
 
-    // Otherwise fetch a new token
-    await fetchToken();
-    return state.token;
+    // Otherwise fetch a new token and return it directly
+    const token = await fetchToken();
+    return token;
   }, [fetchToken, state.token, state.expiresAt]);
 
   const isExpired = state.expiresAt ? Date.now() >= state.expiresAt : false;
 
   return {
     ...state,
-    refetch: fetchToken,
+    refetch: async () => { await fetchToken(); },
     isExpired,
     fetchLazy,
   };

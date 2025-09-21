@@ -1,11 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { withIdempotency } from '../utils/idempotency.js';
 import apiConfig from './config.js';
-import {
-  AppError,
-  errorFromResponse,
-  normalizeError,
-} from '../src/utils/errors.js';
+import { AppError, normalizeError } from '../src/utils/errors.js';
 
 type Bucket = { count: number; reset: number };
 const buckets = new Map<string, Bucket>();
@@ -106,6 +102,20 @@ async function searchYouTube(query: string, maxResults: number = 10) {
   return await response.json();
 }
 
+function normalizeVibe(v: string): 'Electronic' | 'Hip-Hop' | 'House' | 'Techno' {
+  const s = (v || '').toLowerCase();
+  if (s === 'electronic') return 'Electronic';
+  if (s === 'hip-hop' || s === 'hiphop' || s === 'hip hop') return 'Hip-Hop';
+  if (s === 'house') return 'House';
+  if (s === 'techno') return 'Techno';
+  return 'Electronic';
+}
+
+function normalizeEnergy(e: string): 'low' | 'medium' | 'high' {
+  const s = (e || '').toLowerCase();
+  return (['low', 'medium', 'high'].includes(s) ? (s as any) : 'medium');
+}
+
 // Generate Magic Set playlist
 async function generateMagicSetPlaylist(vibe: string, energyLevel: string, trackCount: number = 10) {
   try {
@@ -113,7 +123,9 @@ async function generateMagicSetPlaylist(vibe: string, energyLevel: string, track
     const spotifyToken = await getSpotifyToken();
 
     // Create genre-based search queries
-    const genreQueries = getGenreQueries(vibe, energyLevel);
+    const canonicalVibe = normalizeVibe(vibe);
+    const canonicalEnergy = normalizeEnergy(energyLevel);
+    const genreQueries = getGenreQueries(canonicalVibe, canonicalEnergy);
 
     const tracks = [];
     const seenTitles = new Set();
@@ -148,8 +160,8 @@ async function generateMagicSetPlaylist(vibe: string, energyLevel: string, track
               youtube_id: youtubeVideo.id.videoId,
               youtube_url: `https://www.youtube.com/watch?v=${youtubeVideo.id.videoId}`,
               thumbnail: youtubeVideo.snippet.thumbnails?.medium?.url || youtubeVideo.snippet.thumbnails?.default?.url,
-              genre: vibe,
-              energy_level: energyLevel,
+              genre: canonicalVibe,
+              energy_level: canonicalEnergy,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             });
@@ -165,7 +177,7 @@ async function generateMagicSetPlaylist(vibe: string, energyLevel: string, track
 
     // Fill remaining slots with fallback tracks if needed
     while (tracks.length < trackCount) {
-      const fallbackTrack = generateFallbackTrack(vibe, energyLevel, tracks.length);
+      const fallbackTrack = generateFallbackTrack(canonicalVibe, canonicalEnergy, tracks.length);
       tracks.push(fallbackTrack);
     }
 
@@ -174,14 +186,14 @@ async function generateMagicSetPlaylist(vibe: string, energyLevel: string, track
 
     return {
       id: `playlist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      name: `Magic ${vibe} Set (${energyLevel.charAt(0).toUpperCase() + energyLevel.slice(1)} Energy)`,
-      description: `AI-generated ${vibe} playlist with ${energyLevel} energy level. Perfect for your next DJ set!`,
+      name: `Magic ${canonicalVibe} Set (${canonicalEnergy.charAt(0).toUpperCase() + canonicalEnergy.slice(1)} Energy)`,
+      description: `AI-generated ${canonicalVibe} playlist with ${canonicalEnergy} energy level. Perfect for your next DJ set!`,
       tracks,
       total_duration: totalDuration,
       user_id: 'api-generated',
       is_public: false,
-      genre: vibe,
-      energy_level: energyLevel,
+      genre: canonicalVibe,
+      energy_level: canonicalEnergy,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -308,7 +320,7 @@ async function magicSetHandler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const { vibe, energyLevel, trackCount = 10 } = req.body;
+    const { vibe, energyLevel, trackCount = 10 } = req.body || {};
 
     if (!vibe || !energyLevel) {
       res.setHeader('Content-Type', 'application/json');
@@ -320,10 +332,14 @@ async function magicSetHandler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    const canonicalVibe = normalizeVibe(vibe);
+    const canonicalEnergy = normalizeEnergy(energyLevel);
+
     const validVibes = ['Electronic', 'Hip-Hop', 'House', 'Techno'];
     const validEnergyLevels = ['low', 'medium', 'high'];
 
-    if (!validVibes.includes(vibe)) {
+    // If input normalizes to a valid value, accept it transparently
+    if (!validVibes.includes(canonicalVibe)) {
       res.setHeader('Content-Type', 'application/json');
       return res.status(400).json({
         error: {
@@ -333,7 +349,7 @@ async function magicSetHandler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    if (!validEnergyLevels.includes(energyLevel)) {
+    if (!validEnergyLevels.includes(canonicalEnergy)) {
       res.setHeader('Content-Type', 'application/json');
       return res.status(400).json({
         error: {
@@ -343,7 +359,7 @@ async function magicSetHandler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const playlist = await generateMagicSetPlaylist(vibe, energyLevel, Math.min(trackCount, 20));
+    const playlist = await generateMagicSetPlaylist(canonicalVibe, canonicalEnergy, Math.min(trackCount, 20));
 
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('Content-Type', 'application/json');

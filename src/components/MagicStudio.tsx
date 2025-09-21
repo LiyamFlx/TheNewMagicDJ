@@ -674,15 +674,16 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
                     {vibes.map(vibe => {
                       const Icon = vibe.icon;
                       const isSelected =
-                        selectedVibe === vibe.name.toLowerCase();
+                        selectedVibe === vibe.name;
                       return (
                         <button
                           key={vibe.name}
                           onClick={() => {
-                            setSelectedVibe(vibe.name.toLowerCase());
+                            // Use canonical casing expected by API ('Electronic', 'Hip-Hop', 'House', 'Techno')
+                            setSelectedVibe(vibe.name);
                             if (selectedEnergy) {
                               handleMagicSet(
-                                vibe.name.toLowerCase(),
+                                vibe.name,
                                 selectedEnergy
                               );
                             }

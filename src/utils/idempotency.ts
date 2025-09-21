@@ -27,7 +27,12 @@ class IdempotencyManager {
     const url = new URL(request.url);
     const method = request.method;
     const bodyStr = body ? JSON.stringify(body) : '';
-    return `${method}:${url.pathname}:${btoa(bodyStr)}`;
+    // Use a Node-safe base64 when window.btoa is unavailable
+    const base64 =
+      typeof window === 'undefined'
+        ? Buffer.from(bodyStr).toString('base64')
+        : btoa(bodyStr);
+    return `${method}:${url.pathname}:${base64}`;
   }
 
   store(key: string, response: any): void {
