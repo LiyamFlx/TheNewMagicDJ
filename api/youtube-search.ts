@@ -2,34 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { withIdempotency } from '../utils/idempotency.js';
 import apiConfig from './config.js';
 import { AppError, normalizeError } from '../src/utils/errors.js';
-
-type Bucket = { count: number; reset: number };
-const buckets = new Map<string, Bucket>();
-const BUCKET_MAX = 20;
-const BUCKET_WINDOW_MS = 60_000;
-
-function getClientKey(req: VercelRequest): string {
-  const ip =
-    (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-    req.socket.remoteAddress ||
-    'unknown';
-  return `youtube:${ip}`;
-}
-
-function checkBucket(req: VercelRequest) {
-  const key = getClientKey(req);
-  const now = Date.now();
-  const entry = buckets.get(key);
-  if (!entry || now >= entry.reset) {
-    buckets.set(key, { count: 1, reset: now + BUCKET_WINDOW_MS });
-    return { allowed: true };
-  }
-  if (entry.count >= BUCKET_MAX) {
-    return { allowed: false, retryAfter: entry.reset - now };
-  }
-  entry.count += 1;
-  return { allowed: true };
-}
+import { validateYouTubeSearch } from '../shared/validators.js';
+import { checkAndConsume } from '../utils/apiRateLimiter.js';
 
 async function fetchWithTimeout(
   input: RequestInfo | URL,
@@ -67,27 +41,14 @@ async function youtubeSearchHandler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const bucket = checkBucket(req);
-    if (!bucket.allowed) {
-      res.setHeader(
-        'Retry-After',
-        Math.ceil((bucket.retryAfter || 1000) / 1000).toString()
-      );
+    const decision = await checkAndConsume(req, 'youtube-search', 100, 60_000);
+    if (!decision.allowed) {
+      res.setHeader('Retry-After', Math.ceil(decision.retryAfter / 1000).toString());
       res.setHeader('Content-Type', 'application/json');
-      return res.status(429).json({
-        error: { code: 'RATE_LIMITED', message: 'Too many requests' },
-      });
+      return res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many requests' } });
     }
 
-    const query = req.query.q as string;
-    const maxResults = Math.min(parseInt(req.query.maxResults as string) || 10, 50);
-
-    if (!query || query.trim().length === 0) {
-      res.setHeader('Content-Type', 'application/json');
-      return res.status(400).json({
-        error: { code: 'MISSING_QUERY', message: 'Search query is required' },
-      });
-    }
+    const { q: query, maxResults } = validateYouTubeSearch(req.query);
 
     const searchUrl = new URL('https://www.googleapis.com/youtube/v3/search');
     searchUrl.searchParams.set('part', 'snippet');

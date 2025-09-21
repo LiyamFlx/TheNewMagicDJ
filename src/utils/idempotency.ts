@@ -5,23 +5,70 @@ interface IdempotencyRecord {
   expiresAt: number;
 }
 
-class IdempotencyManager {
+// Shared storage adapter interface
+interface StorageAdapter {
+  get(key: string): Promise<any | null>;
+  set(key: string, value: any, ttlSeconds: number): Promise<void>;
+}
+
+class MemoryAdapter implements StorageAdapter {
   private cache = new Map<string, IdempotencyRecord>();
-  private readonly TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+  async get(key: string): Promise<any | null> {
+    const rec = this.cache.get(key);
+    if (!rec) return null;
+    if (rec.expiresAt < Date.now()) {
+      this.cache.delete(key);
+      return null;
+    }
+    return rec.response;
+  }
+  async set(key: string, value: any, ttlSeconds: number): Promise<void> {
+    const now = Date.now();
+    this.cache.set(key, {
+      key,
+      response: value,
+      timestamp: now,
+      expiresAt: now + ttlSeconds * 1000,
+    });
+  }
+}
+
+class KvAdapter implements StorageAdapter {
+  constructor(_ttlSeconds: number) {}
+  async get(key: string): Promise<any | null> {
+    const { kv } = await import('../../utils/kv.js');
+    const raw = await kv.get(`idem:${key}`);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  async set(key: string, value: any, ttlSeconds: number): Promise<void> {
+    const { kv } = await import('../../utils/kv.js');
+    await kv.setex(`idem:${key}`, ttlSeconds, JSON.stringify(value));
+  }
+}
+
+class IdempotencyManager {
+  private readonly TTL_SECONDS = 24 * 60 * 60; // 24 hours
+  private adapter: StorageAdapter;
 
   constructor() {
-    // Clean expired entries every hour
-    setInterval(() => this.cleanup(), 60 * 60 * 1000);
-  }
-
-  private cleanup(): void {
-    const now = Date.now();
-    for (const [key, record] of this.cache.entries()) {
-      if (record.expiresAt < now) {
-        this.cache.delete(key);
+    // Choose adapter based on env
+    if (process.env.DURABLE_STORE_URL && process.env.DURABLE_STORE_TOKEN) {
+      this.adapter = new KvAdapter(this.TTL_SECONDS);
+    } else {
+      this.adapter = new MemoryAdapter();
+      // In-memory cleanup loop (browser only or long-lived)
+      if (typeof window !== 'undefined') {
+        setInterval(() => this.cleanup?.(), 60 * 60 * 1000);
       }
     }
   }
+
+  private cleanup?(): void;
 
   generateKey(request: Request, body?: any): string {
     const url = new URL(request.url);
@@ -35,26 +82,12 @@ class IdempotencyManager {
     return `${method}:${url.pathname}:${base64}`;
   }
 
-  store(key: string, response: any): void {
-    const now = Date.now();
-    this.cache.set(key, {
-      key,
-      response,
-      timestamp: now,
-      expiresAt: now + this.TTL_MS,
-    });
+  async store(key: string, response: any): Promise<void> {
+    await this.adapter.set(key, response, this.TTL_SECONDS);
   }
 
-  retrieve(key: string): any | null {
-    const record = this.cache.get(key);
-    if (!record) return null;
-
-    if (record.expiresAt < Date.now()) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return record.response;
+  async retrieve(key: string): Promise<any | null> {
+    return this.adapter.get(key);
   }
 
   isValidKey(key: string): boolean {
@@ -80,7 +113,7 @@ export function withIdempotency(handler: (req: any, res: any) => Promise<any>) {
     }
 
     // Check for existing response
-    const existingResponse = idempotencyManager.retrieve(idempotencyKey);
+    const existingResponse = await idempotencyManager.retrieve(idempotencyKey);
     if (existingResponse) {
       return res.status(existingResponse.status).json(existingResponse.body);
     }
@@ -96,10 +129,11 @@ export function withIdempotency(handler: (req: any, res: any) => Promise<any>) {
     };
 
     res.json = function (body: any) {
-      idempotencyManager.store(idempotencyKey, {
+      // Fire and forget; do not block response
+      Promise.resolve(idempotencyManager.store(idempotencyKey, {
         status: capturedStatus,
         body,
-      });
+      })).catch(() => {});
       return originalJson.call(this, body);
     };
 

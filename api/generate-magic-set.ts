@@ -2,6 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { withIdempotency } from '../utils/idempotency.js';
 import apiConfig from './config.js';
 import type { PlaylistDTO, Vibe, EnergyLevel } from '../shared/dto.js';
+import { validateMagicSet } from '../shared/validators.js';
+import { checkAndConsume } from '../utils/apiRateLimiter.js';
 import { AppError, normalizeError } from '../src/utils/errors.js';
 
 type Bucket = { count: number; reset: number };
@@ -309,58 +311,16 @@ async function magicSetHandler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const bucket = checkBucket(req);
-    if (!bucket.allowed) {
-      res.setHeader(
-        'Retry-After',
-        Math.ceil((bucket.retryAfter || 1000) / 1000).toString()
-      );
+    const decision = await checkAndConsume(req, 'magic-set', 10, 60_000);
+    if (!decision.allowed) {
+      res.setHeader('Retry-After', Math.ceil(decision.retryAfter / 1000).toString());
       res.setHeader('Content-Type', 'application/json');
-      return res.status(429).json({
-        error: { code: 'RATE_LIMITED', message: 'Too many requests' },
-      });
+      return res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many requests' } });
     }
 
-    const { vibe, energyLevel, trackCount = 10 } = req.body || {};
+    const { vibe, energyLevel, trackCount } = validateMagicSet(req.body || {});
 
-    if (!vibe || !energyLevel) {
-      res.setHeader('Content-Type', 'application/json');
-      return res.status(400).json({
-        error: {
-          code: 'MISSING_PARAMETERS',
-          message: 'vibe and energyLevel are required'
-        },
-      });
-    }
-
-    const canonicalVibe = normalizeVibe(vibe);
-    const canonicalEnergy = normalizeEnergy(energyLevel);
-
-    const validVibes = ['Electronic', 'Hip-Hop', 'House', 'Techno'];
-    const validEnergyLevels = ['low', 'medium', 'high'];
-
-    // If input normalizes to a valid value, accept it transparently
-    if (!validVibes.includes(canonicalVibe)) {
-      res.setHeader('Content-Type', 'application/json');
-      return res.status(400).json({
-        error: {
-          code: 'INVALID_VIBE',
-          message: `vibe must be one of: ${validVibes.join(', ')}`
-        },
-      });
-    }
-
-    if (!validEnergyLevels.includes(canonicalEnergy)) {
-      res.setHeader('Content-Type', 'application/json');
-      return res.status(400).json({
-        error: {
-          code: 'INVALID_ENERGY_LEVEL',
-          message: `energyLevel must be one of: ${validEnergyLevels.join(', ')}`
-        },
-      });
-    }
-
-    const playlist = await generateMagicSetPlaylist(canonicalVibe, canonicalEnergy, Math.min(trackCount, 20));
+    const playlist = await generateMagicSetPlaylist(vibe, energyLevel, trackCount);
 
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('Content-Type', 'application/json');

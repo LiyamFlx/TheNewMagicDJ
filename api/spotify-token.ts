@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-// Use the top-level utils copy, which Vercel includes alongside api/
 import { withIdempotency } from '../utils/idempotency.js';
 import apiConfig from './config.js';
 import {
@@ -7,6 +6,7 @@ import {
   errorFromResponse,
   normalizeError,
 } from '../src/utils/errors.js';
+import { checkAndConsume } from '../utils/apiRateLimiter.js';
 
 type TokenCache = {
   access_token: string;
@@ -89,16 +89,11 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
   );
 
   try {
-    const bucket = checkBucket(req);
-    if (!bucket.allowed) {
-      res.setHeader(
-        'Retry-After',
-        Math.ceil((bucket.retryAfter || 1000) / 1000).toString()
-      );
+    const decision = await checkAndConsume(req, 'spotify-token', 30, 60_000);
+    if (!decision.allowed) {
+      res.setHeader('Retry-After', Math.ceil(decision.retryAfter / 1000).toString());
       res.setHeader('Content-Type', 'application/json');
-      return res.status(429).json({
-        error: { code: 'RATE_LIMITED', message: 'Too many requests' },
-      });
+      return res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many requests' } });
     }
 
     const now = Date.now();
