@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import styles from './MagicStudio.module.css';
 import {
   Zap,
@@ -44,6 +44,31 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
     'low' | 'medium' | 'high' | ''
   >('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Prefill from URL query params (?vibe=House&energy=high)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const vibeParam = params.get('vibe');
+      const energyParam = params.get('energy');
+      if (vibeParam) {
+        const canonical = ['Electronic','Hip-Hop','House','Techno'].find(v => v.toLowerCase() === vibeParam.toLowerCase());
+        if (canonical) setSelectedVibe(canonical);
+      }
+      if (energyParam) {
+        const e = ['low','medium','high'].find(x => x === energyParam.toLowerCase()) as 'low'|'medium'|'high'|undefined;
+        if (e) setSelectedEnergy(e);
+      }
+      if (vibeParam && energyParam) {
+        const canonical = ['Electronic','Hip-Hop','House','Techno'].find(v => v.toLowerCase() === vibeParam.toLowerCase());
+        const e = ['low','medium','high'].find(x => x === energyParam.toLowerCase()) as 'low'|'medium'|'high'|undefined;
+        if (canonical && e) {
+          handleMagicSet(canonical, e);
+        }
+      }
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const vibes = [
     {

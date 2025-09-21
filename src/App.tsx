@@ -5,6 +5,7 @@ import {
   Route,
   Navigate,
   useNavigate,
+  useLocation,
 } from 'react-router-dom';
 
 import Navigation from './components/Navigation';
@@ -129,14 +130,28 @@ function appReducer(state: AppState, action: Action): AppState {
 // --- Main AppContent ---
 function AppContent() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { showToast } = useToast();
   const [state, dispatch] = useReducer(appReducer, initialState);
+  // Save function indirection to allow debounced calls before declaration
+  const saveFnRef = React.useRef<(pl: Playlist) => void>(() => {});
+  const saveDebounceRef = React.useRef<number | null>(null);
+  const saveCurrentPlaylistDebounced = useCallback((pl: Playlist) => {
+    if (saveDebounceRef.current) {
+      window.clearTimeout(saveDebounceRef.current);
+    }
+    saveDebounceRef.current = window.setTimeout(() => {
+      try { saveFnRef.current?.(pl); } catch {}
+      localStorage.setItem('last-resume-at', String(Date.now()));
+    }, 500);
+  }, []);
 
   // Spotify token
   const {
     isLoading: tokenLoading,
     fetchLazy: fetchSpotifyTokenLazy,
   } = useSpotifyToken();
+  
 
   // Local storage
   const [userPreferences] = useLocalStorage('user-preferences', {
@@ -148,6 +163,12 @@ function AppContent() {
     'last-playlist-id',
     ''
   );
+
+  
+  
+  
+  const [lastRoute, setLastRoute] = useLocalStorage<string>('last-route', '/');
+  const [authDismissedAt, setAuthDismissedAt] = useLocalStorage<number>('auth-dismissed-at', 0);
 
   // --- Spotify is now lazily initialized when needed as fallback ---
   // Removed automatic initialization to improve startup performance
@@ -189,11 +210,15 @@ function AppContent() {
           dispatch({ type: 'SET_USER', payload: appUser });
           Logger.info('User already authenticated');
         } else {
-          // Set up popup timer for unauthenticated users on homepage
+          // Set up popup timer for unauthenticated users on homepage, respect dismissal for 7 days
           if (window.location.pathname === '/') {
-            setTimeout(() => {
-              dispatch({ type: 'SHOW_AUTH_MODAL', payload: { show: true, mode: 'signup' } });
-            }, 5000); // 5 seconds
+            const dismissedAgo = Date.now() - (authDismissedAt || 0);
+            const sevenDays = 7 * 24 * 60 * 60 * 1000;
+            if (dismissedAgo > sevenDays) {
+              setTimeout(() => {
+                dispatch({ type: 'SHOW_AUTH_MODAL', payload: { show: true, mode: 'signup' } });
+              }, 5000);
+            }
           }
         }
 
@@ -249,7 +274,33 @@ function AppContent() {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [authDismissedAt]);
+
+  // Persist last route for resume
+  useEffect(() => {
+    setLastRoute(location.pathname + location.search);
+  }, [location.pathname, location.search, setLastRoute]);
+
+  // Initialize Spotify token on player route
+  useEffect(() => {
+    if (location.pathname.startsWith('/play')) {
+      fetchSpotifyTokenLazy().catch(() => {});
+      localStorage.setItem('last-resume-at', String(Date.now()));
+    }
+  }, [location.pathname, fetchSpotifyTokenLazy]);
+
+  // Auto-resume recent work when landing on home
+  useEffect(() => {
+    if (location.pathname === '/') {
+      const last = lastRoute || '/';
+      const within12h = (Date.now() - (Number(localStorage.getItem('last-resume-at')) || 0)) < (12 * 60 * 60 * 1000);
+      const canResume = state.currentPlaylist || lastPlaylistId;
+      if (canResume && (last.startsWith('/create') || last.startsWith('/play')) && within12h) {
+        showToast('Resuming where you left off', 'info');
+        navigate(last);
+      }
+    }
+  }, [location.pathname, lastRoute, state.currentPlaylist, lastPlaylistId, navigate, showToast]);
 
   // --- Load user data ---
   const loadUserData = useCallback(async (userId: string) => {
@@ -406,6 +457,11 @@ function AppContent() {
     ]
   );
 
+  // Bind latest save function to ref used by debounced saver
+  useEffect(() => {
+    saveFnRef.current = saveCurrentPlaylist;
+  }, [saveCurrentPlaylist]);
+
   // --- Auth handlers ---
   const handleAuthClick = (isSignUp: boolean) => {
     dispatch({ type: 'SHOW_AUTH_MODAL', payload: { show: true, mode: isSignUp ? 'signup' : 'signin' } });
@@ -413,6 +469,7 @@ function AppContent() {
 
   const handleAuthModalClose = () => {
     dispatch({ type: 'SHOW_AUTH_MODAL', payload: { show: false } });
+    setAuthDismissedAt(Date.now());
   };
 
   // --- Playlist handlers ---
@@ -471,7 +528,7 @@ function AppContent() {
         updated_at: new Date().toISOString(),
       };
       dispatch({ type: 'SET_PLAYLIST', payload: updatedPlaylist });
-      saveCurrentPlaylist(updatedPlaylist);
+      saveCurrentPlaylistDebounced(updatedPlaylist);
     } catch (error) {
       Logger.error('handleTrackReorder', 'Failed to reorder tracks', error);
       showToast('Failed to reorder tracks', 'error');
@@ -505,7 +562,7 @@ function AppContent() {
         updated_at: new Date().toISOString(),
       };
       dispatch({ type: 'SET_PLAYLIST', payload: updatedPlaylist });
-      saveCurrentPlaylist(updatedPlaylist);
+      saveCurrentPlaylistDebounced(updatedPlaylist);
       showToast('Track removed successfully', 'success');
     } catch (error) {
       Logger.error('handleTrackRemove', 'Failed to remove track', error);
@@ -515,7 +572,7 @@ function AppContent() {
 
   const handlePlaylistUpdate = (playlist: Playlist) => {
     dispatch({ type: 'SET_PLAYLIST', payload: playlist });
-    saveCurrentPlaylist(playlist);
+    saveCurrentPlaylistDebounced(playlist);
   };
 
   // --- Session handlers ---
