@@ -45,6 +45,22 @@ export interface TrackDTO {
   // Timestamps
   created_at?: string;
   updated_at?: string;
+
+  // Optional enriched analytics/features and provenance
+  advanced_features?: {
+    bpm: number;
+    key: string;
+    genre?: string;
+    energy: number;
+    mfcc_features?: number[];
+    spectral_centroid?: number;
+    confidence?: number;
+    valence?: number;
+    danceability?: number;
+    acousticness?: number;
+    instrumentalness?: number;
+  };
+  recognition_source?: string;
 }
 
 /**
@@ -62,6 +78,16 @@ export interface PlaylistDTO {
   created_at?: string;
   updated_at?: string;
   schemaVersion?: number;
+
+  // Optional playlist-level metadata for UI/analytics
+  metadata?: {
+    harmonic_mixing?: boolean;
+    dominant_key?: string | null;
+    bpm_range?: { min: number; max: number; avg: number } | null;
+    advanced_features?: boolean;
+    track_count?: number;
+    fallback_mode?: boolean;
+  };
 }
 
 /**
@@ -285,4 +311,3 @@ export function isMagicSetRequest(obj: any): obj is MagicSetRequest {
     (obj.trackCount === undefined || (typeof obj.trackCount === 'number' && obj.trackCount >= 1 && obj.trackCount <= 50))
   );
 }
-

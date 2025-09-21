@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { withIdempotency } from '../utils/idempotency.js';
 import apiConfig from './config.js';
-import type { PlaylistDTO, Vibe, EnergyLevel } from '../shared/dto.js';
+import type { PlaylistDTO, Vibe, EnergyLevel, TrackDTO } from '../shared/dto.js';
 import { validateMagicSet } from '../shared/validators.js';
 import { checkAndConsume } from '../utils/apiRateLimiter.js';
 import { AppError, normalizeError } from '../src/utils/errors.js';
@@ -89,7 +89,7 @@ async function generateMagicSetPlaylist(vibe: Vibe, energyLevel: EnergyLevel, tr
     const canonicalEnergy = normalizeEnergy(energyLevel);
     const genreQueries = getGenreQueries(canonicalVibe, canonicalEnergy);
 
-    const tracks = [];
+    const tracks: TrackDTO[] = [];
     const seenTitles = new Set();
 
     for (const query of genreQueries) {
@@ -275,7 +275,7 @@ function getGenreQueries(vibe: string, energyLevel: string): string[] {
 }
 
 // Generate fallback track when APIs fail
-function generateFallbackTrack(vibe: string, energyLevel: string, index: number) {
+function generateFallbackTrack(vibe: string, energyLevel: string, index: number): TrackDTO {
   const fallbackTracks: Record<string, any[]> = {
     'Electronic': [
       { title: 'Synthetic Dreams', artist: 'Digital Waves' },
