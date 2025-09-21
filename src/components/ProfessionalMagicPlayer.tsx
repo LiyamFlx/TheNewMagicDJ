@@ -1502,7 +1502,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                       logger.error('ProfessionalMagicPlayer', 'YouTube A player error', error);
                       handleSourceError('A', error);
                     }}
-                    onProgress={(currentTime, duration) => {
+                    onTimeUpdate={(currentTime: number) => {
+                      const duration = youtubeARef.current?.getDuration() || 0;
                       dispatch({ type: 'SET_TIME', payload: { currentTime, duration } });
                       const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
                       dispatch({ type: 'SET_PROGRESS', payload: { deck: 'deckA', value: progress } });
@@ -1799,7 +1800,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                       logger.error('ProfessionalMagicPlayer', 'YouTube B player error', error);
                       handleSourceError('B', error);
                     }}
-                    onProgress={(currentTime, duration) => {
+                    onTimeUpdate={(currentTime: number) => {
+                      const duration = youtubeBRef.current?.getDuration() || 0;
                       const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
                       dispatch({ type: 'SET_PROGRESS', payload: { deck: 'deckB', value: progress } });
                     }}
