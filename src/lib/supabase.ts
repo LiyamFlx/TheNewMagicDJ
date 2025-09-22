@@ -16,6 +16,18 @@ export const supabase = createClient(resolvedUrl, resolvedKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    storageKey: 'sb-auth-token',
+    debug: import.meta.env.DEV,
+    flowType: 'pkce',
+  },
+  db: {
+    schema: 'public',
+  },
+  global: {
+    headers: {
+      'x-application-name': 'MagicDJ',
+    },
   },
 });
 
