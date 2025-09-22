@@ -669,6 +669,10 @@ function AppContent() {
                       state.currentPlaylist &&
                       handlePlaylistEdited(state.currentPlaylist)
                     }
+                    onSavePlaylist={() =>
+                      state.currentPlaylist &&
+                      saveCurrentPlaylist(state.currentPlaylist)
+                    }
                   />
                 ) : (
                   <MagicStudio
@@ -697,6 +701,7 @@ function AppContent() {
                     }
                     onSessionEnd={handleSessionEnd}
                     onBack={() => navigate('/create')}
+                    onSavePlaylist={saveCurrentPlaylist}
                   />
                 ) : (
                   <Navigate to="/create" replace />

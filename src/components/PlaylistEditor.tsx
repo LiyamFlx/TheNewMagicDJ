@@ -27,6 +27,7 @@ interface PlaylistEditorProps {
   onTrackReorder: (fromIndex: number, toIndex: number) => void;
   onPlaylistUpdate: (playlist: Playlist) => void;
   onSendToPlayer?: () => void;
+  onSavePlaylist?: () => void;
   className?: string;
 }
 
@@ -39,6 +40,7 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
   onTrackReorder,
   onPlaylistUpdate,
   onSendToPlayer,
+  onSavePlaylist,
   className = '',
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -213,6 +215,15 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
         </div>
 
         <div className="flex-end space-md">
+          {onSavePlaylist && (
+            <button
+              onClick={onSavePlaylist}
+              className="btn-success btn-lg flex-center space-sm ease-bounce shadow-neon-cyan"
+            >
+              <Save className="w-5 h-5" />
+              <span className="hidden sm:inline">SAVE PLAYLIST</span>
+            </button>
+          )}
           {onSendToPlayer && (
             <button
               onClick={onSendToPlayer}

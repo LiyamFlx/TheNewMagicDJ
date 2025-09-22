@@ -37,6 +37,7 @@ interface ProfessionalMagicPlayerProps {
   onPlayPause: (playing: boolean) => void;
   onSessionEnd: () => void;
   onBack: () => void;
+  onSavePlaylist?: (playlist: Playlist) => void;
 }
 
 // Consolidated state interface using useReducer
@@ -387,6 +388,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
   onPlayPause,
   onSessionEnd,
   onBack,
+  onSavePlaylist,
 }) => {
   const [state, dispatch] = useReducer(playerReducer, initialState);
   const { addCleanup } = useResourceCleanup();
@@ -1942,6 +1944,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 onTrackRemove={handleTrackRemove}
                 onTrackReorder={handleTrackReorder}
                 onPlaylistUpdate={handlePlaylistUpdate}
+                onSavePlaylist={onSavePlaylist ? () => playlist && onSavePlaylist(playlist) : undefined}
                 className="max-h-96 overflow-hidden"
               />
             )}
