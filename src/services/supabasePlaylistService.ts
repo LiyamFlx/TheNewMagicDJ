@@ -205,7 +205,7 @@ export const supabasePlaylistService = {
 
     const { data: playlistData, error: playlistError } = await supabase
       .from('playlists')
-      .upsert(playlistPayload, { onConflict: 'id' })
+      .upsert(playlistPayload)
       .select()
       .single();
 
@@ -243,7 +243,7 @@ export const supabasePlaylistService = {
     if (spotifyGroup.length > 0) {
       const { error } = await supabase
         .from('tracks')
-        .upsert(spotifyGroup, { onConflict: 'playlist_id,spotify_id' });
+        .upsert(spotifyGroup);
       if (error) {
         logger.error('supabasePlaylistService', 'Tracks upsert error (spotify_id)', error as any);
       } else {
@@ -255,7 +255,7 @@ export const supabasePlaylistService = {
     if (youtubeGroup.length > 0) {
       const { error } = await supabase
         .from('tracks')
-        .upsert(youtubeGroup, { onConflict: 'playlist_id,youtube_id' });
+        .upsert(youtubeGroup);
       if (error) {
         logger.error('supabasePlaylistService', 'Tracks upsert error (youtube_id)', error as any);
       } else {
@@ -267,7 +267,7 @@ export const supabasePlaylistService = {
     if (positionGroup.length > 0) {
       const { error } = await supabase
         .from('tracks')
-        .upsert(positionGroup, { onConflict: 'playlist_id,position' });
+        .upsert(positionGroup);
       if (error) {
         logger.error('supabasePlaylistService', 'Tracks upsert error (position)', error as any);
       } else {
