@@ -17,6 +17,7 @@ export interface Track {
   spotify_id?: string;
   youtube_id?: string;
   youtube_url?: string;
+  source_url?: string; // Primary playable audio source URL
   thumbnail?: string;
   genre?: string;
   energy_level?: string;
