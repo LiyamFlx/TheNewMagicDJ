@@ -49,10 +49,10 @@ const Logger = {
     const data = rest.length ? (rest.length === 1 ? rest[0] : { args: rest }) : undefined;
     logger.warn('App', String(message), data);
   },
-  error: (...args: any[]) => {
+  _error: (...args: any[]) => {
     const [message, ...rest] = args;
     const err = rest.find((r: any) => r instanceof Error) ?? rest[0];
-    logger.error('App', String(message), err);
+    logger._error('App', String(message), err);
   },
 };
 
@@ -66,7 +66,7 @@ interface AppState {
   isPlaying: boolean;
   isEditingPlaylist: boolean;
   isLoading: boolean;
-  error: string | null;
+  _error: string | null;
   showAuthModal: boolean;
   authModalMode: 'signin' | 'signup';
 }
@@ -80,7 +80,7 @@ const initialState: AppState = {
   isPlaying: false,
   isEditingPlaylist: false,
   isLoading: false,
-  error: null,
+  _error: null,
   showAuthModal: false,
   authModalMode: 'signin',
 };
@@ -112,7 +112,7 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'SET_LOADING':
       return { ...state, isLoading: action.payload };
     case 'SET_ERROR':
-      return { ...state, error: action.payload };
+      return { ...state, _error: action.payload };
     case 'SET_PLAYING':
       return { ...state, isPlaying: action.payload };
     case 'SET_EDITING':
@@ -176,7 +176,7 @@ function AppContent() {
 
   // Provide lazy Spotify initialization function for services
   // @ts-ignore - Function reserved for future lazy initialization
-  const _initializeSpotifyLazy = useCallback(async (): Promise<boolean> => {
+  const unused__initializeSpotifyLazy = useCallback(async (): Promise<boolean> => {
     try {
       const token = await fetchSpotifyTokenLazy();
       if (token) {
@@ -185,8 +185,8 @@ function AppContent() {
         return true;
       }
       return false;
-    } catch (error) {
-      Logger.error('Lazy Spotify initialization failed', error);
+    } catch (_error) {
+      Logger._error('Lazy Spotify initialization failed', _error);
       return false;
     }
   }, [fetchSpotifyTokenLazy]);
@@ -241,12 +241,12 @@ function AppContent() {
         dispatch({ type: 'SET_SESSIONS', payload: mockSessions });
         Logger.info('MagicDJ initialized');
       } catch (err) {
-        Logger.error('Init error', err);
+        Logger._error('Init _error', err);
         dispatch({
           type: 'SET_ERROR',
           payload: 'Failed to load application data',
         });
-        showToast('Failed to load application data', 'error');
+        showToast('Failed to load application data', '_error');
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
       }
@@ -309,7 +309,7 @@ function AppContent() {
   // --- Load user data ---
   const loadUserData = useCallback(async (userId: string) => {
     if (!userId) {
-      Logger.error('loadUserData', 'No user ID provided');
+      Logger._error('loadUserData', 'No user ID provided');
       return;
     }
 
@@ -353,14 +353,14 @@ function AppContent() {
         }
       }
     } catch (err) {
-      Logger.error('Load user data error', err);
+      Logger._error('Load user data _error', err);
 
       // Graceful fallback - don't crash the app
       dispatch({ type: 'SET_PLAYLISTS', payload: [] });
 
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      const errorMessage = err instanceof Error ? err.message : 'Unknown _error';
       if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-        showToast('Network error - working offline', 'warning');
+        showToast('Network _error - working offline', 'warning');
       } else {
         showToast('Failed to load playlists - working offline', 'warning');
       }
@@ -371,8 +371,8 @@ function AppContent() {
   useEffect(() => {
     if (state.user?.id) {
       loadUserData(state.user.id).catch(err => {
-        Logger.error('Load user data error', err);
-        showToast('Failed to load user data', 'error');
+        Logger._error('Load user data _error', err);
+        showToast('Failed to load user data', '_error');
       });
     }
   }, [state.user?.id]); // Remove function dependencies to prevent infinite loop
@@ -381,7 +381,7 @@ function AppContent() {
   const saveCurrentPlaylist = useCallback(
     async (playlist: Playlist) => {
       if (!playlist || !playlist.id) {
-        Logger.error(
+        Logger._error(
           'saveCurrentPlaylist',
           'Invalid playlist provided',
           playlist
@@ -438,17 +438,17 @@ function AppContent() {
           throw new Error('Invalid saved playlist response');
         }
       } catch (err) {
-        Logger.error('Save playlist error', err);
+        Logger._error('Save playlist _error', err);
 
         const errorMessage =
-          err instanceof Error ? err.message : 'Unknown error';
+          err instanceof Error ? err.message : 'Unknown _error';
         if (
           errorMessage.includes('network') ||
           errorMessage.includes('fetch')
         ) {
-          showToast('Network error - playlist saved locally', 'warning');
+          showToast('Network _error - playlist saved locally', 'warning');
         } else {
-          showToast('Failed to save playlist to cloud', 'error');
+          showToast('Failed to save playlist to cloud', '_error');
         }
       }
     },
@@ -501,8 +501,8 @@ function AppContent() {
 
   const handleTrackReorder = (fromIndex: number, toIndex: number) => {
     if (!state.currentPlaylist || !state.currentPlaylist.tracks) {
-      Logger.error('handleTrackReorder', 'No playlist or tracks available');
-      showToast('Cannot reorder tracks: No playlist selected', 'error');
+      Logger._error('handleTrackReorder', 'No playlist or tracks available');
+      showToast('Cannot reorder tracks: No playlist selected', '_error');
       return;
     }
 
@@ -513,12 +513,12 @@ function AppContent() {
       toIndex < 0 ||
       toIndex >= state.currentPlaylist.tracks.length
     ) {
-      Logger.error('handleTrackReorder', 'Invalid track indices', {
+      Logger._error('handleTrackReorder', 'Invalid track indices', {
         fromIndex,
         toIndex,
         trackCount: state.currentPlaylist.tracks.length,
       });
-      showToast('Cannot reorder tracks: Invalid track position', 'error');
+      showToast('Cannot reorder tracks: Invalid track position', '_error');
       return;
     }
 
@@ -534,26 +534,26 @@ function AppContent() {
       };
       dispatch({ type: 'SET_PLAYLIST', payload: updatedPlaylist });
       saveCurrentPlaylistDebounced(updatedPlaylist);
-    } catch (error) {
-      Logger.error('handleTrackReorder', 'Failed to reorder tracks', error);
-      showToast('Failed to reorder tracks', 'error');
+    } catch (_error) {
+      Logger._error('handleTrackReorder', 'Failed to reorder tracks', _error);
+      showToast('Failed to reorder tracks', '_error');
     }
   };
 
   const handleTrackRemove = (index: number) => {
     if (!state.currentPlaylist || !state.currentPlaylist.tracks) {
-      Logger.error('handleTrackRemove', 'No playlist or tracks available');
-      showToast('Cannot remove track: No playlist selected', 'error');
+      Logger._error('handleTrackRemove', 'No playlist or tracks available');
+      showToast('Cannot remove track: No playlist selected', '_error');
       return;
     }
 
     // Validate index
     if (index < 0 || index >= state.currentPlaylist.tracks.length) {
-      Logger.error('handleTrackRemove', 'Invalid track index', {
+      Logger._error('handleTrackRemove', 'Invalid track index', {
         index,
         trackCount: state.currentPlaylist.tracks.length,
       });
-      showToast('Cannot remove track: Invalid track position', 'error');
+      showToast('Cannot remove track: Invalid track position', '_error');
       return;
     }
 
@@ -569,9 +569,9 @@ function AppContent() {
       dispatch({ type: 'SET_PLAYLIST', payload: updatedPlaylist });
       saveCurrentPlaylistDebounced(updatedPlaylist);
       showToast('Track removed successfully', 'success');
-    } catch (error) {
-      Logger.error('handleTrackRemove', 'Failed to remove track', error);
-      showToast('Failed to remove track', 'error');
+    } catch (_error) {
+      Logger._error('handleTrackRemove', 'Failed to remove track', _error);
+      showToast('Failed to remove track', '_error');
     }
   };
 
@@ -608,7 +608,7 @@ function AppContent() {
         onAuthClick={handleAuthClick}
       />
 
-      {state.error && (
+      {state._error && (
         <div className="mx-4 mt-4">
           <div className="glass-card p-4 bg-red-500/10 border-red-500/20">
             <div className="flex items-center justify-between">
@@ -618,13 +618,13 @@ function AppContent() {
                 </div>
                 <div>
                   <p className="text-red-400 font-medium">Something went wrong</p>
-                  <p className="text-red-300 text-sm">{state.error}</p>
+                  <p className="text-red-300 text-sm">{state._error}</p>
                 </div>
               </div>
               <button
                 onClick={() => dispatch({ type: 'SET_ERROR', payload: null })}
                 className="glass-button w-8 h-8 flex items-center justify-center text-red-400 hover:bg-red-500/20"
-                aria-label="Dismiss error"
+                aria-label="Dismiss _error"
               >
                 ✕
               </button>

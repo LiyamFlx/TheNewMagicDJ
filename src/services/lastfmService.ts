@@ -67,12 +67,12 @@ class LastFmService {
         // Check rate limit
         const limitCheck = await rateLimiter.checkLimit('lastfm');
         if (!limitCheck.allowed) {
-          const error = errorHandler.createRateLimitError(
+          const _error = errorHandler.createRateLimitError(
             'Last.fm',
             limitCheck.retryAfter || 5000
           );
-          errorHandler.handleError(error);
-          throw new Error(error.message);
+          errorHandler.handleError(_error);
+          throw new Error(_error.message);
         }
 
         const params = new URLSearchParams({
@@ -100,14 +100,14 @@ class LastFmService {
           );
 
           if (!response.ok) {
-            const error = errorHandler.createAPIError(
+            const _error = errorHandler.createAPIError(
               'Last.fm',
               'track.getInfo',
               response.status,
               response.statusText
             );
-            errorHandler.handleError(error);
-            throw new Error(error.message);
+            errorHandler.handleError(_error);
+            throw new Error(_error.message);
           }
 
           const data: LastFmTrackInfo = await response.json();
@@ -139,18 +139,18 @@ class LastFmService {
           });
 
           return trackInfo;
-        } catch (error) {
+        } catch (_error) {
           const responseTime = Date.now() - startTime;
           logger.trackAPICall('lastfm', 'track.getInfo', responseTime, false);
 
-          if (error instanceof TypeError && error.message.includes('fetch')) {
+          if (_error instanceof TypeError && _error.message.includes('fetch')) {
             const networkError =
               errorHandler.createNetworkError('Last.fm track info');
             errorHandler.handleError(networkError);
             throw new Error(networkError.message);
           }
 
-          throw error;
+          throw _error;
         }
       },
       { artist, track }
@@ -202,13 +202,13 @@ class LastFmService {
           );
 
           if (!response.ok) {
-            const error = errorHandler.createAPIError(
+            const _error = errorHandler.createAPIError(
               'Last.fm',
               'track.getSimilar',
               response.status,
               response.statusText
             );
-            errorHandler.handleError(error);
+            errorHandler.handleError(_error);
             return [];
           }
 
@@ -245,7 +245,7 @@ class LastFmService {
           );
 
           return tracks;
-        } catch (error) {
+        } catch (_error) {
           const responseTime = Date.now() - startTime;
           logger.trackAPICall(
             'lastfm',
@@ -254,7 +254,7 @@ class LastFmService {
             false
           );
 
-          if (error instanceof TypeError && error.message.includes('fetch')) {
+          if (_error instanceof TypeError && _error.message.includes('fetch')) {
             const networkError = errorHandler.createNetworkError(
               'Last.fm similar tracks'
             );

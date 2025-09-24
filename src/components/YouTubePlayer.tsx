@@ -34,7 +34,7 @@ interface YouTubePlayerProps {
   volume?: number;
   onReady?: () => void;
   onStateChange?: (state: YouTubePlayerState) => void;
-  onError?: (error: YouTubePlayerError) => void;
+  onError?: (_error: YouTubePlayerError) => void;
   onTimeUpdate?: (currentTime: number) => void;
   className?: string;
 }
@@ -98,7 +98,7 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
     if (!isReady) return;
 
     if (autoplay) {
-      play().catch(console.error);
+      play().catch(console._error);
     } else {
       pause();
     }
@@ -109,45 +109,45 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
     play: async () => {
       try {
         await play();
-      } catch (error) {
-        console.error('Error playing video:', error);
-        throw error;
+      } catch (_error) {
+        console._error('Error playing video:', _error);
+        throw _error;
       }
     },
     pause: () => {
       try {
         pause();
-      } catch (error) {
-        console.error('Error pausing video:', error);
+      } catch (_error) {
+        console._error('Error pausing video:', _error);
       }
     },
     seekTo: (seconds: number) => {
       try {
         seekToPlayer(seconds);
-      } catch (error) {
-        console.error('Error seeking video:', error);
+      } catch (_error) {
+        console._error('Error seeking video:', _error);
       }
     },
     setVolume: (vol: number) => {
       try {
         setPlayerVolume(vol);
-      } catch (error) {
-        console.error('Error setting volume:', error);
+      } catch (_error) {
+        console._error('Error setting volume:', _error);
       }
     },
     getCurrentTime: () => {
       try {
         return getCurrentTime();
-      } catch (error) {
-        console.error('Error getting current time:', error);
+      } catch (_error) {
+        console._error('Error getting current time:', _error);
         return 0;
       }
     },
     getDuration: () => {
       try {
         return getDuration();
-      } catch (error) {
-        console.error('Error getting duration:', error);
+      } catch (_error) {
+        console._error('Error getting duration:', _error);
         return 0;
       }
     },

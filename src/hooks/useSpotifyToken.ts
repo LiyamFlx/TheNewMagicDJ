@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 interface SpotifyTokenState {
   token: string | null;
   isLoading: boolean;
-  error: string | null;
+  _error: string | null;
   expiresAt: number | null;
 }
 
@@ -17,12 +17,12 @@ export function useSpotifyToken(): UseSpotifyTokenReturn {
   const [state, setState] = useState<SpotifyTokenState>({
     token: null,
     isLoading: false, // Start as not loading since we're lazy
-    error: null,
+    _error: null,
     expiresAt: null,
   });
 
   const fetchToken = useCallback(async (): Promise<string | null> => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+    setState(prev => ({ ...prev, isLoading: true, _error: null }));
 
     try {
       const response = await fetch('/api/spotify-token');
@@ -34,13 +34,13 @@ export function useSpotifyToken(): UseSpotifyTokenReturn {
       const data = await response.json();
       const accessToken: string = data.access_token;
       const expiresAt = Date.now() + data.expires_in * 1000 - 60000;
-      setState({ token: accessToken, isLoading: false, error: null, expiresAt });
+      setState({ token: accessToken, isLoading: false, _error: null, expiresAt });
       return accessToken;
-    } catch (error) {
+    } catch (_error) {
       setState({
         token: null,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        _error: _error instanceof Error ? _error.message : 'Unknown _error',
         expiresAt: null,
       });
       return null;

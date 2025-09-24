@@ -21,9 +21,9 @@ const supabase = createClient(
 
 export async function verifySupabaseJWT(
   authHeader: string
-): Promise<{ user: any; error?: string }> {
+): Promise<{ user: any; _error?: string }> {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return { user: null, error: 'Missing or invalid Authorization header' };
+    return { user: null, _error: 'Missing or invalid Authorization header' };
   }
 
   const token = authHeader.substring(7);
@@ -31,28 +31,28 @@ export async function verifySupabaseJWT(
   try {
     const {
       data: { user },
-      error,
+      _error,
     } = await supabase.auth.getUser(token);
 
-    if (error || !user) {
-      return { user: null, error: 'Invalid token' };
+    if (_error || !user) {
+      return { user: null, _error: 'Invalid token' };
     }
 
     return { user };
-  } catch (error) {
-    return { user: null, error: 'Token verification failed' };
+  } catch (_error) {
+    return { user: null, _error: 'Token verification failed' };
   }
 }
 
 export function requireAuth(handler: any) {
   return async (req: any, res: any) => {
     const authHeader = req.headers.authorization;
-    const { user, error } = await verifySupabaseJWT(authHeader);
+    const { user, _error } = await verifySupabaseJWT(authHeader);
 
-    if (error || !user) {
+    if (_error || !user) {
       return res
         .status(401)
-        .json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } });
+        .json({ _error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } });
     }
 
     req.user = user;

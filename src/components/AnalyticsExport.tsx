@@ -186,8 +186,8 @@ Analytics:
       logger.info('AnalyticsExport', 'Export completed successfully', {
         format: exportFormat,
       });
-    } catch (error) {
-      logger.error('AnalyticsExport', 'Export failed', error);
+    } catch (_error) {
+      logger._error('AnalyticsExport', 'Export failed', _error);
     } finally {
       setIsExporting(false);
     }
@@ -285,8 +285,8 @@ Analytics:
             text: `Check out my DJ set analytics: ${analytics?.averageEnergy.toFixed(1)}% average energy, ${analytics?.peakMoments.length} peak moments!`,
             files: [file],
           });
-        } catch (error) {
-          console.error('Share failed:', error);
+        } catch (_error) {
+          console._error('Share failed:', _error);
           downloadFlyer(canvas);
         }
       } else {

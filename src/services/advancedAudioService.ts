@@ -79,11 +79,11 @@ class AdvancedAudioService {
             'Advanced microphone capture initialized',
             { config: captureConfig }
           );
-        } catch (error) {
-          logger.error(
+        } catch (_error) {
+          logger._error(
             'AdvancedAudioService',
             'Failed to initialize audio capture',
-            error
+            _error
           );
           throw new Error('Advanced audio capture initialization failed');
         }
@@ -173,16 +173,16 @@ class AdvancedAudioService {
       });
 
       if (!response.ok) {
-        throw new Error(`Recognition service error: ${response.status}`);
+        throw new Error(`Recognition service _error: ${response.status}`);
       }
 
       const result = await response.json();
       return result as AudioRecognitionResponse;
-    } catch (error) {
+    } catch (_error) {
       logger.warn(
         'AdvancedAudioService',
         'Python service unavailable, using fallback',
-        error
+        _error
       );
 
       // Return mock response if service is unavailable
@@ -212,15 +212,15 @@ class AdvancedAudioService {
           });
 
           if (!response.ok) {
-            throw new Error(`Compatibility service error: ${response.status}`);
+            throw new Error(`Compatibility service _error: ${response.status}`);
           }
 
           return await response.json();
-        } catch (error) {
+        } catch (_error) {
           logger.warn(
             'AdvancedAudioService',
             'Compatibility service unavailable, using local calculation',
-            error
+            _error
           );
 
           return this.calculateLocalCompatibility(key1, key2);

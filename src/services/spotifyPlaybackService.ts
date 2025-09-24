@@ -68,8 +68,8 @@ class SpotifyPlaybackService {
       }
 
       return false;
-    } catch (error) {
-      logger.error('SpotifyPlaybackService', 'Failed to initialize Spotify playback', error);
+    } catch (_error) {
+      logger._error('SpotifyPlaybackService', 'Failed to initialize Spotify playback', _error);
       return false;
     }
   }
@@ -142,14 +142,14 @@ class SpotifyPlaybackService {
         logger.info('SpotifyPlaybackService', 'Started playing track', { spotifyUri });
         return true;
       } else {
-        logger.error('SpotifyPlaybackService', 'Failed to play track', {
+        logger._error('SpotifyPlaybackService', 'Failed to play track', {
           status: response.status,
           statusText: response.statusText
         });
         return false;
       }
-    } catch (error) {
-      logger.error('SpotifyPlaybackService', 'Error playing track', error);
+    } catch (_error) {
+      logger._error('SpotifyPlaybackService', 'Error playing track', _error);
       return false;
     }
   }

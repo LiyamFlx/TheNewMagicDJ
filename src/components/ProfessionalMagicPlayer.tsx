@@ -93,7 +93,7 @@ interface PlayerState {
   };
 
   // Error handling
-  error: {
+  _error: {
     message: string | null;
     isDegraded: boolean;
   };
@@ -164,7 +164,7 @@ const initialState: PlayerState = {
     showSettings: false,
     showAudioDebugger: false,
   },
-  error: {
+  _error: {
     message: null,
     isDegraded: false,
   },
@@ -255,9 +255,9 @@ function playerReducer(state: PlayerState, action: PlayerAction): PlayerState {
     case 'SET_ERROR':
       return {
         ...state,
-        error: {
+        _error: {
           message: action.payload.message,
-          isDegraded: action.payload.isDegraded ?? state.error.isDegraded,
+          isDegraded: action.payload.isDegraded ?? state._error.isDegraded,
         },
       };
 
@@ -288,7 +288,7 @@ function playerReducer(state: PlayerState, action: PlayerAction): PlayerState {
     case 'RESET_ERROR':
       return {
         ...state,
-        error: { message: null, isDegraded: false },
+        _error: { message: null, isDegraded: false },
       };
 
     default:
@@ -309,8 +309,8 @@ const useResourceCleanup = () => {
       cleanupFunctions.current.forEach(fn => {
         try {
           fn();
-        } catch (error) {
-          logger.warn('ProfessionalMagicPlayer', 'Cleanup function failed', error);
+        } catch (_error) {
+          logger.warn('ProfessionalMagicPlayer', 'Cleanup function failed', _error);
         }
       });
       cleanupFunctions.current = [];
@@ -337,10 +337,10 @@ const useAudioSources = () => {
       });
 
       return sources;
-    } catch (error) {
-      logger.error('ProfessionalMagicPlayer', 'Failed to load audio sources', {
+    } catch (_error) {
+      logger._error('ProfessionalMagicPlayer', 'Failed to load audio sources', {
         trackId: track.id,
-        error
+        _error
       });
       return [];
     }
@@ -430,13 +430,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
   // Error auto-clear effect
   useEffect(() => {
-    if (state.error.message) {
+    if (state._error.message) {
       const timeout = setTimeout(() => {
         dispatch({ type: 'RESET_ERROR' });
       }, 5000);
       return () => clearTimeout(timeout);
     }
-  }, [state.error.message]);
+  }, [state._error.message]);
 
   // Log session information
   useEffect(() => {
@@ -463,7 +463,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       audio.currentTime = 0;
 
       // Remove all event listeners
-      const events = ['loadedmetadata', 'canplaythrough', 'timeupdate', 'ended', 'error'];
+      const events = ['loadedmetadata', 'canplaythrough', 'timeupdate', 'ended', '_error'];
       events.forEach(event => {
         audio.removeEventListener(event, () => { });
       });
@@ -472,8 +472,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       audio.load();
 
       logger.debug('ProfessionalMagicPlayer', 'Audio element cleaned up successfully');
-    } catch (error) {
-      logger.warn('ProfessionalMagicPlayer', 'Error during audio cleanup', error);
+    } catch (_error) {
+      logger.warn('ProfessionalMagicPlayer', 'Error during audio cleanup', _error);
     }
   }, []);
 
@@ -503,17 +503,17 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
   // Handle source errors with retry logic and rate limiting
   const errorCountRef = useRef<{[key: string]: number}>({});
-  const handleSourceError = useCallback((deck: 'A' | 'B', error: any) => {
+  const handleSourceError = useCallback((deck: 'A' | 'B', _error: any) => {
     const sources = deck === 'A' ? state.sources.deckA : state.sources.deckB;
     const currentIndex = deck === 'A' ? state.sources.deckAIndex : state.sources.deckBIndex;
 
-    // Rate limit error logging (max 3 errors per deck)
+    // Rate limit _error logging (max 3 errors per deck)
     const errorKey = `deck${deck}`;
     errorCountRef.current[errorKey] = (errorCountRef.current[errorKey] || 0) + 1;
 
     if (errorCountRef.current[errorKey] <= 3) {
-      logger.warn('ProfessionalMagicPlayer', `Audio source error on deck ${deck} (${errorCountRef.current[errorKey]}/3)`, {
-        error: error?.message || 'Unknown error',
+      logger.warn('ProfessionalMagicPlayer', `Audio source _error on deck ${deck} (${errorCountRef.current[errorKey]}/3)`, {
+        _error: _error?.message || 'Unknown _error',
         currentIndex,
         totalSources: sources.length
       });
@@ -532,7 +532,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           isDegraded: true
         }
       });
-      // Reset error count for future attempts
+      // Reset _error count for future attempts
       errorCountRef.current[errorKey] = 0;
     }
   }, [state.sources]);
@@ -580,7 +580,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             });
           }
         }
-      } catch (error) {
+      } catch (_error) {
         if (!cancelled) {
           dispatch({
             type: 'SET_ERROR',
@@ -620,9 +620,9 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         if (!cancelled && sources.length > 0) {
           dispatch({ type: 'SET_SOURCES', payload: { deck: 'deckB', sources, index: 0 } });
         }
-      } catch (error) {
+      } catch (_error) {
         // Silently fail for deck B sources
-        logger.warn('ProfessionalMagicPlayer', 'Failed to load deck B sources', error);
+        logger.warn('ProfessionalMagicPlayer', 'Failed to load deck B sources', _error);
       }
     };
 
@@ -723,7 +723,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     audio.addEventListener('loadedmetadata', onLoadedMetadata);
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('ended', handleTrackEnd);
-    audio.addEventListener('error', onError);
+    audio.addEventListener('_error', onError);
     audio.addEventListener('play', onPlay); // Add playback start logging
 
     audioARef.current = audio;
@@ -775,8 +775,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
     try {
       audio.src = deckBCurrent.url;
-    } catch (error) {
-      handleSourceError('B', error);
+    } catch (_error) {
+      handleSourceError('B', _error);
       return;
     }
 
@@ -787,12 +787,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     };
 
     const onError = (e: Event) => {
-      handleSourceError('B', (e.target as HTMLAudioElement).error);
+      handleSourceError('B', (e.target as HTMLAudioElement)._error);
     };
 
     // Add listeners
     audio.addEventListener('timeupdate', onTimeUpdate);
-    audio.addEventListener('error', onError);
+    audio.addEventListener('_error', onError);
 
     audioBRef.current = audio;
 
@@ -834,8 +834,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         } else {
           audio.pause();
         }
-      } catch (error: any) {
-        if (error.name === 'NotAllowedError') {
+      } catch (_error: any) {
+        if (_error.name === 'NotAllowedError') {
           dispatch({ type: 'SET_UI', payload: { key: 'showUnmuteOverlay', value: true } });
         } else {
           dispatch({ type: 'SET_ERROR', payload: { message: 'Playback failed', isDegraded: false } });
@@ -1049,7 +1049,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     }
 
     audioB.play().catch(e => {
-      logger.error('Next track play failed', e);
+      logger._error('Next track play failed', e);
     });
 
     fadeIntervalRef.current = window.setInterval(() => {
@@ -1222,8 +1222,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         logger.info('ProfessionalMagicPlayer', 'Deck B YouTube playback', { shouldPlay });
       } else if (deckBCurrent.type === 'spotify' && audioBRef.current) {
         if (shouldPlay) {
-          audioBRef.current.play().catch(error => {
-            handleSourceError('B', error);
+          audioBRef.current.play().catch(_error => {
+            handleSourceError('B', _error);
             setDeckBPlaying(false);
           });
         } else {
@@ -1231,9 +1231,9 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         }
         logger.info('ProfessionalMagicPlayer', 'Deck B audio playback', { shouldPlay });
       }
-    } catch (error) {
-      logger.error('ProfessionalMagicPlayer', 'Deck B playback error', error);
-      handleSourceError('B', error);
+    } catch (_error) {
+      logger._error('ProfessionalMagicPlayer', 'Deck B playback _error', _error);
+      handleSourceError('B', _error);
       setDeckBPlaying(false);
     }
   }, [state.sources, handleSourceError]);
@@ -1292,7 +1292,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 <h1 className="text-xl lg:text-2xl font-bold text-white tracking-wide font-orbitron">
                   PROFESSIONAL PLAYER
                 </h1>
-                {state.error.isDegraded && (
+                {state._error.isDegraded && (
                   <span className="text-xs px-2 py-1 bg-yellow-900/50 border border-yellow-400 text-yellow-400 rounded font-orbitron">
                     DEMO
                   </span>
@@ -1346,11 +1346,11 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             <span className="hidden sm:inline">DANCER</span>
           </button>
 
-          {state.error.message ? (
+          {state._error.message ? (
             <div className="flex items-center space-x-2 px-3 lg:px-4 py-2 glass-card border-yellow-400 shadow-yellow-400/20">
               <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
               <span className="text-xs lg:text-sm font-bold tracking-wider text-yellow-400">
-                {state.error.message}
+                {state._error.message}
               </span>
             </div>
           ) : (
@@ -1561,9 +1561,9 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                         handleTrackEnd();
                       }
                     }}
-                    onError={(error) => {
-                      logger.error('ProfessionalMagicPlayer', 'YouTube A player error', error);
-                      handleSourceError('A', error);
+                    onError={(_error) => {
+                      logger._error('ProfessionalMagicPlayer', 'YouTube A player _error', _error);
+                      handleSourceError('A', _error);
                     }}
                     onTimeUpdate={(currentTime: number) => {
                       const duration = youtubeARef.current?.getDuration() || 0;
@@ -1859,9 +1859,9 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                       dispatch({ type: 'SET_READINESS', payload: { player: 'youtubeB', ready: true } });
                       logger.info('ProfessionalMagicPlayer', 'YouTube B player ready');
                     }}
-                    onError={(error) => {
-                      logger.error('ProfessionalMagicPlayer', 'YouTube B player error', error);
-                      handleSourceError('B', error);
+                    onError={(_error) => {
+                      logger._error('ProfessionalMagicPlayer', 'YouTube B player _error', _error);
+                      handleSourceError('B', _error);
                     }}
                     onTimeUpdate={(currentTime: number) => {
                       const duration = youtubeBRef.current?.getDuration() || 0;

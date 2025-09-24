@@ -85,7 +85,7 @@ export function normalizeError(
   if (err instanceof Error) {
     return {
       code: (fallback.code as AppErrorCode) || 'INTERNAL_ERROR',
-      message: err.message || fallback.message || 'Unexpected error',
+      message: err.message || fallback.message || 'Unexpected _error',
       httpStatus: fallback.httpStatus,
       retriable: fallback.retriable,
       details: fallback.details,
@@ -93,7 +93,7 @@ export function normalizeError(
   }
   return {
     code: (fallback.code as AppErrorCode) || 'INTERNAL_ERROR',
-    message: fallback.message || 'Unexpected error',
+    message: fallback.message || 'Unexpected _error',
     httpStatus: fallback.httpStatus,
     retriable: fallback.retriable,
     details: fallback.details ?? err,

@@ -1,10 +1,10 @@
 interface LogEntry {
   timestamp: string;
-  level: 'debug' | 'info' | 'warn' | 'error';
+  level: 'debug' | 'info' | 'warn' | '_error';
   component: string;
   message: string;
   data?: any;
-  error?: Error;
+  _error?: Error;
   sessionId?: string;
   userId?: string;
   correlationId?: string;
@@ -44,17 +44,17 @@ class Logger {
     return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  private shouldLog(level: 'debug' | 'info' | 'warn' | 'error'): boolean {
-    const levels = { debug: 0, info: 1, warn: 2, error: 3 };
+  private shouldLog(level: 'debug' | 'info' | 'warn' | '_error'): boolean {
+    const levels = { debug: 0, info: 1, warn: 2, _error: 3 };
     return levels[level] >= levels[this.logLevel as keyof typeof levels];
   }
 
   private addLog(
-    level: 'debug' | 'info' | 'warn' | 'error',
+    level: 'debug' | 'info' | 'warn' | '_error',
     component: string,
     message: string,
     data?: any,
-    error?: Error,
+    _error?: Error,
     userId?: string,
     correlationId?: string
   ) {
@@ -66,7 +66,7 @@ class Logger {
       component,
       message,
       data,
-      error,
+      _error,
       sessionId: this.sessionId,
       userId,
       correlationId,
@@ -83,8 +83,8 @@ class Logger {
     const logMessage = `[${entry.timestamp}] ${component}: ${message}`;
     const logData = { ...data, sessionId: this.sessionId, correlationId };
 
-    if (level === 'error') {
-      console.error(logMessage, logData, error);
+    if (level === '_error') {
+      console._error(logMessage, logData, _error);
     } else if (level === 'warn') {
       console.warn(logMessage, logData);
     } else if (level === 'debug') {
@@ -101,8 +101,8 @@ class Logger {
           component,
           message,
           data,
-          error: error?.message,
-          stack: error?.stack,
+          _error: _error?.message,
+          stack: _error?.stack,
         },
         timestamp: entry.timestamp,
         sessionId: this.sessionId,
@@ -118,8 +118,8 @@ class Logger {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-    } catch (error) {
-      console.warn('Failed to send telemetry:', error);
+    } catch (_error) {
+      console.warn('Failed to send telemetry:', _error);
     }
   }
 
@@ -177,19 +177,19 @@ class Logger {
     );
   }
 
-  error(
+  _error(
     component: string,
     message: string,
-    error?: any,
+    _error?: any,
     userId?: string,
     correlationId?: string
   ) {
     this.addLog(
-      'error',
+      '_error',
       component,
       message,
       undefined,
-      error,
+      _error,
       userId,
       correlationId
     );
@@ -245,13 +245,13 @@ class Logger {
       }
 
       return result;
-    } catch (error) {
+    } catch (_error) {
       const duration = Date.now() - startTime;
 
-      this.error(
+      this._error(
         component,
         `Failed ${operation}`,
-        error,
+        _error,
         userId,
         correlationId
       );
@@ -263,7 +263,7 @@ class Logger {
           metadata,
           correlationId,
           success: false,
-          errorMessage: error instanceof Error ? error.message : String(error),
+          errorMessage: _error instanceof Error ? _error.message : String(_error),
         },
         userId,
         correlationId
@@ -278,13 +278,13 @@ class Logger {
             operation,
             duration,
             metadata,
-            error: error instanceof Error ? error.message : String(error),
+            _error: _error instanceof Error ? _error.message : String(_error),
           },
           userId
         );
       }
 
-      throw error;
+      throw _error;
     }
   }
 
@@ -334,7 +334,7 @@ class Logger {
   }
 
   getLogs(
-    level?: 'debug' | 'info' | 'warn' | 'error',
+    level?: 'debug' | 'info' | 'warn' | '_error',
     component?: string
   ): LogEntry[] {
     let filteredLogs = [...this.logs];

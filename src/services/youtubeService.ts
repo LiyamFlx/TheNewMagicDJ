@@ -9,7 +9,7 @@ import config from '../config';
 // =============================================================================
 
 /**
- * Standard error response format for YouTube API errors
+ * Standard _error response format for YouTube API errors
  */
 interface YouTubeServiceError {
   readonly code: string;
@@ -134,7 +134,7 @@ function parseDuration(duration: string): number {
 // =============================================================================
 
 /**
- * Comprehensive YouTube API service with full error handling, caching,
+ * Comprehensive YouTube API service with full _error handling, caching,
  * rate limiting, and type safety
  */
 export class YouTubeService {
@@ -164,7 +164,7 @@ export class YouTubeService {
   /**
    * Searches for music videos on YouTube
    * @param params - Search parameters
-   * @returns Promise resolving to array of Track objects or null if error
+   * @returns Promise resolving to array of Track objects or null if _error
    */
   public async searchTracks(
     params: YouTubeSearchParams
@@ -213,8 +213,8 @@ export class YouTubeService {
       });
 
       return tracks;
-    } catch (error) {
-      logger.error('YouTubeService', 'Search operation failed', error);
+    } catch (_error) {
+      logger._error('YouTubeService', 'Search operation failed', _error);
       return null;
     }
   }
@@ -222,7 +222,7 @@ export class YouTubeService {
   /**
    * Gets music recommendations based on genres, vibe, and energy
    * @param params - Recommendation parameters
-   * @returns Promise resolving to array of Track objects or null if error
+   * @returns Promise resolving to array of Track objects or null if _error
    */
   public async getRecommendations(
     params: YouTubeRecommendationParams
@@ -268,7 +268,7 @@ export class YouTubeService {
   /**
    * Executes YouTube search API call
    * @param params - Search parameters
-   * @returns Search results or null if error
+   * @returns Search results or null if _error
    */
   private async executeSearch(
     params: YouTubeSearchParams
@@ -303,7 +303,7 @@ export class YouTubeService {
 
     if (!response.ok) {
       const errorInfo = await this.handleApiError(response);
-      logger.error('YouTubeService', 'Search API call failed', errorInfo);
+      logger._error('YouTubeService', 'Search API call failed', errorInfo);
       return null;
     }
 
@@ -352,7 +352,7 @@ export class YouTubeService {
   /**
    * Gets detailed information for multiple videos in a batch request
    * @param videoIds - Array of video IDs
-   * @returns Video details or null if error
+   * @returns Video details or null if _error
    */
   private async getVideoDetails(
     videoIds: string[]
@@ -385,17 +385,17 @@ export class YouTubeService {
       }
 
       return await response.json();
-    } catch (error) {
-      logger.error('YouTubeService', 'Failed to fetch video details', error);
+    } catch (_error) {
+      logger._error('YouTubeService', 'Failed to fetch video details', _error);
       return null;
     }
   }
 
 
   /**
-   * Handles YouTube API errors with specific error codes
+   * Handles YouTube API errors with specific _error codes
    * @param response - Failed API response
-   * @returns Structured error information
+   * @returns Structured _error information
    */
   private async handleApiError(
     response: Response
@@ -406,7 +406,7 @@ export class YouTubeService {
       const errorBody = await response.text();
       errorDetails = errorBody;
     } catch {
-      errorDetails = 'Unable to read error response';
+      errorDetails = 'Unable to read _error response';
     }
 
     switch (response.status) {

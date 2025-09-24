@@ -44,11 +44,11 @@ class AudioProcessingService {
             'AudioProcessingService',
             'Microphone capture started successfully'
           );
-        } catch (error) {
-          logger.error(
+        } catch (_error) {
+          logger._error(
             'AudioProcessingService',
             'Failed to start microphone capture',
-            error
+            _error
           );
           throw new Error('Microphone access denied or not available');
         }
@@ -90,11 +90,11 @@ class AudioProcessingService {
           );
 
           return result;
-        } catch (error) {
-          logger.error(
+        } catch (_error) {
+          logger._error(
             'AudioProcessingService',
             'Advanced audio processing failed, falling back to basic processing',
-            error
+            _error
           );
 
           // Fallback to basic processing
@@ -126,8 +126,8 @@ class AudioProcessingService {
         // if (auddService.isConfigured()) {
         //   try {
         //     recognitionResult = await auddService.recognizeAudio(audioData);
-        //   } catch (error) {
-        //     logger.warn('AudioProcessingService', 'AudD recognition failed', error);
+        //   } catch (_error) {
+        //     logger.warn('AudioProcessingService', 'AudD recognition failed', _error);
         //   }
         // }
 
@@ -145,11 +145,11 @@ class AudioProcessingService {
                 'Track recognized via AcoustID'
               );
             }
-          } catch (error) {
+          } catch (_error) {
             logger.warn(
               'AudioProcessingService',
               'AcoustID recognition failed',
-              error
+              _error
             );
           }
         }
@@ -193,11 +193,11 @@ class AudioProcessingService {
             if (recognitionResult) {
               logger.info('AudioProcessingService', 'File recognized via AudD');
             }
-          } catch (error) {
+          } catch (_error) {
             logger.warn(
               'AudioProcessingService',
               'AudD file recognition failed',
-              error
+              _error
             );
           }
         }
@@ -218,11 +218,11 @@ class AudioProcessingService {
                 'File recognized via AcoustID fingerprint'
               );
             }
-          } catch (error) {
+          } catch (_error) {
             logger.warn(
               'AudioProcessingService',
               'AcoustID file recognition failed',
-              error
+              _error
             );
           }
         }
@@ -284,7 +284,7 @@ class AudioProcessingService {
           const arrayBuffer = await blob.arrayBuffer();
           const audioBuffer = await this.audioContext!.decodeAudioData(arrayBuffer);
           resolve(audioBuffer);
-        } catch (error) {
+        } catch (_error) {
           // Fallback to mock buffer if decoding fails
           const mockBuffer = this.audioContext!.createBuffer(1, 44100, 44100);
           const channelData = mockBuffer.getChannelData(0);

@@ -22,7 +22,7 @@ interface AudioDebugInfo {
     src: string;
     readyState: number;
     networkState: number;
-    error: string | null;
+    _error: string | null;
     duration: number;
     volume: number;
   } | null;
@@ -76,8 +76,8 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
             supported: true
           };
         }
-      } catch (error) {
-        logger.warn('AudioDebugger', 'AudioContext not supported', error);
+      } catch (_error) {
+        logger.warn('AudioDebugger', 'AudioContext not supported', _error);
       }
 
       // Check HTML Audio support
@@ -89,8 +89,8 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
           canPlayWAV: testAudio.canPlayType('audio/wav') !== '',
           canPlayAAC: testAudio.canPlayType('audio/aac') !== ''
         };
-      } catch (error) {
-        logger.warn('AudioDebugger', 'HTML Audio not supported', error);
+      } catch (_error) {
+        logger.warn('AudioDebugger', 'HTML Audio not supported', _error);
       }
 
       // Check autoplay policy
@@ -103,8 +103,8 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
           info.permissions.autoplay = 'allowed';
           testAudio.pause();
         }
-      } catch (error: any) {
-        if (error.name === 'NotAllowedError') {
+      } catch (_error: any) {
+        if (_error.name === 'NotAllowedError') {
           info.permissions.autoplay = 'blocked';
         } else {
           info.permissions.autoplay = 'unknown';
@@ -116,8 +116,8 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         info.permissions.microphone = 'granted';
         stream.getTracks().forEach(track => track.stop());
-      } catch (error: any) {
-        if (error.name === 'NotAllowedError') {
+      } catch (_error: any) {
+        if (_error.name === 'NotAllowedError') {
           info.permissions.microphone = 'denied';
         } else {
           info.permissions.microphone = 'unknown';
@@ -142,7 +142,7 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
           src: audio.src,
           readyState: audio.readyState,
           networkState: audio.networkState,
-          error: audio.error?.message || null,
+          _error: audio._error?.message || null,
           duration: audio.duration || 0,
           volume: audio.volume
         }
@@ -150,7 +150,7 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
     };
 
     const audio = audioRef.current;
-    const events = ['loadstart', 'loadedmetadata', 'canplay', 'canplaythrough', 'error', 'stalled'];
+    const events = ['loadstart', 'loadedmetadata', 'canplay', 'canplaythrough', '_error', 'stalled'];
 
     events.forEach(event => {
       audio.addEventListener(event, updateAudioInfo);
@@ -183,9 +183,9 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
         await audioRef.current.play();
         setIsTestPlaying(true);
       }
-    } catch (error: any) {
-      setTestError(error.message);
-      logger.error('AudioDebugger', 'Test playback failed', error);
+    } catch (_error: any) {
+      setTestError(_error.message);
+      logger._error('AudioDebugger', 'Test playback failed', _error);
     }
   };
 
@@ -206,8 +206,8 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
       oscillator.stop(audioContext.currentTime + 1);
 
       logger.info('AudioDebugger', 'Test tone generated');
-    } catch (error) {
-      logger.error('AudioDebugger', 'Failed to generate test tone', error);
+    } catch (_error) {
+      logger._error('AudioDebugger', 'Failed to generate test tone', _error);
       setTestError('Failed to generate test tone');
     }
   };
@@ -321,10 +321,10 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
               <span className="text-slate-400">Volume:</span>
               <span className="text-white">{(debugInfo.currentAudio.volume * 100).toFixed(0)}%</span>
             </div>
-            {debugInfo.currentAudio.error && (
+            {debugInfo.currentAudio._error && (
               <div className="flex items-start space-x-2">
                 <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                <span className="text-red-400 text-xs break-all">{debugInfo.currentAudio.error}</span>
+                <span className="text-red-400 text-xs break-all">{debugInfo.currentAudio._error}</span>
               </div>
             )}
           </div>

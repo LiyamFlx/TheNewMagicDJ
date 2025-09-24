@@ -6,7 +6,7 @@ interface UseYouTubePlayerOptions {
   volume?: number;
   onReady?: () => void;
   onStateChange?: (state: YouTubePlayerState) => void;
-  onError?: (error: YouTubePlayerError) => void;
+  onError?: (_error: YouTubePlayerError) => void;
   onTimeUpdate?: (currentTime: number) => void;
 }
 

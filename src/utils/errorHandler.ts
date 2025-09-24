@@ -23,8 +23,8 @@ export class ErrorHandler {
   }
 
   private constructor() {
-    // Global error handlers
-    window.addEventListener('error', this.handleGlobalError.bind(this));
+    // Global _error handlers
+    window.addEventListener('_error', this.handleGlobalError.bind(this));
     window.addEventListener(
       'unhandledrejection',
       this.handleUnhandledRejection.bind(this)
@@ -35,14 +35,14 @@ export class ErrorHandler {
     this.handleError({
       code: 'GLOBAL_ERROR',
       message: event.message,
-      userMessage: 'An unexpected error occurred. Please try again.',
+      userMessage: 'An unexpected _error occurred. Please try again.',
       severity: 'high',
       recoverable: true,
       context: {
         filename: event.filename,
         lineno: event.lineno,
         colno: event.colno,
-        stack: event.error?.stack,
+        stack: event._error?.stack,
       },
       timestamp: new Date().toISOString(),
     });
@@ -64,48 +64,48 @@ export class ErrorHandler {
     });
   }
 
-  handleError(error: AppError): void {
+  handleError(_error: AppError): void {
     // Add to queue
-    this.errorQueue.push(error);
+    this.errorQueue.push(_error);
     if (this.errorQueue.length > this.maxErrors) {
       this.errorQueue.shift();
     }
 
-    // Log the error
-    logger.error('ErrorHandler', error.message, {
-      code: error.code,
-      severity: error.severity,
-      recoverable: error.recoverable,
-      context: error.context,
+    // Log the _error
+    logger._error('ErrorHandler', _error.message, {
+      code: _error.code,
+      severity: _error.severity,
+      recoverable: _error.recoverable,
+      context: _error.context,
     });
 
-    // Track error analytics
+    // Track _error analytics
     logger.trackEvent('error_occurred', {
-      code: error.code,
-      severity: error.severity,
-      recoverable: error.recoverable,
-      userMessage: error.userMessage,
+      code: _error.code,
+      severity: _error.severity,
+      recoverable: _error.recoverable,
+      userMessage: _error.userMessage,
     });
 
     // Notify user if appropriate
-    if (error.severity === 'high' || error.severity === 'critical') {
-      this.notifyUser(error);
+    if (_error.severity === 'high' || _error.severity === 'critical') {
+      this.notifyUser(_error);
     }
   }
 
-  private notifyUser(error: AppError): void {
+  private notifyUser(_error: AppError): void {
     // This would integrate with your notification system
-    console.warn('User notification:', error.userMessage);
+    console.warn('User notification:', _error.userMessage);
 
     // You could dispatch a custom event here for UI components to listen to
     window.dispatchEvent(
-      new CustomEvent('app-error', {
-        detail: error,
+      new CustomEvent('app-_error', {
+        detail: _error,
       })
     );
   }
 
-  // Specific error creators
+  // Specific _error creators
   createAPIError(
     service: string,
     endpoint: string,
@@ -114,7 +114,7 @@ export class ErrorHandler {
   ): AppError {
     return {
       code: `API_ERROR_${service.toUpperCase()}`,
-      message: `${service} API error: ${message}`,
+      message: `${service} API _error: ${message}`,
       userMessage: `Unable to connect to ${service}. Please check your internet connection and try again.`,
       severity: status >= 500 ? 'high' : 'medium',
       recoverable: true,
@@ -167,7 +167,7 @@ export class ErrorHandler {
   createNetworkError(operation: string): AppError {
     return {
       code: 'NETWORK_ERROR',
-      message: `Network error during ${operation}`,
+      message: `Network _error during ${operation}`,
       userMessage:
         'Network connection failed. Please check your internet connection and try again.',
       severity: 'medium',
@@ -179,7 +179,7 @@ export class ErrorHandler {
 
   getErrors(severity?: AppError['severity']): AppError[] {
     if (severity) {
-      return this.errorQueue.filter(error => error.severity === severity);
+      return this.errorQueue.filter(_error => _error.severity === severity);
     }
     return [...this.errorQueue];
   }
@@ -190,8 +190,8 @@ export class ErrorHandler {
 
   getErrorStats(): Record<string, number> {
     const stats: Record<string, number> = {};
-    this.errorQueue.forEach(error => {
-      stats[error.code] = (stats[error.code] || 0) + 1;
+    this.errorQueue.forEach(_error => {
+      stats[_error.code] = (stats[_error.code] || 0) + 1;
     });
     return stats;
   }

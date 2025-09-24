@@ -1,6 +1,6 @@
 import { useNotifications } from '../components/NotificationSystem';
 
-type ToastType = 'success' | 'error' | 'warning' | 'info';
+type ToastType = 'success' | '_error' | 'warning' | 'info';
 
 interface ToastOptions {
   dedupe?: boolean;

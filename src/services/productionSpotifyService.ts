@@ -82,7 +82,7 @@ class ProductionSpotifyService {
           if (!response.ok) {
             const errorText = await response.text();
             const err = await errorFromResponse(response, errorText);
-            logger.error(
+            logger._error(
               'ProductionSpotifyService',
               'Authentication failed',
               err
@@ -94,7 +94,7 @@ class ProductionSpotifyService {
           if (!ct.includes('application/json')) {
             const snippet = (await response.text()).slice(0, 120);
             const err = { code: 'BAD_RESPONSE', message: 'Non-JSON token response', details: snippet } as any;
-            logger.error('ProductionSpotifyService', 'Authentication failed', err);
+            logger._error('ProductionSpotifyService', 'Authentication failed', err);
             throw err;
           }
           const data: SpotifyAuthResponse = await response.json();
@@ -107,15 +107,15 @@ class ProductionSpotifyService {
           });
 
           return this.accessToken;
-        } catch (error) {
-          logger.error(
+        } catch (_error) {
+          logger._error(
             'ProductionSpotifyService',
             'Authentication request failed',
-            error
+            _error
           );
           // Back off for 5 minutes after auth failure
           this.authBackoffUntil = Date.now() + 5 * 60 * 1000;
-          throw error;
+          throw _error;
         }
       }
     );
@@ -217,7 +217,7 @@ class ProductionSpotifyService {
           if (!response.ok) {
             const errorText = await response.text();
             const err = await errorFromResponse(response, errorText);
-            logger.error(
+            logger._error(
               'ProductionSpotifyService',
               'Recommendations API failed',
               { ...err, url, params }
@@ -273,11 +273,11 @@ class ProductionSpotifyService {
             expiry: now + this.recsTtlMs,
           });
           return tracks;
-        } catch (error) {
-          logger.error(
+        } catch (_error) {
+          logger._error(
             'ProductionSpotifyService',
             'Recommendations failed - no fallback available',
-            error
+            _error
           );
 
           // No demo fallback - return empty array when Spotify API fails

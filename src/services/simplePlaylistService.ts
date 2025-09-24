@@ -43,8 +43,8 @@ export class SimplePlaylistService {
         throw e;
       }
 
-    } catch (error) {
-      logger.warn('SimplePlaylistService', 'API unavailable, using enhanced local generation', error);
+    } catch (_error) {
+      logger.warn('SimplePlaylistService', 'API unavailable, using enhanced local generation', _error);
 
       // Enhanced local generation with YouTube-like tracks
       return this.generateEnhancedLocalPlaylist(typeof vibe === 'string' ? vibe : (vibe as any), typeof energyLevel === 'string' ? energyLevel : (energyLevel as any), userId);
@@ -119,8 +119,8 @@ export class SimplePlaylistService {
 
       return playlist;
 
-    } catch (error) {
-      logger.error('SimplePlaylistService', 'Magic Match generation failed, using fallback', error);
+    } catch (_error) {
+      logger._error('SimplePlaylistService', 'Magic Match generation failed, using fallback', _error);
 
       // Return fallback playlist
       return this.createFallbackMagicMatch(userId);
