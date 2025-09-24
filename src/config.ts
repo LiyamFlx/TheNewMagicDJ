@@ -20,9 +20,9 @@ const USE_SPOTIFY_MOCK = Boolean(
     (IS_DEV && !import.meta.env?.VITE_SPOTIFY_CLIENT_ID)
 );
 
-// YouTube API configuration
-const YOUTUBE_API_KEY = (import.meta.env?.VITE_YOUTUBE_API_KEY as string) || 'AIzaSyAnIaqX86d9r-PCNdzTwpe64dWAq60zRbY';
-const YOUTUBE_CLIENT_ID = (import.meta.env?.VITE_YOUTUBE_CLIENT_ID as string) || '257624552069-c9le9nejqmfqd4qisirasj7ided86lgs.apps.googleusercontent.com';
+// YouTube API configuration (no hard-coded defaults)
+const YOUTUBE_API_KEY = (import.meta.env?.VITE_YOUTUBE_API_KEY as string) || '';
+const YOUTUBE_CLIENT_ID = (import.meta.env?.VITE_YOUTUBE_CLIENT_ID as string) || '';
 
 export const config: FrontendConfig = {
   IS_DEV,
@@ -33,4 +33,3 @@ export const config: FrontendConfig = {
 };
 
 export default config;
-

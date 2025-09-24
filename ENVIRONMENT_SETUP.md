@@ -8,18 +8,39 @@ npm install
 ```
 
 ### 2. Environment Variables
-Create a `.env.local` file in your project root:
+Create a `.env.local` file in your project root (use `.env.example` as template):
 
 ```bash
 # .env.local
-VITA_SPOTIFY_CLIENT_ID=your_spotify_client_id_here
-VITA_SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# YouTube
+VITE_YOUTUBE_API_KEY=your_youtube_api_key
+YOUTUBE_API_KEY=your_youtube_api_key  # for serverless APIs
+
+# Spotify (client & server)
+VITE_SPOTIFY_CLIENT_ID=your_spotify_client_id
+VITE_SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+SPOTIFY_CLIENT_ID=your_spotify_client_id
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
 
 # Optional: Development settings
 NODE_ENV=development
 ```
 
-**Note:** Replace the placeholder values with your actual Spotify API credentials from the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
+Optional (recognition, analytics, AI):
+
+VITE_AUDD_API_TOKEN=your_audd_token
+AUDD_API_TOKEN=your_audd_token
+VITE_ACOUSTID_API_KEY=your_acoustid_key
+ACOUSTID_API_KEY=your_acoustid_key
+VITE_LASTFM_API_KEY=your_lastfm_key
+VITE_LASTFM_SECRET=your_lastfm_secret
+OPENAI_API_KEY=your_openai_key   # server-side preferred
+GEMINI_API_KEY=your_gemini_key   # server-side preferred
+
+Security: Do not commit real secrets. Prefer server-side vars (no VITE_) whenever possible.
 
 ### 3. Verify Setup
 ```bash
@@ -47,12 +68,14 @@ vercel link
 
 ### 3. Set Environment Variables
 ```bash
-# Set production environment variables
-vercel env add VITA_SPOTIFY_CLIENT_ID
-# Paste your Spotify Client ID
-
-vercel env add VITA_SPOTIFY_CLIENT_SECRET
-# Paste your Spotify Client Secret
+# Set production environment variables (examples)
+vercel env add VITE_SUPABASE_URL production
+vercel env add VITE_SUPABASE_ANON_KEY production
+vercel env add SPOTIFY_CLIENT_ID production
+vercel env add SPOTIFY_CLIENT_SECRET production
+vercel env add YOUTUBE_API_KEY production
+vercel env add AUDD_API_TOKEN production
+vercel env add ACOUSTID_API_KEY production
 
 # Set for all environments (production, preview, development)
 vercel env ls
