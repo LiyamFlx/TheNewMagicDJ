@@ -139,7 +139,7 @@ class LastFmService {
           });
 
           return trackInfo;
-        } catch (_error) {
+        } catch (error) {
           const responseTime = Date.now() - startTime;
           logger.trackAPICall('lastfm', 'track.getInfo', responseTime, false);
 
@@ -245,7 +245,7 @@ class LastFmService {
           );
 
           return tracks;
-        } catch (_error) {
+        } catch (error) {
           const responseTime = Date.now() - startTime;
           logger.trackAPICall(
             'lastfm',

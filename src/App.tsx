@@ -57,10 +57,10 @@ const Logger = {
       : undefined;
     logger.warn('App', String(message), data);
   },
-  _error: (...args: any[]) => {
+  error: (...args: any[]) => {
     const [message, ...rest] = args;
     const err = rest.find((r: any) => r instanceof Error) ?? rest[0];
-    logger.error('App', String(message), err);
+    logger._error('App', String(message), err);
   },
 };
 
@@ -74,7 +74,7 @@ interface AppState {
   isPlaying: boolean;
   isEditingPlaylist: boolean;
   isLoading: boolean;
-  _error: string | null;
+  error: string | null;
   showAuthModal: boolean;
   authModalMode: 'signin' | 'signup';
 }
@@ -88,7 +88,7 @@ const initialState: AppState = {
   isPlaying: false,
   isEditingPlaylist: false,
   isLoading: false,
-  _error: null,
+  error: null,
   showAuthModal: false,
   authModalMode: 'signin',
 };
@@ -123,7 +123,7 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'SET_LOADING':
       return { ...state, isLoading: action.payload };
     case 'SET_ERROR':
-      return { ...state, _error: action.payload };
+      return { ...state, error: action.payload };
     case 'SET_PLAYING':
       return { ...state, isPlaying: action.payload };
     case 'SET_EDITING':
@@ -196,8 +196,8 @@ function AppContent() {
           return true;
         }
         return false;
-      } catch (_error) {
-        Logger.error('Lazy Spotify initialization failed', _error);
+      } catch (error) {
+        Logger.error('Lazy Spotify initialization failed', error);
         return false;
       }
     }, [fetchSpotifyTokenLazy]);
@@ -585,8 +585,8 @@ function AppContent() {
       };
       dispatch({ type: 'SET_PLAYLIST', payload: updatedPlaylist });
       saveCurrentPlaylistDebounced(updatedPlaylist);
-    } catch (_error) {
-      Logger.error('handleTrackReorder', 'Failed to reorder tracks', _error);
+    } catch (error) {
+      Logger.error('handleTrackReorder', 'Failed to reorder tracks', error);
       showToast('Failed to reorder tracks', '_error');
     }
   };
@@ -620,8 +620,8 @@ function AppContent() {
       dispatch({ type: 'SET_PLAYLIST', payload: updatedPlaylist });
       saveCurrentPlaylistDebounced(updatedPlaylist);
       showToast('Track removed successfully', 'success');
-    } catch (_error) {
-      Logger.error('handleTrackRemove', 'Failed to remove track', _error);
+    } catch (error) {
+      Logger.error('handleTrackRemove', 'Failed to remove track', error);
       showToast('Failed to remove track', '_error');
     }
   };
@@ -677,7 +677,7 @@ function AppContent() {
               <button
                 onClick={() => dispatch({ type: 'SET_ERROR', payload: null })}
                 className="glass-button w-8 h-8 flex items-center justify-center text-red-400 hover:bg-red-500/20"
-                aria-label="Dismiss _error"
+                aria-label="Dismiss error"
               >
                 ✕
               </button>

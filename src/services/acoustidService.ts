@@ -151,7 +151,7 @@ class AcoustIDService {
           });
 
           return result;
-        } catch (_error) {
+        } catch (error) {
           const responseTime = Date.now() - startTime;
           logger.trackAPICall('acoustid', 'lookup', responseTime, false);
 

@@ -77,8 +77,8 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
             supported: true,
           };
         }
-      } catch (_error) {
-        logger.warn('AudioDebugger', 'AudioContext not supported', _error);
+      } catch (error) {
+        logger.warn('AudioDebugger', 'AudioContext not supported', error);
       }
 
       // Check HTML Audio support
@@ -90,8 +90,8 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
           canPlayWAV: testAudio.canPlayType('audio/wav') !== '',
           canPlayAAC: testAudio.canPlayType('audio/aac') !== '',
         };
-      } catch (_error) {
-        logger.warn('AudioDebugger', 'HTML Audio not supported', _error);
+      } catch (error) {
+        logger.warn('AudioDebugger', 'HTML Audio not supported', error);
       }
 
       // Check autoplay policy
@@ -197,9 +197,9 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
         await audioRef.current.play();
         setIsTestPlaying(true);
       }
-    } catch (_error: any) {
-      setTestError(_error.message);
-      logger.error('AudioDebugger', 'Test playback failed', _error);
+    } catch (error: any) {
+      setTestError(error.message);
+      logger._error('AudioDebugger', 'Test playback failed', error);
     }
   };
 
@@ -225,8 +225,8 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
       oscillator.stop(audioContext.currentTime + 1);
 
       logger.info('AudioDebugger', 'Test tone generated');
-    } catch (_error) {
-      logger.error('AudioDebugger', 'Failed to generate test tone', _error);
+    } catch (error) {
+      logger._error('AudioDebugger', 'Failed to generate test tone', error);
       setTestError('Failed to generate test tone');
     }
   };
@@ -377,11 +377,11 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
                 {(debugInfo.currentAudio.volume * 100).toFixed(0)}%
               </span>
             </div>
-            {debugInfo.currentAudio.error && (
+            {debugInfo.currentAudio._error && (
               <div className="flex items-start space-x-2">
                 <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
                 <span className="text-red-400 text-xs break-all">
-                  {debugInfo.currentAudio.error}
+                  {debugInfo.currentAudio._error}
                 </span>
               </div>
             )}

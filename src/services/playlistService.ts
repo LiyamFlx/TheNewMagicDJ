@@ -312,7 +312,7 @@ class PlaylistService {
         params.userId
       );
       if (!savedPlaylist) {
-        logger.error('PlaylistService', 'Failed to save playlist to database');
+        logger._error('PlaylistService', 'Failed to save playlist to database');
         return null;
       }
 
@@ -330,8 +330,8 @@ class PlaylistService {
         throw new Error('Playlist creation failed: No ID returned');
       }
       return savedPlaylist as import('../types/index').Playlist;
-    } catch (_error) {
-      logger.error('PlaylistService', 'Failed to create playlist', _error);
+    } catch (error) {
+      logger._error('PlaylistService', 'Failed to create playlist', error);
       return null;
     }
   }
@@ -409,8 +409,8 @@ class PlaylistService {
       });
 
       return typedPlaylist;
-    } catch (_error) {
-      logger.error('PlaylistService', 'Failed to get playlist', _error);
+    } catch (error) {
+      logger._error('PlaylistService', 'Failed to get playlist', error);
       return null;
     }
   }
@@ -493,8 +493,8 @@ class PlaylistService {
       });
 
       return typedPlaylists;
-    } catch (_error) {
-      logger.error('PlaylistService', 'Failed to get user playlists', _error);
+    } catch (error) {
+      logger._error('PlaylistService', 'Failed to get user playlists', error);
       return null;
     }
   }
@@ -563,7 +563,7 @@ class PlaylistService {
         params.userId
       );
       if (!savedPlaylist) {
-        logger.error('PlaylistService', 'Failed to save updated playlist');
+        logger._error('PlaylistService', 'Failed to save updated playlist');
         return null;
       }
 
@@ -581,8 +581,8 @@ class PlaylistService {
         throw new Error('Playlist update failed: No ID returned');
       }
       return savedPlaylist as import('../types/index').Playlist;
-    } catch (_error) {
-      logger.error('PlaylistService', 'Failed to update playlist', _error);
+    } catch (error) {
+      logger._error('PlaylistService', 'Failed to update playlist', error);
       return null;
     }
   }
@@ -625,7 +625,7 @@ class PlaylistService {
       // Delete from database
       const deleted = await supabasePlaylistService.deletePlaylist(playlistId);
       if (!deleted) {
-        logger.error(
+        logger._error(
           'PlaylistService',
           'Failed to delete playlist from database'
         );
@@ -642,8 +642,8 @@ class PlaylistService {
       });
 
       return true;
-    } catch (_error) {
-      logger.error('PlaylistService', 'Failed to delete playlist', _error);
+    } catch (error) {
+      logger._error('PlaylistService', 'Failed to delete playlist', error);
       return false;
     }
   }
@@ -734,7 +734,7 @@ class PlaylistService {
         params.userId
       );
       if (!savedPlaylist) {
-        logger.error(
+        logger._error(
           'PlaylistService',
           'Failed to save playlist after adding track'
         );
@@ -756,8 +756,8 @@ class PlaylistService {
         throw new Error('Add track failed: No playlist ID returned');
       }
       return savedPlaylist as import('../types/index').Playlist;
-    } catch (_error) {
-      logger.error(
+    } catch (error) {
+      logger._error(
         'PlaylistService',
         'Failed to add track to playlist',
         _error
@@ -832,7 +832,7 @@ class PlaylistService {
         params.userId
       );
       if (!savedPlaylist) {
-        logger.error(
+        logger._error(
           'PlaylistService',
           'Failed to save playlist after removing track'
         );
@@ -858,8 +858,8 @@ class PlaylistService {
         throw new Error('Remove track failed: No playlist ID returned');
       }
       return savedPlaylist as import('../types/index').Playlist;
-    } catch (_error) {
-      logger.error(
+    } catch (error) {
+      logger._error(
         'PlaylistService',
         'Failed to remove track from playlist',
         _error
@@ -964,7 +964,7 @@ class PlaylistService {
         params.userId
       );
       if (!savedPlaylist) {
-        logger.error(
+        logger._error(
           'PlaylistService',
           'Failed to save playlist after reordering tracks'
         );
@@ -987,8 +987,8 @@ class PlaylistService {
         throw new Error('Reorder tracks failed: No playlist ID returned');
       }
       return savedPlaylist as import('../types/index').Playlist;
-    } catch (_error) {
-      logger.error(
+    } catch (error) {
+      logger._error(
         'PlaylistService',
         'Failed to reorder tracks in playlist',
         _error
@@ -1034,7 +1034,7 @@ class PlaylistService {
                 spotify_id: recognition.spotify_id,
               };
             }
-          } catch (_error) {
+          } catch (error) {
             logger.warn(
               'PlaylistService',
               'Track recognition failed, using seed track',
@@ -1099,7 +1099,7 @@ class PlaylistService {
                 limit: 15,
               });
             }
-          } catch (_error) {
+          } catch (error) {
             logger.warn(
               'PlaylistService',
               'Failed to get track-based recommendations, using genre-based',
@@ -1156,7 +1156,7 @@ class PlaylistService {
                 limit: 15,
               });
             }
-          } catch (_error) {
+          } catch (error) {
             logger.warn(
               'PlaylistService',
               'Primary recommendation service failed, trying YouTube',
@@ -1284,7 +1284,7 @@ class PlaylistService {
           } else {
             throw new Error('YouTube returned no tracks');
           }
-        } catch (_error) {
+        } catch (error) {
           logger.warn(
             'PlaylistService',
             'YouTube recommendations failed, trying Spotify fallback',
@@ -1302,7 +1302,7 @@ class PlaylistService {
               count: tracks.length,
             });
           } catch (fallbackError) {
-            logger.error(
+            logger._error(
               'PlaylistService',
               'Both YouTube and Spotify failed - no real music available',
               fallbackError

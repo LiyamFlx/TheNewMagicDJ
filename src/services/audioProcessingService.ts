@@ -44,8 +44,8 @@ class AudioProcessingService {
             'AudioProcessingService',
             'Microphone capture started successfully'
           );
-        } catch (_error) {
-          logger.error(
+        } catch (error) {
+          logger._error(
             'AudioProcessingService',
             'Failed to start microphone capture',
             _error
@@ -93,8 +93,8 @@ class AudioProcessingService {
           );
 
           return result;
-        } catch (_error) {
-          logger.error(
+        } catch (error) {
+          logger._error(
             'AudioProcessingService',
             'Advanced audio processing failed, falling back to basic processing',
             _error
@@ -129,8 +129,8 @@ class AudioProcessingService {
         // if (auddService.isConfigured()) {
         //   try {
         //     recognitionResult = await auddService.recognizeAudio(audioData);
-        //   } catch (_error) {
-        //     logger.warn('AudioProcessingService', 'AudD recognition failed', _error);
+        //   } catch (error) {
+        //     logger.warn('AudioProcessingService', 'AudD recognition failed', error);
         //   }
         // }
 
@@ -149,7 +149,7 @@ class AudioProcessingService {
                 'Track recognized via AcoustID'
               );
             }
-          } catch (_error) {
+          } catch (error) {
             logger.warn(
               'AudioProcessingService',
               'AcoustID recognition failed',
@@ -197,7 +197,7 @@ class AudioProcessingService {
             if (recognitionResult) {
               logger.info('AudioProcessingService', 'File recognized via AudD');
             }
-          } catch (_error) {
+          } catch (error) {
             logger.warn(
               'AudioProcessingService',
               'AudD file recognition failed',
@@ -222,7 +222,7 @@ class AudioProcessingService {
                 'File recognized via AcoustID fingerprint'
               );
             }
-          } catch (_error) {
+          } catch (error) {
             logger.warn(
               'AudioProcessingService',
               'AcoustID file recognition failed',
@@ -289,7 +289,7 @@ class AudioProcessingService {
           const audioBuffer =
             await this.audioContext!.decodeAudioData(arrayBuffer);
           resolve(audioBuffer);
-        } catch (_error) {
+        } catch (error) {
           // Fallback to mock buffer if decoding fails
           const mockBuffer = this.audioContext!.createBuffer(1, 44100, 44100);
           const channelData = mockBuffer.getChannelData(0);

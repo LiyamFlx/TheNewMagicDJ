@@ -4,27 +4,27 @@ import App from './App.tsx';
 import './index.css';
 import { logger } from './utils/logger';
 
-// Global _error handlers for debugging Chrome extension/iframe issues
-window.addEventListener('_error', event => {
+// Global error handlers for debugging Chrome extension/iframe issues
+window.addEventListener('error', (event: ErrorEvent) => {
   if (
     event.message.includes(
       'message channel closed before a response was received'
     )
   ) {
-    console.warn('Chrome extension iframe messaging _error (can be ignored):', {
+    console.warn('Chrome extension iframe messaging error (can be ignored):', {
       message: event.message,
       filename: event.filename,
       lineno: event.lineno,
       colno: event.colno,
-      _error: event.error,
+      error: event.error,
     });
-    // This _error is common with Chrome extensions and usually safe to ignore
+    // This error is common with Chrome extensions and usually safe to ignore
     event.preventDefault();
     return false;
   }
 
   // Log other errors normally
-  logger.error('App', 'Unhandled _error', event.error);
+  logger._error('App', 'Unhandled error', event.error);
 });
 
 window.addEventListener('unhandledrejection', event => {
@@ -43,7 +43,7 @@ window.addEventListener('unhandledrejection', event => {
   }
 
   // Log other rejections normally
-  logger.error('App', 'Unhandled promise rejection', event.reason);
+  logger._error('App', 'Unhandled promise rejection', event.reason);
 });
 
 // Clear any existing Service Workers in development

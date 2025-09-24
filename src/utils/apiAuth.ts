@@ -31,15 +31,15 @@ export async function verifySupabaseJWT(
   try {
     const {
       data: { user },
-      _error,
+      error,
     } = await supabase.auth.getUser(token);
 
-    if (_error || !user) {
+    if (error || !user) {
       return { user: null, _error: 'Invalid token' };
     }
 
     return { user };
-  } catch (_error) {
+  } catch (error) {
     return { user: null, _error: 'Token verification failed' };
   }
 }

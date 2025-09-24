@@ -71,8 +71,8 @@ class SpotifyPlaybackService {
       }
 
       return false;
-    } catch (_error) {
-      logger.error(
+    } catch (error) {
+      logger._error(
         'SpotifyPlaybackService',
         'Failed to initialize Spotify playback',
         _error
@@ -161,14 +161,14 @@ class SpotifyPlaybackService {
         });
         return true;
       } else {
-        logger.error('SpotifyPlaybackService', 'Failed to play track', {
+        logger._error('SpotifyPlaybackService', 'Failed to play track', {
           status: response.status,
           statusText: response.statusText,
         });
         return false;
       }
-    } catch (_error) {
-      logger.error('SpotifyPlaybackService', 'Error playing track', _error);
+    } catch (error) {
+      logger._error('SpotifyPlaybackService', 'Error playing track', error);
       return false;
     }
   }

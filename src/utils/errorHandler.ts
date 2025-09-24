@@ -24,7 +24,7 @@ export class ErrorHandler {
 
   private constructor() {
     // Global _error handlers
-    window.addEventListener('_error', this.handleGlobalError.bind(this));
+    window.addEventListener('error', this.handleGlobalError.bind(this));
     window.addEventListener(
       'unhandledrejection',
       this.handleUnhandledRejection.bind(this)
@@ -35,7 +35,7 @@ export class ErrorHandler {
     this.handleError({
       code: 'GLOBAL_ERROR',
       message: event.message,
-      userMessage: 'An unexpected _error occurred. Please try again.',
+      userMessage: 'An unexpected error occurred. Please try again.',
       severity: 'high',
       recoverable: true,
       context: {
@@ -72,7 +72,7 @@ export class ErrorHandler {
     }
 
     // Log the _error
-    logger.error('ErrorHandler', _error.message, {
+    logger._error('Context', 'Error message', {
       code: _error.code,
       severity: _error.severity,
       recoverable: _error.recoverable,

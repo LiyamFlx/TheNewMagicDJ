@@ -118,8 +118,8 @@ class Logger {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-    } catch (_error) {
-      console.warn('Failed to send telemetry:', _error);
+    } catch (error) {
+      console.warn('Failed to send telemetry:', error);
     }
   }
 
@@ -245,13 +245,13 @@ class Logger {
       }
 
       return result;
-    } catch (_error) {
+    } catch (error) {
       const duration = Date.now() - startTime;
 
-      this.error(
+      this._error(
         component,
         `Failed ${operation}`,
-        _error,
+        error,
         userId,
         correlationId
       );
@@ -264,7 +264,7 @@ class Logger {
           correlationId,
           success: false,
           errorMessage:
-            _error instanceof Error ? _error.message : String(_error),
+            error instanceof Error ? error.message : String(error),
         },
         userId,
         correlationId
@@ -279,13 +279,13 @@ class Logger {
             operation,
             duration,
             metadata,
-            _error: _error instanceof Error ? _error.message : String(_error),
+            error: error instanceof Error ? error.message : String(error),
           },
           userId
         );
       }
 
-      throw _error;
+      throw error;
     }
   }
 

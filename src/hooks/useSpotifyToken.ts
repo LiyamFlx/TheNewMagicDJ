@@ -41,7 +41,7 @@ export function useSpotifyToken(): UseSpotifyTokenReturn {
         expiresAt,
       });
       return accessToken;
-    } catch (_error) {
+    } catch (error) {
       setState({
         token: null,
         isLoading: false,

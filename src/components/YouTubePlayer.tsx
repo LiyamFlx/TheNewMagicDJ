@@ -120,45 +120,45 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(
         play: async () => {
           try {
             await play();
-          } catch (_error) {
-            console.error('Error playing video:', _error);
+          } catch (error) {
+            console.error('Error playing video:', error);
             throw _error;
           }
         },
         pause: () => {
           try {
             pause();
-          } catch (_error) {
-            console.error('Error pausing video:', _error);
+          } catch (error) {
+            console.error('Error pausing video:', error);
           }
         },
         seekTo: (seconds: number) => {
           try {
             seekToPlayer(seconds);
-          } catch (_error) {
-            console.error('Error seeking video:', _error);
+          } catch (error) {
+            console.error('Error seeking video:', error);
           }
         },
         setVolume: (vol: number) => {
           try {
             setPlayerVolume(vol);
-          } catch (_error) {
-            console.error('Error setting volume:', _error);
+          } catch (error) {
+            console.error('Error setting volume:', error);
           }
         },
         getCurrentTime: () => {
           try {
             return getCurrentTime();
-          } catch (_error) {
-            console.error('Error getting current time:', _error);
+          } catch (error) {
+            console.error('Error getting current time:', error);
             return 0;
           }
         },
         getDuration: () => {
           try {
             return getDuration();
-          } catch (_error) {
-            console.error('Error getting duration:', _error);
+          } catch (error) {
+            console.error('Error getting duration:', error);
             return 0;
           }
         },

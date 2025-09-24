@@ -6,12 +6,12 @@ import { errorHandler } from '../utils/errorHandler';
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
-  onError?: (_error: Error, errorInfo: ErrorInfo) => void;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface State {
   hasError: boolean;
-  _error: Error | null;
+  error: Error | null;
   errorId: string | null;
 }
 
@@ -20,41 +20,41 @@ class ErrorBoundary extends Component<Props, State> {
     super(props);
     this.state = {
       hasError: false,
-      _error: null,
+      error: null,
       errorId: null,
     };
   }
 
-  static getDerivedStateFromError(_error: Error): State {
+  static getDerivedStateFromError(error: Error): State {
     return {
       hasError: true,
-      _error,
+      error,
       errorId: `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     };
   }
 
-  componentDidCatch(_error: Error, errorInfo: ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const errorId = this.state.errorId || 'unknown';
 
-    // Log the _error
-    logger.error('ErrorBoundary', 'React component _error caught', {
-      _error,
+    // Log the error
+    logger._error('ErrorBoundary', 'React component error caught', {
+      error,
       errorInfo,
       errorId,
       componentStack: errorInfo.componentStack,
     });
 
-    // Handle with _error handler
+    // Handle with error handler
     const appError = {
       code: 'REACT_ERROR_BOUNDARY',
-      message: _error.message,
+      message: error.message,
       userMessage:
-        'A component _error occurred. The page will be refreshed automatically.',
+        'A component error occurred. The page will be refreshed automatically.',
       severity: 'high' as const,
       recoverable: true,
       context: {
         errorId,
-        stack: _error.stack,
+        stack: error.stack,
         componentStack: errorInfo.componentStack,
       },
       timestamp: new Date().toISOString(),
@@ -62,9 +62,9 @@ class ErrorBoundary extends Component<Props, State> {
 
     errorHandler.handleError(appError);
 
-    // Call custom _error handler if provided
+    // Call custom error handler if provided
     if (this.props.onError) {
-      this.props.onError(_error, errorInfo);
+      this.props.onError(error, errorInfo);
     }
   }
 
@@ -75,7 +75,7 @@ class ErrorBoundary extends Component<Props, State> {
 
     this.setState({
       hasError: false,
-      _error: null,
+      error: null,
       errorId: null,
     });
   };
@@ -115,7 +115,7 @@ class ErrorBoundary extends Component<Props, State> {
             </h1>
 
             <p className="text-gray-300 mb-6 leading-relaxed font-inter">
-              We encountered an unexpected _error. Don't worry, our team has
+              We encountered an unexpected error. Don't worry, our team has
               been notified and we're working on a fix.
             </p>
 

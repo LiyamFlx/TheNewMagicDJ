@@ -51,7 +51,7 @@ export class SimplePlaylistService {
       } catch (e) {
         throw e;
       }
-    } catch (_error) {
+    } catch (error) {
       logger.warn(
         'SimplePlaylistService',
         'API unavailable, using enhanced local generation',
@@ -135,8 +135,8 @@ export class SimplePlaylistService {
         (playlist.total_duration || 0) + (recognizedTrack.duration || 180);
 
       return playlist;
-    } catch (_error) {
-      logger.error(
+    } catch (error) {
+      logger._error(
         'SimplePlaylistService',
         'Magic Match generation failed, using fallback',
         _error

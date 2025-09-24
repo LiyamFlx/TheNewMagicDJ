@@ -320,7 +320,7 @@ function playerReducer(state: PlayerState, action: PlayerAction): PlayerState {
         ...state,
         _error: {
           message: action.payload.message,
-          isDegraded: action.payload.isDegraded ?? state.error.isDegraded,
+          isDegraded: action.payload.isDegraded ?? state._error.isDegraded,
         },
       };
 
@@ -378,7 +378,7 @@ const useResourceCleanup = () => {
       cleanupFunctions.current.forEach(fn => {
         try {
           fn();
-        } catch (_error) {
+        } catch (error) {
           logger.warn(
             'ProfessionalMagicPlayer',
             'Cleanup function failed',
@@ -415,8 +415,8 @@ const useAudioSources = () => {
         });
 
         return sources;
-      } catch (_error) {
-        logger.error(
+      } catch (error) {
+        logger._error(
           'ProfessionalMagicPlayer',
           'Failed to load audio sources',
           {
@@ -525,13 +525,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
   // Error auto-clear effect
   useEffect(() => {
-    if (state.error.message) {
+    if (state._error.message) {
       const timeout = setTimeout(() => {
         dispatch({ type: 'RESET_ERROR' });
       }, 5000);
       return () => clearTimeout(timeout);
     }
-  }, [state.error.message]);
+  }, [state._error.message]);
 
   // Log session information
   useEffect(() => {
@@ -576,7 +576,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         'ProfessionalMagicPlayer',
         'Audio element cleaned up successfully'
       );
-    } catch (_error) {
+    } catch (error) {
       logger.warn(
         'ProfessionalMagicPlayer',
         'Error during audio cleanup',
@@ -722,7 +722,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             });
           }
         }
-      } catch (_error) {
+      } catch (error) {
         if (!cancelled) {
           dispatch({
             type: 'SET_ERROR',
@@ -768,7 +768,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             payload: { deck: 'deckB', sources, index: 0 },
           });
         }
-      } catch (_error) {
+      } catch (error) {
         // Silently fail for deck B sources
         logger.warn(
           'ProfessionalMagicPlayer',
@@ -945,8 +945,8 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
     try {
       audio.src = deckBCurrent.url;
-    } catch (_error) {
-      handleSourceError('B', _error);
+    } catch (error) {
+      handleSourceError('B', error);
       return;
     }
 
@@ -1249,7 +1249,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     }
 
     audioB.play().catch(e => {
-      logger.error('Next track play failed', e);
+      logger._error('Next track play failed', e);
     });
 
     fadeIntervalRef.current = window.setInterval(() => {
@@ -1493,7 +1493,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         } else if (deckBCurrent.type === 'spotify' && audioBRef.current) {
           if (shouldPlay) {
             audioBRef.current.play().catch(_error => {
-              handleSourceError('B', _error);
+              handleSourceError('B', error);
               setDeckBPlaying(false);
             });
           } else {
@@ -1503,13 +1503,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             shouldPlay,
           });
         }
-      } catch (_error) {
-        logger.error(
+      } catch (error) {
+        logger._error(
           'ProfessionalMagicPlayer',
           'Deck B playback _error',
           _error
         );
-        handleSourceError('B', _error);
+        handleSourceError('B', error);
         setDeckBPlaying(false);
       }
     },
@@ -1582,7 +1582,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 <h1 className="text-xl lg:text-2xl font-bold text-white tracking-wide font-orbitron">
                   PROFESSIONAL PLAYER
                 </h1>
-                {state.error.isDegraded && (
+                {state._error.isDegraded && (
                   <span className="text-xs px-2 py-1 bg-yellow-900/50 border border-yellow-400 text-yellow-400 rounded font-orbitron">
                     DEMO
                   </span>
@@ -1683,11 +1683,11 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             <span className="hidden sm:inline">DANCER</span>
           </button>
 
-          {state.error.message ? (
+          {state._error.message ? (
             <div className="flex items-center space-x-2 px-3 lg:px-4 py-2 glass-card border-yellow-400 shadow-yellow-400/20">
               <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
               <span className="text-xs lg:text-sm font-bold tracking-wider text-yellow-400">
-                {state.error.message}
+                {state._error.message}
               </span>
             </div>
           ) : (
@@ -1931,12 +1931,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                       }
                     }}
                     onError={_error => {
-                      logger.error(
+                      logger._error(
                         'ProfessionalMagicPlayer',
                         'YouTube A player _error',
                         _error
                       );
-                      handleSourceError('A', _error);
+                      handleSourceError('A', error);
                     }}
                     onTimeUpdate={(currentTime: number) => {
                       const duration = youtubeARef.current?.getDuration() || 0;
@@ -2293,12 +2293,12 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                       );
                     }}
                     onError={_error => {
-                      logger.error(
+                      logger._error(
                         'ProfessionalMagicPlayer',
                         'YouTube B player _error',
                         _error
                       );
-                      handleSourceError('B', _error);
+                      handleSourceError('B', error);
                     }}
                     onTimeUpdate={(currentTime: number) => {
                       const duration = youtubeBRef.current?.getDuration() || 0;

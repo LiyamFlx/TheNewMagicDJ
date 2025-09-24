@@ -7,8 +7,8 @@ export const clearServiceWorkers = async (): Promise<void> => {
         registrations.map(registration => registration.unregister())
       );
       console.log('✅ Cleared all Service Worker registrations');
-    } catch (_error) {
-      console.warn('⚠️ Could not clear Service Worker registrations:', _error);
+    } catch (error) {
+      console.warn('⚠️ Could not clear Service Worker registrations:', error);
     }
   }
 };

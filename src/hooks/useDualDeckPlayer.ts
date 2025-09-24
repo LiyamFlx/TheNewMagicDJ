@@ -84,7 +84,7 @@ export function useDualDeckPlayer({
       updater(prev => ({
         ...prev,
         ...updates,
-        _error: updates.error !== undefined ? updates.error : null,
+        _error: updates._error !== undefined ? updates._error : null,
       }));
     },
     []
@@ -194,7 +194,7 @@ export function useDualDeckPlayer({
       try {
         await audio.play();
         updateDeckState(deckId, { isPlaying: true });
-      } catch (_error) {
+      } catch (error) {
         const err =
           _error instanceof Error ? _error : new Error('Playback failed');
         updateDeckState(deckId, {
