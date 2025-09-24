@@ -1014,15 +1014,43 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
                   </div>
                 </div>
 
+                {/* Track Count */}
+                <div>
+                  <label className="block text-sm lg:text-base font-bold text-gray-300 mb-2 tracking-wide font-orbitron">
+                    TRACK COUNT
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min={6}
+                      max={20}
+                      value={trackCount}
+                      onChange={(e) => setTrackCount(Number(e.target.value))}
+                      className="w-full"
+                      aria-label="Track count"
+                    />
+                    <div className="w-10 text-right text-white font-mono">{trackCount}</div>
+                  </div>
+                </div>
+
                 {/* Quick Generate Button */}
                 {selectedVibe && selectedEnergy && (
-                  <button
-                    onClick={() => handleMagicSet(selectedVibe, selectedEnergy)}
-                    className="btn-primary btn-lg w-full flex-center space-md ease-bounce animate-pulse-glow shadow-neon-hard"
-                  >
-                    <Wand2 className="w-5 h-5" />
-                    <span>GENERATE {selectedVibe.toUpperCase()} SET</span>
-                  </button>
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleQuickGenerate}
+                      disabled={isProcessing}
+                      className="btn-primary btn-lg w-full flex-center space-md ease-bounce animate-pulse-glow shadow-neon-hard disabled:opacity-60"
+                    >
+                      <Wand2 className="w-5 h-5" />
+                      <span>{isProcessing ? 'GENERATING…' : `GENERATE ${selectedVibe.toUpperCase()} SET`}</span>
+                    </button>
+                    {uiError && (
+                      <div className="text-sm text-red-300 text-center">{uiError}</div>
+                    )}
+                    {statusMessage && (
+                      <div className="text-sm text-slate-300 text-center">{statusMessage}</div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
