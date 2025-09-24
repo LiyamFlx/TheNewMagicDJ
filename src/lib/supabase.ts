@@ -1,7 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Support multiple env var prefixes (Vite, Next.js, generic PUBLIC_)
+// Prefer VITE_* (Vite standard), then PUBLIC_*, then NEXT_PUBLIC_*, and finally process.env fallbacks
+// @ts-ignore - import.meta.env keys are runtime-defined
+const supabaseUrl =
+  (import.meta as any)?.env?.VITE_SUPABASE_URL ||
+  (import.meta as any)?.env?.PUBLIC_SUPABASE_URL ||
+  (import.meta as any)?.env?.NEXT_PUBLIC_SUPABASE_URL ||
+  (typeof process !== 'undefined' ? process.env.VITE_SUPABASE_URL : undefined) ||
+  (typeof process !== 'undefined' ? process.env.PUBLIC_SUPABASE_URL : undefined) ||
+  (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_SUPABASE_URL : undefined);
+
+// @ts-ignore - import.meta.env keys are runtime-defined
+const supabaseAnonKey =
+  (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY ||
+  (import.meta as any)?.env?.PUBLIC_SUPABASE_ANON_KEY ||
+  (import.meta as any)?.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  (typeof process !== 'undefined' ? process.env.VITE_SUPABASE_ANON_KEY : undefined) ||
+  (typeof process !== 'undefined' ? process.env.PUBLIC_SUPABASE_ANON_KEY : undefined) ||
+  (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY : undefined);
 
 // Fail loudly in production if env is missing; warn and use placeholder only in dev
 if ((!supabaseUrl || !supabaseAnonKey) && !import.meta.env.DEV) {
