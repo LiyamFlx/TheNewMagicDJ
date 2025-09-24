@@ -3,13 +3,21 @@ import type { VercelRequest } from '@vercel/node';
 type Result = { allowed: true } | { allowed: false; retryAfter: number };
 
 function getClientKey(req: VercelRequest): string {
-  const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
+  const ip =
+    (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+    req.socket.remoteAddress ||
+    'unknown';
   return ip;
 }
 
 const mem = new Map<string, { count: number; reset: number }>();
 
-export async function checkAndConsume(req: VercelRequest, bucket: string, max: number, windowMs: number): Promise<Result> {
+export async function checkAndConsume(
+  req: VercelRequest,
+  bucket: string,
+  max: number,
+  windowMs: number
+): Promise<Result> {
   const client = getClientKey(req);
   const key = `rl:${bucket}:${client}`;
 
@@ -41,4 +49,3 @@ export async function checkAndConsume(req: VercelRequest, bucket: string, max: n
   entry.count += 1;
   return { allowed: true };
 }
-

@@ -147,6 +147,6 @@ async function auddHandler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default (apiConfig.ENABLE_IDEMPOTENCY
+export default apiConfig.ENABLE_IDEMPOTENCY
   ? withIdempotency(auddHandler)
-  : auddHandler);
+  : auddHandler;

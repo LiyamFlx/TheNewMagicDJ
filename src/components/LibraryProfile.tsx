@@ -68,7 +68,7 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
             0
           ) /
             Math.max(1, playlist.tracks.length)) *
-          100
+            100
         ) || 75,
     }));
 
@@ -128,7 +128,9 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
           <div className="w-16 h-16 glass-card flex-center animate-pulse-glow shadow-neon-pink mx-auto mb-4">
             <Music className="w-8 h-8 text-gradient-primary" />
           </div>
-          <p className="text-xl text-gray-300 font-orbitron">Loading your library...</p>
+          <p className="text-xl text-gray-300 font-orbitron">
+            Loading your library...
+          </p>
         </div>
       </div>
     );
@@ -156,7 +158,9 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                 <h1 className="text-xl lg:text-2xl font-bold text-gradient-primary font-orbitron tracking-wide">
                   LIBRARY & PROFILE
                 </h1>
-                <p className="text-sm text-gradient-accent font-mono">{user?.email}</p>
+                <p className="text-sm text-gradient-accent font-mono">
+                  {user?.email}
+                </p>
               </div>
             </div>
           </div>
@@ -180,7 +184,9 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
             <div className="text-3xl font-bold text-gradient-accent mb-3 font-orbitron group-hover:scale-110 ease-bounce animate-count-up">
               {library.length}
             </div>
-            <div className="text-sm text-gray-400 font-inter tracking-wide">TOTAL SETS</div>
+            <div className="text-sm text-gray-400 font-inter tracking-wide">
+              TOTAL SETS
+            </div>
             <div className="progress-bar h-2 max-w-16 mx-auto mt-3">
               <div className="progress-fill w-full gradient-bg-accent"></div>
             </div>
@@ -189,7 +195,9 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
             <div className="text-3xl font-bold text-gradient-primary mb-3 font-orbitron group-hover:scale-110 ease-bounce animate-count-up">
               {library.reduce((sum, item) => sum + item.tracks, 0)}
             </div>
-            <div className="text-sm text-gray-400 font-inter tracking-wide">TOTAL TRACKS</div>
+            <div className="text-sm text-gray-400 font-inter tracking-wide">
+              TOTAL TRACKS
+            </div>
             <div className="progress-bar h-2 max-w-16 mx-auto mt-3">
               <div className="progress-fill w-full gradient-bg-secondary"></div>
             </div>
@@ -200,7 +208,9 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                 library.reduce((sum, item) => sum + item.duration, 0)
               )}
             </div>
-            <div className="text-sm text-gray-400 font-inter tracking-wide">TOTAL TIME</div>
+            <div className="text-sm text-gray-400 font-inter tracking-wide">
+              TOTAL TIME
+            </div>
             <div className="progress-bar h-2 max-w-16 mx-auto mt-3">
               <div className="progress-fill w-full gradient-bg-accent"></div>
             </div>
@@ -209,11 +219,13 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
             <div className="text-3xl font-bold text-gradient-primary mb-3 font-orbitron group-hover:scale-110 ease-bounce animate-count-up">
               {Math.round(
                 library.reduce((sum, item) => sum + item.energy, 0) /
-                library.length || 0
+                  library.length || 0
               )}
               %
             </div>
-            <div className="text-sm text-gray-400 font-inter tracking-wide">AVG ENERGY</div>
+            <div className="text-sm text-gray-400 font-inter tracking-wide">
+              AVG ENERGY
+            </div>
             <div className="progress-bar h-2 max-w-16 mx-auto mt-3">
               <div className="progress-fill w-full gradient-bg-secondary"></div>
             </div>
@@ -311,24 +323,23 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
           </div>
         ) : (
           <div
-            className={
-              viewMode === 'grid'
-                ? 'grid-auto gap-6'
-                : 'space-y-4'
-            }
+            className={viewMode === 'grid' ? 'grid-auto gap-6' : 'space-y-4'}
           >
             {filteredLibrary.map(item => (
               <div
                 key={item.id}
-                className={`glass-card p-lg hover-lift ease-smooth cursor-pointer group shadow-neon-soft hover:shadow-neon-medium ${viewMode === 'list' ? 'flex-between space-md' : ''
-                  }`}
+                className={`glass-card p-lg hover-lift ease-smooth cursor-pointer group shadow-neon-soft hover:shadow-neon-medium ${
+                  viewMode === 'list' ? 'flex-between space-md' : ''
+                }`}
                 onClick={() => handlePlaylistClick(item)}
               >
                 {viewMode === 'grid' ? (
                   <>
                     <div className="flex-between mb-4">
                       <div className="w-12 h-12 glass-card flex-center animate-pulse-glow shadow-neon-soft">
-                        <span className="text-2xl">{getTypeIcon(item.type)}</span>
+                        <span className="text-2xl">
+                          {getTypeIcon(item.type)}
+                        </span>
                       </div>
                       <div className="flex-center space-sm opacity-0 group-hover:opacity-100 ease-smooth">
                         <button
@@ -363,20 +374,31 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                     <div className="space-y-3 text-sm">
                       <div className="flex-between">
                         <span className="text-gray-400 font-inter">TRACKS</span>
-                        <span className="text-gradient-accent font-bold font-mono">{item.tracks}</span>
+                        <span className="text-gradient-accent font-bold font-mono">
+                          {item.tracks}
+                        </span>
                       </div>
                       <div className="flex-between">
-                        <span className="text-gray-400 font-inter">DURATION</span>
-                        <span className="text-gradient-primary font-bold font-mono">{formatTime(item.duration)}</span>
+                        <span className="text-gray-400 font-inter">
+                          DURATION
+                        </span>
+                        <span className="text-gradient-primary font-bold font-mono">
+                          {formatTime(item.duration)}
+                        </span>
                       </div>
                       <div className="flex-between">
                         <span className="text-gray-400 font-inter">ENERGY</span>
-                        <span className={`font-bold font-mono ${getEnergyColor(item.energy)}`}>
+                        <span
+                          className={`font-bold font-mono ${getEnergyColor(item.energy)}`}
+                        >
                           {item.energy}%
                         </span>
                       </div>
                       <div className="progress-bar h-1 mt-2">
-                        <div className="progress-fill gradient-bg-accent" style={{width: `${item.energy}%`}}></div>
+                        <div
+                          className="progress-fill gradient-bg-accent"
+                          style={{ width: `${item.energy}%` }}
+                        ></div>
                       </div>
                       <div className="text-xs text-gray-500 font-mono pt-2 border-t border-glass">
                         {new Date(item.created_at).toLocaleDateString()}
@@ -387,16 +409,29 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
                   <>
                     <div className="flex-start space-md">
                       <div className="w-12 h-12 glass-card flex-center animate-pulse-glow shadow-neon-soft">
-                        <span className="text-2xl">{getTypeIcon(item.type)}</span>
+                        <span className="text-2xl">
+                          {getTypeIcon(item.type)}
+                        </span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-lg font-bold text-gradient-primary truncate group-hover:text-gradient-accent ease-smooth font-orbitron">
                           {item.name}
                         </h3>
                         <p className="text-sm text-gray-400 font-inter">
-                          <span className="text-gradient-accent font-bold">{item.tracks}</span> tracks •
-                          <span className="text-gradient-primary font-bold"> {formatTime(item.duration)}</span> •
-                          Energy: <span className={`font-bold ${getEnergyColor(item.energy)}`}>{item.energy}%</span>
+                          <span className="text-gradient-accent font-bold">
+                            {item.tracks}
+                          </span>{' '}
+                          tracks •
+                          <span className="text-gradient-primary font-bold">
+                            {' '}
+                            {formatTime(item.duration)}
+                          </span>{' '}
+                          • Energy:{' '}
+                          <span
+                            className={`font-bold ${getEnergyColor(item.energy)}`}
+                          >
+                            {item.energy}%
+                          </span>
                         </p>
                       </div>
                     </div>

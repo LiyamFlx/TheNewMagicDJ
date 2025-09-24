@@ -757,7 +757,11 @@ class PlaylistService {
       }
       return savedPlaylist as import('../types/index').Playlist;
     } catch (_error) {
-      logger._error('PlaylistService', 'Failed to add track to playlist', _error);
+      logger._error(
+        'PlaylistService',
+        'Failed to add track to playlist',
+        _error
+      );
       return null;
     }
   }
@@ -1065,19 +1069,24 @@ class PlaylistService {
               const searchVibe = audioFeatures?.estimatedVibe || 'electronic';
               const searchEnergy = audioFeatures?.energyLevel || 'medium';
 
-              logger.info('PlaylistService', 'Using analyzed audio characteristics', {
-                genre: searchGenres[0],
-                vibe: searchVibe,
-                energy: searchEnergy,
-                tempo: audioFeatures?.tempo
-              });
+              logger.info(
+                'PlaylistService',
+                'Using analyzed audio characteristics',
+                {
+                  genre: searchGenres[0],
+                  vibe: searchVibe,
+                  energy: searchEnergy,
+                  tempo: audioFeatures?.tempo,
+                }
+              );
 
-              tracks = await this.primaryMusicService.getRecommendations({
-                seed_genres: searchGenres,
-                vibe: searchVibe,
-                energy: searchEnergy,
-                limit: 15,
-              }) || [];
+              tracks =
+                (await this.primaryMusicService.getRecommendations({
+                  seed_genres: searchGenres,
+                  vibe: searchVibe,
+                  energy: searchEnergy,
+                  limit: 15,
+                })) || [];
 
               if (tracks.length === 0) {
                 throw new Error('YouTube returned no tracks');
@@ -1119,18 +1128,23 @@ class PlaylistService {
               const searchVibe = audioFeatures?.estimatedVibe || 'electronic';
               const searchEnergy = audioFeatures?.energyLevel || 'medium';
 
-              logger.info('PlaylistService', 'Using analyzed audio characteristics (fallback)', {
-                genre: searchGenres[0],
-                vibe: searchVibe,
-                energy: searchEnergy
-              });
+              logger.info(
+                'PlaylistService',
+                'Using analyzed audio characteristics (fallback)',
+                {
+                  genre: searchGenres[0],
+                  vibe: searchVibe,
+                  energy: searchEnergy,
+                }
+              );
 
-              tracks = await this.primaryMusicService.getRecommendations({
-                seed_genres: searchGenres,
-                vibe: searchVibe,
-                energy: searchEnergy,
-                limit: 15,
-              }) || [];
+              tracks =
+                (await this.primaryMusicService.getRecommendations({
+                  seed_genres: searchGenres,
+                  vibe: searchVibe,
+                  energy: searchEnergy,
+                  limit: 15,
+                })) || [];
 
               if (tracks.length === 0) {
                 throw new Error('YouTube returned no tracks');
@@ -1249,21 +1263,33 @@ class PlaylistService {
 
         // Try YouTube first (primary source)
         try {
-          logger.info('PlaylistService', 'Attempting YouTube recommendations first');
-          tracks = await this.primaryMusicService.getRecommendations({
-            seed_genres: genres,
-            vibe: params.vibe,
-            energy: params.energyLevel,
-            limit: 20,
-          }) || [];
+          logger.info(
+            'PlaylistService',
+            'Attempting YouTube recommendations first'
+          );
+          tracks =
+            (await this.primaryMusicService.getRecommendations({
+              seed_genres: genres,
+              vibe: params.vibe,
+              energy: params.energyLevel,
+              limit: 20,
+            })) || [];
 
           if (tracks.length > 0) {
-            logger.info('PlaylistService', 'YouTube recommendations successful', { count: tracks.length });
+            logger.info(
+              'PlaylistService',
+              'YouTube recommendations successful',
+              { count: tracks.length }
+            );
           } else {
             throw new Error('YouTube returned no tracks');
           }
         } catch (_error) {
-          logger.warn('PlaylistService', 'YouTube recommendations failed, trying Spotify fallback', _error);
+          logger.warn(
+            'PlaylistService',
+            'YouTube recommendations failed, trying Spotify fallback',
+            _error
+          );
 
           // Fallback to Spotify
           try {
@@ -1272,10 +1298,18 @@ class PlaylistService {
               limit: 20,
               target_energy: energy,
             });
-            logger.info('PlaylistService', 'Spotify fallback successful', { count: tracks.length });
+            logger.info('PlaylistService', 'Spotify fallback successful', {
+              count: tracks.length,
+            });
           } catch (fallbackError) {
-            logger._error('PlaylistService', 'Both YouTube and Spotify failed - no real music available', fallbackError);
-            throw new Error('Unable to fetch real music tracks. Please check your internet connection and try again.');
+            logger._error(
+              'PlaylistService',
+              'Both YouTube and Spotify failed - no real music available',
+              fallbackError
+            );
+            throw new Error(
+              'Unable to fetch real music tracks. Please check your internet connection and try again.'
+            );
           }
         }
 
@@ -1412,7 +1446,7 @@ class PlaylistService {
   private validateTracks(tracks: Track[]): Track[] {
     // Filter out tracks without real preview URLs
     // Only return tracks with actual Spotify/YouTube audio sources
-    return tracks.filter((track) => {
+    return tracks.filter(track => {
       if (!track.preview_url || track.preview_url.trim() === '') {
         logger.info(
           'PlaylistService',
@@ -1491,7 +1525,6 @@ class PlaylistService {
     }
   }
 
-
   /**
    * Clears all cache entries for a user's playlists
    * @param userId - User ID
@@ -1512,7 +1545,10 @@ class PlaylistService {
    */
   private logTrackSourceDiagnostics(tracks: Track[]): void {
     if (tracks.length === 0) {
-      logger.warn('PlaylistService', 'No tracks to analyze for source diagnostics');
+      logger.warn(
+        'PlaylistService',
+        'No tracks to analyze for source diagnostics'
+      );
       return;
     }
 
@@ -1525,9 +1561,15 @@ class PlaylistService {
 
     // Analyze track sources based on URL patterns and metadata
     tracks.forEach(track => {
-      if (track.url?.includes('youtube.com') || track.url?.includes('youtu.be')) {
+      if (
+        track.url?.includes('youtube.com') ||
+        track.url?.includes('youtu.be')
+      ) {
         sourceStats.youtube++;
-      } else if (track.url?.includes('spotify.com') || track.platform === 'spotify') {
+      } else if (
+        track.url?.includes('spotify.com') ||
+        track.platform === 'spotify'
+      ) {
         sourceStats.spotify++;
       } else if (track.url?.includes('/api/proxy-audio')) {
         sourceStats.proxy++;
@@ -1549,7 +1591,7 @@ class PlaylistService {
       totalTracks: total,
       sources: sourceStats,
       percentages,
-      pipeline: 'YouTube → Spotify only'
+      pipeline: 'YouTube → Spotify only',
     });
 
     // Warn if low success rate indicates API issues
@@ -1557,14 +1599,14 @@ class PlaylistService {
       logger.warn('PlaylistService', 'Low success rate indicates API issues', {
         successRate: percentages.youtube + percentages.spotify,
         youtubeCount: sourceStats.youtube,
-        spotifyCount: sourceStats.spotify
+        spotifyCount: sourceStats.spotify,
       });
     }
 
     // Info if good YouTube performance
     if (percentages.youtube > 80) {
       logger.info('PlaylistService', 'Excellent YouTube API performance', {
-        youtubePercentage: percentages.youtube
+        youtubePercentage: percentages.youtube,
       });
     }
   }

@@ -1,9 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Get API keys from environment
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || process.env.VITE_YOUTUBE_API_KEY;
-const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || process.env.VITE_SPOTIFY_CLIENT_ID;
-const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || process.env.VITE_SPOTIFY_CLIENT_SECRET;
+const YOUTUBE_API_KEY =
+  process.env.YOUTUBE_API_KEY || process.env.VITE_YOUTUBE_API_KEY;
+const SPOTIFY_CLIENT_ID =
+  process.env.SPOTIFY_CLIENT_ID || process.env.VITE_SPOTIFY_CLIENT_ID;
+const SPOTIFY_CLIENT_SECRET =
+  process.env.SPOTIFY_CLIENT_SECRET || process.env.VITE_SPOTIFY_CLIENT_SECRET;
 
 // Get Spotify access token
 async function getSpotifyToken(): Promise<string> {
@@ -17,9 +20,9 @@ async function getSpotifyToken(): Promise<string> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': `Basic ${credentials}`
+      Authorization: `Basic ${credentials}`,
     },
-    body: 'grant_type=client_credentials'
+    body: 'grant_type=client_credentials',
   });
 
   if (!response.ok) {
@@ -31,7 +34,11 @@ async function getSpotifyToken(): Promise<string> {
 }
 
 // Search Spotify for tracks with preview URLs
-async function searchSpotify(query: string, token: string, maxResults: number = 1) {
+async function searchSpotify(
+  query: string,
+  token: string,
+  maxResults: number = 1
+) {
   const searchUrl = new URL('https://api.spotify.com/v1/search');
   searchUrl.searchParams.set('q', query);
   searchUrl.searchParams.set('type', 'track');
@@ -39,9 +46,9 @@ async function searchSpotify(query: string, token: string, maxResults: number = 
 
   const response = await fetch(searchUrl.toString(), {
     headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json'
-    }
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
   });
 
   if (!response.ok) {
@@ -70,8 +77,8 @@ async function searchYouTube(query: string, maxResults: number = 1) {
 
   const response = await fetch(searchUrl.toString(), {
     headers: {
-      'Accept': 'application/json'
-    }
+      Accept: 'application/json',
+    },
   });
 
   if (!response.ok) {
@@ -85,16 +92,32 @@ async function searchYouTube(query: string, maxResults: number = 1) {
 // Generate search queries based on vibe and energy
 function getSearchQueries(vibe: string, energyLevel: string) {
   const genreMap: Record<string, string[]> = {
-    'Electronic': ['electronic music', 'techno', 'house music', 'EDM', 'synthesizer music'],
-    'Hip-Hop': ['hip hop music', 'rap beats', 'trap music', 'hip hop instrumental'],
-    'House': ['house music', 'deep house', 'tech house', 'progressive house'],
-    'Techno': ['techno music', 'minimal techno', 'acid techno', 'industrial techno']
+    Electronic: [
+      'electronic music',
+      'techno',
+      'house music',
+      'EDM',
+      'synthesizer music',
+    ],
+    'Hip-Hop': [
+      'hip hop music',
+      'rap beats',
+      'trap music',
+      'hip hop instrumental',
+    ],
+    House: ['house music', 'deep house', 'tech house', 'progressive house'],
+    Techno: [
+      'techno music',
+      'minimal techno',
+      'acid techno',
+      'industrial techno',
+    ],
   };
 
   const energyModifiers: Record<string, string[]> = {
-    'low': ['chill', 'ambient', 'downtempo', 'relaxed'],
-    'medium': ['groove', 'steady', 'rhythmic'],
-    'high': ['energetic', 'upbeat', 'intense', 'peak time']
+    low: ['chill', 'ambient', 'downtempo', 'relaxed'],
+    medium: ['groove', 'steady', 'rhythmic'],
+    high: ['energetic', 'upbeat', 'intense', 'peak time'],
   };
 
   const baseQueries = genreMap[vibe] || genreMap['Electronic'];
@@ -117,9 +140,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { vibe = 'Electronic', energyLevel = 'medium', trackCount = 10 } = req.body || {};
+    const {
+      vibe = 'Electronic',
+      energyLevel = 'medium',
+      trackCount = 10,
+    } = req.body || {};
 
-    console.log(`[Magic Set] Generating ${trackCount} tracks for ${vibe} with ${energyLevel} energy`);
+    console.log(
+      `[Magic Set] Generating ${trackCount} tracks for ${vibe} with ${energyLevel} energy`
+    );
 
     const tracks = [];
     const searchQueries = getSearchQueries(vibe, energyLevel);
@@ -132,7 +161,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       spotifyToken = await getSpotifyToken();
       console.log(`[Magic Set] ✅ Spotify API authenticated`);
     } catch (error) {
-      console.warn(`[Magic Set] ⚠️ Spotify authentication failed, using YouTube only:`, error);
+      console.warn(
+        `[Magic Set] ⚠️ Spotify authentication failed, using YouTube only:`,
+        error
+      );
     }
 
     // Generate tracks with multi-provider sources (Spotify + YouTube)
@@ -149,7 +181,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         album: 'Magic DJ Generated',
         duration: 180 + Math.floor(Math.random() * 120),
         bpm: 120 + Math.floor(Math.random() * 20),
-        energy: energyLevel === 'low' ? 40 + Math.random() * 20 : energyLevel === 'high' ? 80 + Math.random() * 20 : 60 + Math.random() * 20,
+        energy:
+          energyLevel === 'low'
+            ? 40 + Math.random() * 20
+            : energyLevel === 'high'
+              ? 80 + Math.random() * 20
+              : 60 + Math.random() * 20,
         key: ['C', 'D', 'E', 'F', 'G', 'A', 'B'][Math.floor(Math.random() * 7)],
         genre: vibe,
         created_at: new Date().toISOString(),
@@ -160,7 +197,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         spotify_id: null,
         preview_url: null,
         source_url: null,
-        thumbnail: null
+        thumbnail: null,
       };
 
       // Try Spotify first for better metadata and preview URLs
@@ -174,9 +211,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             trackData.title = track.name || trackData.title;
             trackData.artist = track.artists?.[0]?.name || trackData.artist;
             trackData.album = track.album?.name || trackData.album;
-            trackData.duration = Math.floor((track.duration_ms || 180000) / 1000);
+            trackData.duration = Math.floor(
+              (track.duration_ms || 180000) / 1000
+            );
             trackData.spotify_id = track.id;
-            trackData.thumbnail = track.album?.images?.[1]?.url || track.album?.images?.[0]?.url;
+            trackData.thumbnail =
+              track.album?.images?.[1]?.url || track.album?.images?.[0]?.url;
 
             // Add Spotify preview URL if available
             if (track.preview_url) {
@@ -185,17 +225,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               trackSourceCount++;
               trackSourceTypes.push('spotify');
               allSourceTypes.add('spotify');
-              console.log(`[Magic Set] ✅ Spotify preview resolved: trackId="${trackData.id}", preview_url="${track.preview_url}"`);
+              console.log(
+                `[Magic Set] ✅ Spotify preview resolved: trackId="${trackData.id}", preview_url="${track.preview_url}"`
+              );
             }
           }
         } catch (error) {
-          console.warn(`[Magic Set] Spotify search failed for "${query}":`, error);
+          console.warn(
+            `[Magic Set] Spotify search failed for "${query}":`,
+            error
+          );
         }
       }
 
       // Try YouTube as secondary/fallback source
       try {
-        console.log(`[Magic Set] Searching YouTube for: "${trackData.title} ${trackData.artist}"`);
+        console.log(
+          `[Magic Set] Searching YouTube for: "${trackData.title} ${trackData.artist}"`
+        );
         const youtubeQuery = `${trackData.title} ${trackData.artist}`;
         const youtubeResults = await searchYouTube(youtubeQuery, 1);
 
@@ -216,11 +263,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             trackSourceCount++;
             trackSourceTypes.push('youtube');
             allSourceTypes.add('youtube');
-            console.log(`[Magic Set] ✅ YouTube resolved: trackId="${trackData.id}", youtube_url="${youtubeUrl}"`);
+            console.log(
+              `[Magic Set] ✅ YouTube resolved: trackId="${trackData.id}", youtube_url="${youtubeUrl}"`
+            );
           }
         }
       } catch (error) {
-        console.warn(`[Magic Set] YouTube search failed for "${trackData.title}":`, error);
+        console.warn(
+          `[Magic Set] YouTube search failed for "${trackData.title}":`,
+          error
+        );
       }
 
       // Add track regardless of source resolution (with clear logging)
@@ -228,9 +280,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       totalSourceCount += trackSourceCount;
 
       if (trackSourceCount > 0) {
-        console.log(`[Magic Set] ✅ Multi-provider resolution: trackId="${trackData.id}", sourceCount=${trackSourceCount}, sourceTypes=${JSON.stringify(trackSourceTypes)}`);
+        console.log(
+          `[Magic Set] ✅ Multi-provider resolution: trackId="${trackData.id}", sourceCount=${trackSourceCount}, sourceTypes=${JSON.stringify(trackSourceTypes)}`
+        );
       } else {
-        console.log(`[Magic Set] ❌ No sources resolved: trackId="${trackData.id}", sourceCount=0, sourceTypes=[]`);
+        console.log(
+          `[Magic Set] ❌ No sources resolved: trackId="${trackData.id}", sourceCount=0, sourceTypes=[]`
+        );
       }
     }
 
@@ -249,24 +305,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
             tracks.push({
               id: `track-${Date.now()}-${tracks.length}`,
-              title: video.snippet?.title || `${vibe} Track ${tracks.length + 1}`,
+              title:
+                video.snippet?.title || `${vibe} Track ${tracks.length + 1}`,
               artist: video.snippet?.channelTitle || 'Unknown Artist',
               album: 'Magic DJ Generated',
               duration: 180 + Math.floor(Math.random() * 120),
               bpm: 120 + Math.floor(Math.random() * 20),
-              energy: energyLevel === 'low' ? 40 + Math.random() * 20 : energyLevel === 'high' ? 80 + Math.random() * 20 : 60 + Math.random() * 20,
-              key: ['C', 'D', 'E', 'F', 'G', 'A', 'B'][Math.floor(Math.random() * 7)],
+              energy:
+                energyLevel === 'low'
+                  ? 40 + Math.random() * 20
+                  : energyLevel === 'high'
+                    ? 80 + Math.random() * 20
+                    : 60 + Math.random() * 20,
+              key: ['C', 'D', 'E', 'F', 'G', 'A', 'B'][
+                Math.floor(Math.random() * 7)
+              ],
               genre: vibe,
               youtube_id: videoId,
               youtube_url: youtubeUrl,
               source_url: youtubeUrl,
-              thumbnail: video.snippet?.thumbnails?.medium?.url || video.snippet?.thumbnails?.default?.url,
+              thumbnail:
+                video.snippet?.thumbnails?.medium?.url ||
+                video.snippet?.thumbnails?.default?.url,
               created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
+              updated_at: new Date().toISOString(),
             });
 
             totalSourceCount++;
-            console.log(`[Magic Set] ✅ Additional source resolved: trackId="${tracks[tracks.length-1].id}", sourceCount=1, sourceTypes=["youtube"], url="${youtubeUrl}"`);
+            console.log(
+              `[Magic Set] ✅ Additional source resolved: trackId="${tracks[tracks.length - 1].id}", sourceCount=1, sourceTypes=["youtube"], url="${youtubeUrl}"`
+            );
           }
         } else {
           break; // No more results available
@@ -281,7 +349,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const tracksWithSources = tracks.filter(track => track.source_url).length;
     const sourceTypesArray = Array.from(allSourceTypes);
 
-    console.log(`[Magic Set] Generation complete: ${tracks.length} tracks, ${tracksWithSources} with sources, ${totalSourceCount} total sources`);
+    console.log(
+      `[Magic Set] Generation complete: ${tracks.length} tracks, ${tracksWithSources} with sources, ${totalSourceCount} total sources`
+    );
 
     const playlist = {
       id: `playlist-${Date.now()}`,
@@ -302,18 +372,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         source_types: sourceTypesArray,
         source_coverage: Math.round((tracksWithSources / tracks.length) * 100),
         multi_provider: sourceTypesArray.length > 1,
-        providers_available: sourceTypesArray.length
-      }
+        providers_available: sourceTypesArray.length,
+      },
     };
 
-    console.log(`[Magic Set] MULTI-PROVIDER RESULT: totalTracks=${playlist.source_metadata.total_tracks}, sourcedTracks=${playlist.source_metadata.sourced_tracks}, totalSources=${playlist.source_metadata.total_sources}, sourceTypes=${JSON.stringify(playlist.source_metadata.source_types)}, multiProvider=${playlist.source_metadata.multi_provider}, coverage=${playlist.source_metadata.source_coverage}%`);
+    console.log(
+      `[Magic Set] MULTI-PROVIDER RESULT: totalTracks=${playlist.source_metadata.total_tracks}, sourcedTracks=${playlist.source_metadata.sourced_tracks}, totalSources=${playlist.source_metadata.total_sources}, sourceTypes=${JSON.stringify(playlist.source_metadata.source_types)}, multiProvider=${playlist.source_metadata.multi_provider}, coverage=${playlist.source_metadata.source_coverage}%`
+    );
 
     res.status(200).json(playlist);
   } catch (error) {
     console.error('[Magic Set] Generation failed:', error);
     res.status(500).json({
       error: 'Failed to generate magic set',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details:
+        process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 }

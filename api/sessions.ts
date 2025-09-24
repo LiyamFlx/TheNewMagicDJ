@@ -28,7 +28,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method === 'POST') {
-    const raw = (typeof req.body === 'string') ? JSON.parse(req.body) : req.body || {};
+    const raw =
+      typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
     const { name, playlist_id } = CreateSessionSchema.parse(raw);
     const { data: user } = await supabase.auth.getUser();
     const user_id = user?.user?.id;
@@ -36,7 +37,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { data, error } = await supabase
       .from('sessions')
-      .insert([{ user_id, playlist_id: playlist_id ?? null, status: 'active', started_at: new Date().toISOString() }])
+      .insert([
+        {
+          user_id,
+          playlist_id: playlist_id ?? null,
+          status: 'active',
+          started_at: new Date().toISOString(),
+        },
+      ])
       .select('*')
       .single();
 

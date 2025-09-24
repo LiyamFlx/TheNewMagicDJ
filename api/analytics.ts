@@ -18,7 +18,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data: events, error } = await supabase
       .from('events')
       .select('type, created_at')
-      .gte('created_at', new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString());
+      .gte(
+        'created_at',
+        new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString()
+      );
 
     if (error) return res.status(500).json({ error: error.message });
 
@@ -32,4 +35,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: e?.message || 'unknown' });
   }
 }
-

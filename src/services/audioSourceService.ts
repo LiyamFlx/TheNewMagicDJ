@@ -16,7 +16,6 @@ export interface AudioSource {
  * Audio source service that provides real audio sources for tracks from streaming platforms
  */
 class AudioSourceService {
-
   /**
    * Get real audio sources for a track from streaming platforms
    */
@@ -33,7 +32,7 @@ class AudioSourceService {
         quality: 'high',
         metadata: {
           videoId: track.id, // YouTube video ID for iframe player
-        }
+        },
       });
     }
 
@@ -44,7 +43,7 @@ class AudioSourceService {
         url: track.preview_url,
         title: track.title,
         duration: 30, // Spotify previews are 30 seconds
-        quality: 'high'
+        quality: 'high',
       });
     }
 
@@ -54,7 +53,9 @@ class AudioSourceService {
     // If no real sources available, return empty array
     // This forces the application to get real tracks instead of playing demos
     if (sources.length === 0) {
-      console.warn(`No real audio sources available for track: ${track.title} by ${track.artist}`);
+      console.warn(
+        `No real audio sources available for track: ${track.title} by ${track.artist}`
+      );
     }
 
     return sources;

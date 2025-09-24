@@ -34,7 +34,12 @@ export function useSpotifyToken(): UseSpotifyTokenReturn {
       const data = await response.json();
       const accessToken: string = data.access_token;
       const expiresAt = Date.now() + data.expires_in * 1000 - 60000;
-      setState({ token: accessToken, isLoading: false, _error: null, expiresAt });
+      setState({
+        token: accessToken,
+        isLoading: false,
+        _error: null,
+        expiresAt,
+      });
       return accessToken;
     } catch (_error) {
       setState({
@@ -67,7 +72,9 @@ export function useSpotifyToken(): UseSpotifyTokenReturn {
 
   return {
     ...state,
-    refetch: async () => { await fetchToken(); },
+    refetch: async () => {
+      await fetchToken();
+    },
     isExpired,
     fetchLazy,
   };

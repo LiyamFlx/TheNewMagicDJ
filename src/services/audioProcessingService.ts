@@ -59,7 +59,9 @@ class AudioProcessingService {
   /**
    * Advanced audio processing with Python service integration
    */
-  async processAdvancedAudio(durationMs: number = 10000): Promise<AudioFingerprint> {
+  async processAdvancedAudio(
+    durationMs: number = 10000
+  ): Promise<AudioFingerprint> {
     return logger.trackOperation(
       'AudioProcessingService',
       'processAdvancedAudio',
@@ -72,7 +74,8 @@ class AudioProcessingService {
             channels: 1,
           });
 
-          const result = await advancedAudioService.captureAndAnalyze(durationMs);
+          const result =
+            await advancedAudioService.captureAndAnalyze(durationMs);
 
           await advancedAudioService.stopCapture();
 
@@ -134,7 +137,8 @@ class AudioProcessingService {
         // Try AcoustID if configured
         if (!recognitionResult && acoustidService.isConfigured()) {
           try {
-            const fingerprintData = this.generateFingerprintFromBuffer(audioBuffer);
+            const fingerprintData =
+              this.generateFingerprintFromBuffer(audioBuffer);
             recognitionResult = await acoustidService.recognizeFingerprint(
               fingerprintData,
               durationMs / 1000
@@ -274,7 +278,7 @@ class AudioProcessingService {
       const mediaRecorder = new MediaRecorder(this.audioStream);
       const chunks: Blob[] = [];
 
-      mediaRecorder.ondataavailable = (event) => {
+      mediaRecorder.ondataavailable = event => {
         chunks.push(event.data);
       };
 
@@ -282,7 +286,8 @@ class AudioProcessingService {
         try {
           const blob = new Blob(chunks, { type: 'audio/wav' });
           const arrayBuffer = await blob.arrayBuffer();
-          const audioBuffer = await this.audioContext!.decodeAudioData(arrayBuffer);
+          const audioBuffer =
+            await this.audioContext!.decodeAudioData(arrayBuffer);
           resolve(audioBuffer);
         } catch (_error) {
           // Fallback to mock buffer if decoding fails
@@ -309,14 +314,15 @@ class AudioProcessingService {
     return await audioContext.decodeAudioData(arrayBuffer);
   }
 
-
   private generateFingerprintFromBuffer(buffer: AudioBuffer): string {
     // Extract real audio characteristics for intelligent playlist generation
     const channelData = buffer.getChannelData(0);
-    const features = this.extractDetailedAudioFeatures(channelData, buffer.sampleRate);
+    const features = this.extractDetailedAudioFeatures(
+      channelData,
+      buffer.sampleRate
+    );
     return JSON.stringify(features);
   }
-
 
   private generateMockFingerprint(): string {
     // Generate a mock fingerprint hash
@@ -329,8 +335,10 @@ class AudioProcessingService {
     return result;
   }
 
-
-  private extractDetailedAudioFeatures(channelData: Float32Array, sampleRate: number): any {
+  private extractDetailedAudioFeatures(
+    channelData: Float32Array,
+    sampleRate: number
+  ): any {
     const baseFeatures = {
       timestamp: Date.now(),
       duration: channelData.length / sampleRate,
@@ -338,7 +346,7 @@ class AudioProcessingService {
       tempo: this.estimateRealTempo(channelData, sampleRate),
       spectralFeatures: this.calculateSpectralFeatures(channelData),
       rhythmPattern: this.analyzeRhythmPattern(channelData, sampleRate),
-      frequencyProfile: this.analyzeFrequencyProfile(channelData)
+      frequencyProfile: this.analyzeFrequencyProfile(channelData),
     };
 
     // Determine genre and vibe based on audio features
@@ -346,46 +354,58 @@ class AudioProcessingService {
       ...baseFeatures,
       estimatedGenre: this.classifyGenre(baseFeatures),
       estimatedVibe: this.classifyVibe(baseFeatures),
-      energyLevel: this.classifyEnergyLevel(baseFeatures.energy)
+      energyLevel: this.classifyEnergyLevel(baseFeatures.energy),
     };
 
     return features;
   }
-
 
   private calculateRealEnergy(channelData: Float32Array): number {
     const sum = channelData.reduce((acc, sample) => acc + sample * sample, 0);
     return Math.sqrt(sum / channelData.length);
   }
 
-
-  private estimateRealTempo(channelData: Float32Array, sampleRate: number): number {
+  private estimateRealTempo(
+    channelData: Float32Array,
+    sampleRate: number
+  ): number {
     const hopSize = 512;
     const onsets = [];
 
     for (let i = 0; i < channelData.length - hopSize; i += hopSize) {
-      const energy = channelData.slice(i, i + hopSize)
+      const energy = channelData
+        .slice(i, i + hopSize)
         .reduce((sum, sample) => sum + Math.abs(sample), 0);
       onsets.push(energy);
     }
 
     const peaks = this.findPeaks(onsets);
-    const avgInterval = peaks.length > 1 ?
-      (peaks[peaks.length - 1] - peaks[0]) / (peaks.length - 1) : hopSize;
+    const avgInterval =
+      peaks.length > 1
+        ? (peaks[peaks.length - 1] - peaks[0]) / (peaks.length - 1)
+        : hopSize;
 
     const bpm = (60 * sampleRate) / (avgInterval * hopSize);
     return Math.max(80, Math.min(180, bpm));
   }
 
-
   private calculateSpectralFeatures(channelData: Float32Array): any {
     const windowSize = 1024;
-    const spectralCentroid = this.calculateSpectralCentroidReal(channelData, windowSize);
-    const spectralRolloff = this.calculateSpectralRolloff(channelData, windowSize);
+    const spectralCentroid = this.calculateSpectralCentroidReal(
+      channelData,
+      windowSize
+    );
+    const spectralRolloff = this.calculateSpectralRolloff(
+      channelData,
+      windowSize
+    );
     return { spectralCentroid, spectralRolloff };
   }
 
-  private calculateSpectralCentroidReal(channelData: Float32Array, windowSize: number): number {
+  private calculateSpectralCentroidReal(
+    channelData: Float32Array,
+    windowSize: number
+  ): number {
     let weightedSum = 0;
     let magnitudeSum = 0;
 
@@ -398,7 +418,10 @@ class AudioProcessingService {
     return magnitudeSum > 0 ? weightedSum / magnitudeSum : 0;
   }
 
-  private calculateSpectralRolloff(channelData: Float32Array, windowSize: number): number {
+  private calculateSpectralRolloff(
+    channelData: Float32Array,
+    windowSize: number
+  ): number {
     const energies = [];
     for (let i = 0; i < Math.min(channelData.length, windowSize); i++) {
       energies.push(Math.abs(channelData[i]));
@@ -417,7 +440,10 @@ class AudioProcessingService {
     return 1.0;
   }
 
-  private analyzeRhythmPattern(channelData: Float32Array, _sampleRate: number): any {
+  private analyzeRhythmPattern(
+    channelData: Float32Array,
+    _sampleRate: number
+  ): any {
     const beatStrength = this.calculateBeatStrength(channelData);
     const rhythmComplexity = this.calculateRhythmComplexity(channelData);
     return { beatStrength, rhythmComplexity };
@@ -429,7 +455,8 @@ class AudioProcessingService {
     let avgEnergy = 0;
 
     for (let i = 0; i < channelData.length - windowSize; i += windowSize) {
-      const energy = channelData.slice(i, i + windowSize)
+      const energy = channelData
+        .slice(i, i + windowSize)
         .reduce((sum, sample) => sum + sample * sample, 0);
       maxEnergy = Math.max(maxEnergy, energy);
       avgEnergy += energy;
@@ -444,7 +471,8 @@ class AudioProcessingService {
     const windowSize = 512;
 
     for (let i = 0; i < channelData.length - windowSize; i += windowSize) {
-      const energy = channelData.slice(i, i + windowSize)
+      const energy = channelData
+        .slice(i, i + windowSize)
         .reduce((sum, sample) => sum + Math.abs(sample), 0);
       energies.push(energy);
     }
@@ -452,7 +480,9 @@ class AudioProcessingService {
     if (energies.length < 2) return 0;
 
     const mean = energies.reduce((sum, e) => sum + e, 0) / energies.length;
-    const variance = energies.reduce((sum, e) => sum + Math.pow(e - mean, 2), 0) / energies.length;
+    const variance =
+      energies.reduce((sum, e) => sum + Math.pow(e - mean, 2), 0) /
+      energies.length;
 
     return Math.sqrt(variance) / mean;
   }
@@ -464,7 +494,11 @@ class AudioProcessingService {
     return { bassEnergy, midEnergy, trebleEnergy };
   }
 
-  private calculateBandEnergy(channelData: Float32Array, lowRatio: number, highRatio: number): number {
+  private calculateBandEnergy(
+    channelData: Float32Array,
+    lowRatio: number,
+    highRatio: number
+  ): number {
     const start = Math.floor(channelData.length * lowRatio);
     const end = Math.floor(channelData.length * highRatio);
 
@@ -486,13 +520,16 @@ class AudioProcessingService {
     return peaks;
   }
 
-
   private classifyGenre(features: any): string {
     const { tempo, energy, frequencyProfile } = features;
 
     if (tempo > 140 && energy > 0.7) {
       return frequencyProfile.bassEnergy > 0.6 ? 'techno' : 'electronic';
-    } else if (tempo >= 120 && tempo <= 140 && frequencyProfile.bassEnergy > 0.5) {
+    } else if (
+      tempo >= 120 &&
+      tempo <= 140 &&
+      frequencyProfile.bassEnergy > 0.5
+    ) {
       return 'house';
     } else if (tempo < 120 && features.rhythmPattern?.beatStrength > 1.5) {
       return 'hip-hop';

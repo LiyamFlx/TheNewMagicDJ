@@ -5,14 +5,18 @@ import './index.css';
 import { logger } from './utils/logger';
 
 // Global _error handlers for debugging Chrome extension/iframe issues
-window.addEventListener('_error', (event) => {
-  if (event.message.includes('message channel closed before a response was received')) {
+window.addEventListener('_error', event => {
+  if (
+    event.message.includes(
+      'message channel closed before a response was received'
+    )
+  ) {
     console.warn('Chrome extension iframe messaging _error (can be ignored):', {
       message: event.message,
       filename: event.filename,
       lineno: event.lineno,
       colno: event.colno,
-      _error: event._error
+      _error: event._error,
     });
     // This _error is common with Chrome extensions and usually safe to ignore
     event.preventDefault();
@@ -23,11 +27,15 @@ window.addEventListener('_error', (event) => {
   logger._error('App', 'Unhandled _error', event._error);
 });
 
-window.addEventListener('unhandledrejection', (event) => {
-  if (event.reason?.message?.includes('message channel closed before a response was received')) {
+window.addEventListener('unhandledrejection', event => {
+  if (
+    event.reason?.message?.includes(
+      'message channel closed before a response was received'
+    )
+  ) {
     console.warn('Chrome extension promise rejection (can be ignored):', {
       reason: event.reason,
-      stack: event.reason?.stack
+      stack: event.reason?.stack,
     });
     // This rejection is common with Chrome extensions and usually safe to ignore
     event.preventDefault();

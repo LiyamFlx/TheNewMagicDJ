@@ -5,7 +5,7 @@ import {
   TrackSuggestion,
   KeyCompatibility,
   AudioCaptureConfig,
-  Track
+  Track,
 } from '../types/index';
 import { logger } from '../utils/logger';
 
@@ -28,7 +28,9 @@ class AdvancedAudioService {
   /**
    * Initialize microphone capture with advanced configuration
    */
-  async initializeCapture(config: Partial<AudioCaptureConfig> = {}): Promise<void> {
+  async initializeCapture(
+    config: Partial<AudioCaptureConfig> = {}
+  ): Promise<void> {
     return logger.trackOperation(
       'AdvancedAudioService',
       'initializeCapture',
@@ -48,8 +50,8 @@ class AdvancedAudioService {
 
           this.audioContext = new (window.AudioContext ||
             (window as any).webkitAudioContext)({
-              sampleRate: captureConfig.sampleRate
-            });
+            sampleRate: captureConfig.sampleRate,
+          });
 
           // Resume AudioContext if suspended
           if (this.audioContext.state === 'suspended') {
@@ -57,7 +59,9 @@ class AdvancedAudioService {
           }
 
           // Set up audio analysis
-          const source = this.audioContext.createMediaStreamSource(this.audioStream);
+          const source = this.audioContext.createMediaStreamSource(
+            this.audioStream
+          );
           this.analyser = this.audioContext.createAnalyser();
           this.analyser.fftSize = 2048;
           this.analyser.smoothingTimeConstant = 0.8;
@@ -68,7 +72,7 @@ class AdvancedAudioService {
             mimeType: 'audio/webm; codecs=opus',
           });
 
-          this.recorder.ondataavailable = (event) => {
+          this.recorder.ondataavailable = event => {
             if (event.data.size > 0) {
               this.recordedChunks.push(event.data);
             }
@@ -94,7 +98,9 @@ class AdvancedAudioService {
   /**
    * Capture and analyze audio with advanced recognition
    */
-  async captureAndAnalyze(durationMs: number = 10000): Promise<AudioFingerprint> {
+  async captureAndAnalyze(
+    durationMs: number = 10000
+  ): Promise<AudioFingerprint> {
     return logger.trackOperation(
       'AdvancedAudioService',
       'captureAndAnalyze',
@@ -159,7 +165,9 @@ class AdvancedAudioService {
   /**
    * Call the Python audio recognition service
    */
-  private async callPythonService(base64Audio: string): Promise<AudioRecognitionResponse> {
+  private async callPythonService(
+    base64Audio: string
+  ): Promise<AudioRecognitionResponse> {
     try {
       const response = await fetch('/api/audio-recognition', {
         method: 'POST',
@@ -193,7 +201,10 @@ class AdvancedAudioService {
   /**
    * Check key compatibility between tracks
    */
-  async checkKeyCompatibility(key1: string, key2: string): Promise<KeyCompatibility> {
+  async checkKeyCompatibility(
+    key1: string,
+    key2: string
+  ): Promise<KeyCompatibility> {
     return logger.trackOperation(
       'AdvancedAudioService',
       'checkKeyCompatibility',
@@ -273,7 +284,10 @@ class AdvancedAudioService {
           key: track.key || this.generateRandomKey(),
           genre: track.genre || 'electronic',
           energy: track.energy || Math.random(),
-          mfcc_features: Array.from({ length: 13 }, () => Math.random() * 100 - 50),
+          mfcc_features: Array.from(
+            { length: 13 },
+            () => Math.random() * 100 - 50
+          ),
           spectral_centroid: 2000 + Math.random() * 2000,
           confidence: 0.8,
           valence: track.valence,
@@ -316,7 +330,10 @@ class AdvancedAudioService {
         this.recorder = null;
         this.recordedChunks = [];
 
-        logger.info('AdvancedAudioService', 'Audio capture stopped and cleaned up');
+        logger.info(
+          'AdvancedAudioService',
+          'Audio capture stopped and cleaned up'
+        );
       }
     );
   }
@@ -340,7 +357,10 @@ class AdvancedAudioService {
     this.analyser.getByteTimeDomainData(timeDomainData);
 
     // Calculate volume level
-    const volume = frequencyData.reduce((sum, value) => sum + value, 0) / frequencyData.length / 255;
+    const volume =
+      frequencyData.reduce((sum, value) => sum + value, 0) /
+      frequencyData.length /
+      255;
 
     return {
       frequencyData,
@@ -371,7 +391,20 @@ class AdvancedAudioService {
   }
 
   private generateMockResponse(): AudioRecognitionResponse {
-    const keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const keys = [
+      'C',
+      'C#',
+      'D',
+      'D#',
+      'E',
+      'F',
+      'F#',
+      'G',
+      'G#',
+      'A',
+      'A#',
+      'B',
+    ];
     const genres = ['electronic', 'house', 'techno', 'pop', 'rock', 'hip-hop'];
 
     return {
@@ -381,7 +414,10 @@ class AdvancedAudioService {
         key: keys[Math.floor(Math.random() * keys.length)],
         genre: genres[Math.floor(Math.random() * genres.length)],
         energy: Math.random(),
-        mfcc_features: Array.from({ length: 13 }, () => Math.random() * 100 - 50),
+        mfcc_features: Array.from(
+          { length: 13 },
+          () => Math.random() * 100 - 50
+        ),
         spectral_centroid: 2000 + Math.random() * 2000,
         confidence: 0.7 + Math.random() * 0.2,
       },
@@ -390,15 +426,18 @@ class AdvancedAudioService {
     };
   }
 
-  private calculateLocalCompatibility(key1: string, key2: string): KeyCompatibility {
+  private calculateLocalCompatibility(
+    key1: string,
+    key2: string
+  ): KeyCompatibility {
     const majorScales: Record<string, string[]> = {
-      'C': ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
-      'G': ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],
-      'D': ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
-      'A': ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'],
-      'E': ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'],
-      'B': ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'],
-      'F': ['F', 'G', 'A', 'A#', 'C', 'D', 'E'],
+      C: ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
+      G: ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],
+      D: ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
+      A: ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'],
+      E: ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'],
+      B: ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'],
+      F: ['F', 'G', 'A', 'A#', 'C', 'D', 'E'],
     };
 
     if (!majorScales[key1] || !majorScales[key2]) {
@@ -412,7 +451,9 @@ class AdvancedAudioService {
 
     const scale1 = new Set(majorScales[key1]);
     const scale2 = new Set(majorScales[key2]);
-    const sharedNotes = Array.from(scale1).filter(note => scale2.has(note)).length;
+    const sharedNotes = Array.from(scale1).filter(note =>
+      scale2.has(note)
+    ).length;
 
     return {
       compatible: sharedNotes >= 5,
@@ -422,7 +463,9 @@ class AdvancedAudioService {
     };
   }
 
-  private generateCompatibleSuggestions(features: AdvancedAudioFeatures): TrackSuggestion[] {
+  private generateCompatibleSuggestions(
+    features: AdvancedAudioFeatures
+  ): TrackSuggestion[] {
     const suggestions: TrackSuggestion[] = [];
     const templateTracks = [
       { title: 'Harmonic Flow', artist: 'DJ Synthesis' },
@@ -446,7 +489,20 @@ class AdvancedAudioService {
   }
 
   private generateRandomKey(): string {
-    const keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const keys = [
+      'C',
+      'C#',
+      'D',
+      'D#',
+      'E',
+      'F',
+      'F#',
+      'G',
+      'G#',
+      'A',
+      'A#',
+      'B',
+    ];
     return keys[Math.floor(Math.random() * keys.length)];
   }
 }

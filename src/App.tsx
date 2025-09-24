@@ -41,12 +41,20 @@ const LibraryProfile = React.lazy(() => import('./components/LibraryProfile'));
 const Logger = {
   info: (...args: any[]) => {
     const [message, ...rest] = args;
-    const data = rest.length ? (rest.length === 1 ? rest[0] : { args: rest }) : undefined;
+    const data = rest.length
+      ? rest.length === 1
+        ? rest[0]
+        : { args: rest }
+      : undefined;
     logger.info('App', String(message), data);
   },
   warn: (...args: any[]) => {
     const [message, ...rest] = args;
-    const data = rest.length ? (rest.length === 1 ? rest[0] : { args: rest }) : undefined;
+    const data = rest.length
+      ? rest.length === 1
+        ? rest[0]
+        : { args: rest }
+      : undefined;
     logger.warn('App', String(message), data);
   },
   _error: (...args: any[]) => {
@@ -95,7 +103,10 @@ type Action =
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'SET_PLAYING'; payload: boolean }
   | { type: 'SET_EDITING'; payload: boolean }
-  | { type: 'SHOW_AUTH_MODAL'; payload: { show: boolean; mode?: 'signin' | 'signup' } };
+  | {
+      type: 'SHOW_AUTH_MODAL';
+      payload: { show: boolean; mode?: 'signin' | 'signup' };
+    };
 
 function appReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -121,7 +132,7 @@ function appReducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         showAuthModal: action.payload.show,
-        authModalMode: action.payload.mode || state.authModalMode
+        authModalMode: action.payload.mode || state.authModalMode,
       };
     default:
       return state;
@@ -142,17 +153,16 @@ function AppContent() {
       window.clearTimeout(saveDebounceRef.current);
     }
     saveDebounceRef.current = window.setTimeout(() => {
-      try { saveFnRef.current?.(pl); } catch {}
+      try {
+        saveFnRef.current?.(pl);
+      } catch {}
       localStorage.setItem('last-resume-at', String(Date.now()));
     }, 500);
   }, []);
 
   // Spotify token
-  const {
-    isLoading: tokenLoading,
-    fetchLazy: fetchSpotifyTokenLazy,
-  } = useSpotifyToken();
-  
+  const { isLoading: tokenLoading, fetchLazy: fetchSpotifyTokenLazy } =
+    useSpotifyToken();
 
   // Local storage
   const [userPreferences] = useLocalStorage('user-preferences', {
@@ -165,31 +175,32 @@ function AppContent() {
     ''
   );
 
-  
-  
-  
   const [lastRoute, setLastRoute] = useLocalStorage<string>('last-route', '/');
-  const [authDismissedAt, setAuthDismissedAt] = useLocalStorage<number>('auth-dismissed-at', 0);
+  const [authDismissedAt, setAuthDismissedAt] = useLocalStorage<number>(
+    'auth-dismissed-at',
+    0
+  );
 
   // --- Spotify is now lazily initialized when needed as fallback ---
   // Removed automatic initialization to improve startup performance
 
   // Provide lazy Spotify initialization function for services
   // @ts-ignore - Function reserved for future lazy initialization
-  const unused__initializeSpotifyLazy = useCallback(async (): Promise<boolean> => {
-    try {
-      const token = await fetchSpotifyTokenLazy();
-      if (token) {
-        spotifyService.initialize(token);
-        Logger.info('Spotify service lazily initialized');
-        return true;
+  const unused__initializeSpotifyLazy =
+    useCallback(async (): Promise<boolean> => {
+      try {
+        const token = await fetchSpotifyTokenLazy();
+        if (token) {
+          spotifyService.initialize(token);
+          Logger.info('Spotify service lazily initialized');
+          return true;
+        }
+        return false;
+      } catch (_error) {
+        Logger._error('Lazy Spotify initialization failed', _error);
+        return false;
       }
-      return false;
-    } catch (_error) {
-      Logger._error('Lazy Spotify initialization failed', _error);
-      return false;
-    }
-  }, [fetchSpotifyTokenLazy]);
+    }, [fetchSpotifyTokenLazy]);
 
   // --- Initialize App ---
   useEffect(() => {
@@ -205,8 +216,11 @@ function AppContent() {
           const appUser: User = {
             id: supabaseUser.id,
             email: supabaseUser.email || '',
-            name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-            created_at: supabaseUser.created_at
+            name:
+              supabaseUser.user_metadata?.name ||
+              supabaseUser.email?.split('@')[0] ||
+              'User',
+            created_at: supabaseUser.created_at,
           };
           dispatch({ type: 'SET_USER', payload: appUser });
           Logger.info('User already authenticated');
@@ -217,7 +231,10 @@ function AppContent() {
             const sevenDays = 7 * 24 * 60 * 60 * 1000;
             if (dismissedAgo > sevenDays) {
               setTimeout(() => {
-                dispatch({ type: 'SHOW_AUTH_MODAL', payload: { show: true, mode: 'signup' } });
+                dispatch({
+                  type: 'SHOW_AUTH_MODAL',
+                  payload: { show: true, mode: 'signup' },
+                });
               }, 5000);
             }
           }
@@ -254,23 +271,28 @@ function AppContent() {
     initializeApp();
 
     // Listen for auth state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        const supabaseUser = session.user;
-        const appUser: User = {
-          id: supabaseUser.id,
-          email: supabaseUser.email || '',
-          name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-          created_at: supabaseUser.created_at
-        };
-        dispatch({ type: 'SET_USER', payload: appUser });
-        dispatch({ type: 'SHOW_AUTH_MODAL', payload: { show: false } });
-        Logger.info('User signed in');
-      } else if (event === 'SIGNED_OUT') {
-        dispatch({ type: 'SET_USER', payload: null });
-        Logger.info('User signed out');
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          const supabaseUser = session.user;
+          const appUser: User = {
+            id: supabaseUser.id,
+            email: supabaseUser.email || '',
+            name:
+              supabaseUser.user_metadata?.name ||
+              supabaseUser.email?.split('@')[0] ||
+              'User',
+            created_at: supabaseUser.created_at,
+          };
+          dispatch({ type: 'SET_USER', payload: appUser });
+          dispatch({ type: 'SHOW_AUTH_MODAL', payload: { show: false } });
+          Logger.info('User signed in');
+        } else if (event === 'SIGNED_OUT') {
+          dispatch({ type: 'SET_USER', payload: null });
+          Logger.info('User signed out');
+        }
       }
-    });
+    );
 
     return () => {
       authListener.subscription.unsubscribe();
@@ -294,78 +316,104 @@ function AppContent() {
   useEffect(() => {
     if (location.pathname !== '/') return;
 
-    const autoResumeEnabled = localStorage.getItem('auto-resume-enabled') === 'true';
+    const autoResumeEnabled =
+      localStorage.getItem('auto-resume-enabled') === 'true';
     if (!autoResumeEnabled) return; // disabled by default
 
     const last = lastRoute || '/';
-    const within12h = (Date.now() - (Number(localStorage.getItem('last-resume-at')) || 0)) < (12 * 60 * 60 * 1000);
+    const within12h =
+      Date.now() - (Number(localStorage.getItem('last-resume-at')) || 0) <
+      12 * 60 * 60 * 1000;
     const canResume = state.currentPlaylist || lastPlaylistId;
-    if (canResume && (last.startsWith('/create') || last.startsWith('/edit') || last.startsWith('/play')) && within12h) {
+    if (
+      canResume &&
+      (last.startsWith('/create') ||
+        last.startsWith('/edit') ||
+        last.startsWith('/play')) &&
+      within12h
+    ) {
       showToast('Resuming where you left off', 'info');
       navigate(last);
     }
-  }, [location.pathname, lastRoute, state.currentPlaylist, lastPlaylistId, navigate, showToast]);
+  }, [
+    location.pathname,
+    lastRoute,
+    state.currentPlaylist,
+    lastPlaylistId,
+    navigate,
+    showToast,
+  ]);
 
   // --- Load user data ---
-  const loadUserData = useCallback(async (userId: string) => {
-    if (!userId) {
-      Logger._error('loadUserData', 'No user ID provided');
-      return;
-    }
+  const loadUserData = useCallback(
+    async (userId: string) => {
+      if (!userId) {
+        Logger._error('loadUserData', 'No user ID provided');
+        return;
+      }
 
-    try {
-      Logger.info('loadUserData', 'Loading playlists for user', { userId });
-      const playlists = await supabasePlaylistService.getPlaylists(userId);
+      try {
+        Logger.info('loadUserData', 'Loading playlists for user', { userId });
+        const playlists = await supabasePlaylistService.getPlaylists(userId);
 
-      // Ensure playlists is an array and all have required properties
-      const safePlaylists: Playlist[] = Array.isArray(playlists)
-        ? (playlists as Playlist[]).filter(
-            (p): p is Playlist => !!p && typeof p.id === 'string' && !!p.name
-          )
-        : [];
-      dispatch({ type: 'SET_PLAYLISTS', payload: safePlaylists });
+        // Ensure playlists is an array and all have required properties
+        const safePlaylists: Playlist[] = Array.isArray(playlists)
+          ? (playlists as Playlist[]).filter(
+              (p): p is Playlist => !!p && typeof p.id === 'string' && !!p.name
+            )
+          : [];
+        dispatch({ type: 'SET_PLAYLISTS', payload: safePlaylists });
 
-      // Restore last playlist with additional safety checks
-      if (safePlaylists.length > 0) {
-        const candidate = lastPlaylistId
-          ? safePlaylists.find((p: Playlist) => p && p.id === lastPlaylistId)
-          : null;
+        // Restore last playlist with additional safety checks
+        if (safePlaylists.length > 0) {
+          const candidate = lastPlaylistId
+            ? safePlaylists.find((p: Playlist) => p && p.id === lastPlaylistId)
+            : null;
 
-        const playlistToRestore =
-          candidate ||
-          safePlaylists
-            .filter((p: Playlist) => p && p.updated_at) // Filter out invalid playlists
-            .sort(
-              (a: Playlist, b: Playlist) =>
-                new Date(b.updated_at || 0).getTime() -
-                new Date(a.updated_at || 0).getTime()
-            )[0];
+          const playlistToRestore =
+            candidate ||
+            safePlaylists
+              .filter((p: Playlist) => p && p.updated_at) // Filter out invalid playlists
+              .sort(
+                (a: Playlist, b: Playlist) =>
+                  new Date(b.updated_at || 0).getTime() -
+                  new Date(a.updated_at || 0).getTime()
+              )[0];
 
+          if (
+            playlistToRestore &&
+            playlistToRestore.id &&
+            playlistToRestore.name
+          ) {
+            dispatch({ type: 'SET_PLAYLIST', payload: playlistToRestore });
+            setLastPlaylistId(playlistToRestore.id);
+            Logger.info('Restored playlist', playlistToRestore.name);
+            showToast(
+              `Restored playlist: ${playlistToRestore.name}`,
+              'success'
+            );
+          }
+        }
+      } catch (err) {
+        Logger._error('Load user data _error', err);
+
+        // Graceful fallback - don't crash the app
+        dispatch({ type: 'SET_PLAYLISTS', payload: [] });
+
+        const errorMessage =
+          err instanceof Error ? err.message : 'Unknown _error';
         if (
-          playlistToRestore &&
-          playlistToRestore.id &&
-          playlistToRestore.name
+          errorMessage.includes('network') ||
+          errorMessage.includes('fetch')
         ) {
-          dispatch({ type: 'SET_PLAYLIST', payload: playlistToRestore });
-          setLastPlaylistId(playlistToRestore.id);
-          Logger.info('Restored playlist', playlistToRestore.name);
-          showToast(`Restored playlist: ${playlistToRestore.name}`, 'success');
+          showToast('Network _error - working offline', 'warning');
+        } else {
+          showToast('Failed to load playlists - working offline', 'warning');
         }
       }
-    } catch (err) {
-      Logger._error('Load user data _error', err);
-
-      // Graceful fallback - don't crash the app
-      dispatch({ type: 'SET_PLAYLISTS', payload: [] });
-
-      const errorMessage = err instanceof Error ? err.message : 'Unknown _error';
-      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-        showToast('Network _error - working offline', 'warning');
-      } else {
-        showToast('Failed to load playlists - working offline', 'warning');
-      }
-    }
-  }, [setLastPlaylistId, showToast]);
+    },
+    [setLastPlaylistId, showToast]
+  );
 
   // Separate effect for user data loading
   useEffect(() => {
@@ -468,7 +516,10 @@ function AppContent() {
 
   // --- Auth handlers ---
   const handleAuthClick = (isSignUp: boolean) => {
-    dispatch({ type: 'SHOW_AUTH_MODAL', payload: { show: true, mode: isSignUp ? 'signup' : 'signin' } });
+    dispatch({
+      type: 'SHOW_AUTH_MODAL',
+      payload: { show: true, mode: isSignUp ? 'signup' : 'signin' },
+    });
   };
 
   const handleAuthModalClose = () => {
@@ -617,7 +668,9 @@ function AppContent() {
                   <span className="text-red-400 text-sm">⚠</span>
                 </div>
                 <div>
-                  <p className="text-red-400 font-medium">Something went wrong</p>
+                  <p className="text-red-400 font-medium">
+                    Something went wrong
+                  </p>
                   <p className="text-red-300 text-sm">{state._error}</p>
                 </div>
               </div>
@@ -633,16 +686,18 @@ function AppContent() {
         </div>
       )}
 
-      <Suspense fallback={
-        <div className="min-h-screen flex items-center justify-center gradient-bg-primary">
-          <LoadingSpinner
-            variant="futuristic"
-            size="large"
-            text="Loading MagicDJ..."
-            subtext="Preparing your AI studio"
-          />
-        </div>
-      }>
+      <Suspense
+        fallback={
+          <div className="min-h-screen flex items-center justify-center gradient-bg-primary">
+            <LoadingSpinner
+              variant="futuristic"
+              size="large"
+              text="Loading MagicDJ..."
+              subtext="Preparing your AI studio"
+            />
+          </div>
+        }
+      >
         <Routes>
           <Route
             path="/"
@@ -710,7 +765,7 @@ function AppContent() {
                     playlist={state.currentPlaylist}
                     session={state.currentSession}
                     isPlaying={state.isPlaying}
-                    onPlayPause={async (playing) => {
+                    onPlayPause={async playing => {
                       dispatch({ type: 'SET_PLAYING', payload: playing });
                       // best-effort event
                       logEvent(playing ? 'player.play' : 'player.pause');

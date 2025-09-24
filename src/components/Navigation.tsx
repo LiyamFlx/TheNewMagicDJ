@@ -199,7 +199,9 @@ const Navigation: React.FC<NavigationProps> = ({
                           <div className="glass-card px-3 py-2 text-xs whitespace-nowrap">
                             <p className="text-white">{item.description}</p>
                             <p className="text-yellow-400 mt-1">
-                              {item.path === '/edit' || item.path === '/play' ? '→ Create playlist in Studio first' : '→ Start playing a set first'}
+                              {item.path === '/edit' || item.path === '/play'
+                                ? '→ Create playlist in Studio first'
+                                : '→ Start playing a set first'}
                             </p>
                           </div>
                         </div>
@@ -412,7 +414,6 @@ const Navigation: React.FC<NavigationProps> = ({
           </div>
         </div>
       )}
-
     </>
   );
 };

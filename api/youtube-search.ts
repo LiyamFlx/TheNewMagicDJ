@@ -43,9 +43,16 @@ async function youtubeSearchHandler(req: VercelRequest, res: VercelResponse) {
   try {
     const decision = await checkAndConsume(req, 'youtube-search', 100, 60_000);
     if (!decision.allowed) {
-      res.setHeader('Retry-After', Math.ceil(decision.retryAfter / 1000).toString());
+      res.setHeader(
+        'Retry-After',
+        Math.ceil(decision.retryAfter / 1000).toString()
+      );
       res.setHeader('Content-Type', 'application/json');
-      return res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many requests' } });
+      return res
+        .status(429)
+        .json({
+          error: { code: 'RATE_LIMITED', message: 'Too many requests' },
+        });
     }
 
     const { q: query, maxResults } = validateYouTubeSearch(req.query);
@@ -68,11 +75,9 @@ async function youtubeSearchHandler(req: VercelRequest, res: VercelResponse) {
       console.error('YouTube API Error:', response.status, errorText);
 
       if (response.status === 403) {
-        throw new AppError(
-          'QUOTA_EXCEEDED',
-          'YouTube API quota exceeded',
-          { httpStatus: 503 }
-        );
+        throw new AppError('QUOTA_EXCEEDED', 'YouTube API quota exceeded', {
+          httpStatus: 503,
+        });
       }
 
       if (response.status === 401) {
@@ -83,18 +88,21 @@ async function youtubeSearchHandler(req: VercelRequest, res: VercelResponse) {
         );
       }
 
-      throw new AppError(
-        'YOUTUBE_API_ERROR',
-        'YouTube search failed',
-        { httpStatus: response.status }
-      );
+      throw new AppError('YOUTUBE_API_ERROR', 'YouTube search failed', {
+        httpStatus: response.status,
+      });
     }
 
     const data = await response.json();
 
     // Filter and clean the results with guards for shape changes
     const cleanedItems = (Array.isArray(data.items) ? data.items : [])
-      .filter((item: any) => item && item.id && (item.id.videoId || item.id.kind === 'youtube#video'))
+      .filter(
+        (item: any) =>
+          item &&
+          item.id &&
+          (item.id.videoId || item.id.kind === 'youtube#video')
+      )
       .map((item: any) => ({
         id: {
           videoId: item.id.videoId || item.id.videoId || null,
@@ -113,14 +121,13 @@ async function youtubeSearchHandler(req: VercelRequest, res: VercelResponse) {
       items: cleanedItems,
       pageInfo: {
         totalResults: data.pageInfo?.totalResults || cleanedItems.length,
-        resultsPerPage: data.pageInfo?.resultsPerPage || cleanedItems.length
-      }
+        resultsPerPage: data.pageInfo?.resultsPerPage || cleanedItems.length,
+      },
     };
 
     res.setHeader('Cache-Control', 'public, max-age=300'); // Cache for 5 minutes
     res.setHeader('Content-Type', 'application/json');
     return res.status(200).json(result);
-
   } catch (e: any) {
     const normalized = normalizeError(e, {
       code: 'YOUTUBE_API_ERROR',
@@ -140,6 +147,6 @@ async function youtubeSearchHandler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default (apiConfig.ENABLE_IDEMPOTENCY
+export default apiConfig.ENABLE_IDEMPOTENCY
   ? withIdempotency(youtubeSearchHandler)
-  : youtubeSearchHandler);
+  : youtubeSearchHandler;

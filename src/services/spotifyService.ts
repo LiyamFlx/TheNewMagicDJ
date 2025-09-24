@@ -18,7 +18,6 @@ interface SpotifyService {
 }
 
 class UnifiedSpotifyService implements SpotifyService {
-
   initialize(_token: string): void {
     // Production service handles its own token management
     // No initialization needed

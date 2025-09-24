@@ -91,9 +91,16 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
   try {
     const decision = await checkAndConsume(req, 'spotify-token', 30, 60_000);
     if (!decision.allowed) {
-      res.setHeader('Retry-After', Math.ceil(decision.retryAfter / 1000).toString());
+      res.setHeader(
+        'Retry-After',
+        Math.ceil(decision.retryAfter / 1000).toString()
+      );
       res.setHeader('Content-Type', 'application/json');
-      return res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many requests' } });
+      return res
+        .status(429)
+        .json({
+          error: { code: 'RATE_LIMITED', message: 'Too many requests' },
+        });
     }
 
     const now = Date.now();
@@ -177,6 +184,6 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default (apiConfig.ENABLE_IDEMPOTENCY
+export default apiConfig.ENABLE_IDEMPOTENCY
   ? withIdempotency(spotifyTokenHandler)
-  : spotifyTokenHandler);
+  : spotifyTokenHandler;

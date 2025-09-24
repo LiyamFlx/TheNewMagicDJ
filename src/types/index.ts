@@ -1,6 +1,6 @@
 export interface Track {
   url?: string;
-  platform?: "youtube" | "spotify" | "demo" | "proxy" | string;
+  platform?: 'youtube' | 'spotify' | 'demo' | 'proxy' | string;
   id: string;
   title: string;
   artist: string;

@@ -22,7 +22,8 @@ const USE_SPOTIFY_MOCK = Boolean(
 
 // YouTube API configuration (no hard-coded defaults)
 const YOUTUBE_API_KEY = (import.meta.env?.VITE_YOUTUBE_API_KEY as string) || '';
-const YOUTUBE_CLIENT_ID = (import.meta.env?.VITE_YOUTUBE_CLIENT_ID as string) || '';
+const YOUTUBE_CLIENT_ID =
+  (import.meta.env?.VITE_YOUTUBE_CLIENT_ID as string) || '';
 
 export const config: FrontendConfig = {
   IS_DEV,

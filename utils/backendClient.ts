@@ -16,10 +16,15 @@ import type {
   UpdateSessionRequest,
   playlistToDTO,
   trackToDTO,
-  sessionToDTO
+  sessionToDTO,
 } from '../shared/dto.js';
 import { AppError, normalizeError } from '../src/utils/errors.js';
-import { rateLimiter, deduplicator, ApiLogger, type RequestContext } from './apiUtils.js';
+import {
+  rateLimiter,
+  deduplicator,
+  ApiLogger,
+  type RequestContext,
+} from './apiUtils.js';
 
 // =============================================================================
 // CLIENT CONFIGURATION
@@ -77,8 +82,9 @@ class ResponseCache {
   set<T>(key: string, data: T, ttlMs: number): void {
     // Evict oldest entries if cache is full
     if (this.cache.size >= this.maxSize) {
-      const oldestKey = Array.from(this.cache.entries())
-        .sort(([, a], [, b]) => a.createdAt - b.createdAt)[0]?.[0];
+      const oldestKey = Array.from(this.cache.entries()).sort(
+        ([, a], [, b]) => a.createdAt - b.createdAt
+      )[0]?.[0];
       if (oldestKey) {
         this.cache.delete(oldestKey);
       }
@@ -195,7 +201,10 @@ export class BackendClient {
     this.checkRateLimit(options);
 
     if (!options.userId) {
-      throw new AppError('UNAUTHORIZED', 'User ID required for playlist creation');
+      throw new AppError(
+        'UNAUTHORIZED',
+        'User ID required for playlist creation'
+      );
     }
 
     try {
@@ -212,7 +221,10 @@ export class BackendClient {
         .single();
 
       if (error) {
-        throw new AppError('DATABASE_ERROR', `Failed to create playlist: ${error.message}`);
+        throw new AppError(
+          'DATABASE_ERROR',
+          `Failed to create playlist: ${error.message}`
+        );
       }
 
       // Invalidate user's playlist cache
@@ -238,47 +250,49 @@ export class BackendClient {
     const cached = this.cache.get<PlaylistDTO>(cacheKey);
     if (cached) return cached;
 
-    return this.withDeduplication(
-      `getPlaylist:${playlistId}`,
-      async () => {
-        try {
-          // Get playlist with tracks in a single query
-          const { data: playlist, error: playlistError } = await this.supabase
-            .from('playlists')
-            .select(`
+    return this.withDeduplication(`getPlaylist:${playlistId}`, async () => {
+      try {
+        // Get playlist with tracks in a single query
+        const { data: playlist, error: playlistError } = await this.supabase
+          .from('playlists')
+          .select(
+            `
               *,
               tracks (*)
-            `)
-            .eq('id', playlistId)
-            .single();
+            `
+          )
+          .eq('id', playlistId)
+          .single();
 
-          if (playlistError) {
-            if (playlistError.code === 'PGRST116') return null; // Not found
-            throw new AppError('DATABASE_ERROR', `Failed to get playlist: ${playlistError.message}`);
-          }
-
-          // Convert to DTO
-          const playlistDto = playlistToDTO(playlist);
-          const tracksDto = (playlist.tracks || [])
-            .sort((a, b) => (a.position || 0) - (b.position || 0))
-            .map(trackToDTO);
-
-          const result: PlaylistDTO = {
-            ...playlistDto,
-            tracks: tracksDto,
-          };
-
-          // Cache the result
-          this.cache.set(cacheKey, result, this.config.cacheConfig.defaultTtlMs);
-          return result;
-        } catch (error) {
-          throw normalizeError(error, {
-            code: 'PLAYLIST_GET_ERROR',
-            message: 'Failed to get playlist',
-          });
+        if (playlistError) {
+          if (playlistError.code === 'PGRST116') return null; // Not found
+          throw new AppError(
+            'DATABASE_ERROR',
+            `Failed to get playlist: ${playlistError.message}`
+          );
         }
+
+        // Convert to DTO
+        const playlistDto = playlistToDTO(playlist);
+        const tracksDto = (playlist.tracks || [])
+          .sort((a, b) => (a.position || 0) - (b.position || 0))
+          .map(trackToDTO);
+
+        const result: PlaylistDTO = {
+          ...playlistDto,
+          tracks: tracksDto,
+        };
+
+        // Cache the result
+        this.cache.set(cacheKey, result, this.config.cacheConfig.defaultTtlMs);
+        return result;
+      } catch (error) {
+        throw normalizeError(error, {
+          code: 'PLAYLIST_GET_ERROR',
+          message: 'Failed to get playlist',
+        });
       }
-    );
+    });
   }
 
   async getUserPlaylists(
@@ -291,35 +305,35 @@ export class BackendClient {
     const cached = this.cache.get<PlaylistDTO[]>(cacheKey);
     if (cached) return cached;
 
-    return this.withDeduplication(
-      `getUserPlaylists:${userId}`,
-      async () => {
-        try {
-          const { data: playlists, error } = await this.supabase
-            .from('playlists')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
+    return this.withDeduplication(`getUserPlaylists:${userId}`, async () => {
+      try {
+        const { data: playlists, error } = await this.supabase
+          .from('playlists')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
 
-          if (error) {
-            throw new AppError('DATABASE_ERROR', `Failed to get playlists: ${error.message}`);
-          }
-
-          const result = playlists.map(playlist => ({
-            ...playlistToDTO(playlist),
-            tracks: [], // Don't load tracks for list view
-          }));
-
-          this.cache.set(cacheKey, result, this.config.cacheConfig.defaultTtlMs);
-          return result;
-        } catch (error) {
-          throw normalizeError(error, {
-            code: 'PLAYLISTS_GET_ERROR',
-            message: 'Failed to get user playlists',
-          });
+        if (error) {
+          throw new AppError(
+            'DATABASE_ERROR',
+            `Failed to get playlists: ${error.message}`
+          );
         }
+
+        const result = playlists.map(playlist => ({
+          ...playlistToDTO(playlist),
+          tracks: [], // Don't load tracks for list view
+        }));
+
+        this.cache.set(cacheKey, result, this.config.cacheConfig.defaultTtlMs);
+        return result;
+      } catch (error) {
+        throw normalizeError(error, {
+          code: 'PLAYLISTS_GET_ERROR',
+          message: 'Failed to get user playlists',
+        });
       }
-    );
+    });
   }
 
   async updatePlaylist(
@@ -330,7 +344,10 @@ export class BackendClient {
     this.checkRateLimit(options);
 
     if (!options.userId) {
-      throw new AppError('UNAUTHORIZED', 'User ID required for playlist update');
+      throw new AppError(
+        'UNAUTHORIZED',
+        'User ID required for playlist update'
+      );
     }
 
     try {
@@ -338,7 +355,9 @@ export class BackendClient {
         .from('playlists')
         .update({
           ...(request.name && { name: request.name }),
-          ...(request.description !== undefined && { description: request.description }),
+          ...(request.description !== undefined && {
+            description: request.description,
+          }),
           ...(request.genre && { genre: request.genre }),
           ...(request.energy_level && { energy_level: request.energy_level }),
         })
@@ -348,7 +367,10 @@ export class BackendClient {
         .single();
 
       if (error) {
-        throw new AppError('DATABASE_ERROR', `Failed to update playlist: ${error.message}`);
+        throw new AppError(
+          'DATABASE_ERROR',
+          `Failed to update playlist: ${error.message}`
+        );
       }
 
       // Invalidate caches
@@ -372,7 +394,10 @@ export class BackendClient {
     this.checkRateLimit(options);
 
     if (!options.userId) {
-      throw new AppError('UNAUTHORIZED', 'User ID required for playlist deletion');
+      throw new AppError(
+        'UNAUTHORIZED',
+        'User ID required for playlist deletion'
+      );
     }
 
     try {
@@ -383,7 +408,10 @@ export class BackendClient {
         .eq('user_id', options.userId);
 
       if (error) {
-        throw new AppError('DATABASE_ERROR', `Failed to delete playlist: ${error.message}`);
+        throw new AppError(
+          'DATABASE_ERROR',
+          `Failed to delete playlist: ${error.message}`
+        );
       }
 
       // Invalidate caches
@@ -418,7 +446,7 @@ export class BackendClient {
         .limit(1)
         .single();
 
-      const position = request.position || ((lastTrack?.position || 0) + 1);
+      const position = request.position || (lastTrack?.position || 0) + 1;
 
       const { data, error } = await this.supabase
         .from('tracks')
@@ -444,7 +472,10 @@ export class BackendClient {
         .single();
 
       if (error) {
-        throw new AppError('DATABASE_ERROR', `Failed to add track: ${error.message}`);
+        throw new AppError(
+          'DATABASE_ERROR',
+          `Failed to add track: ${error.message}`
+        );
       }
 
       // Invalidate playlist cache
@@ -479,12 +510,17 @@ export class BackendClient {
         .eq('id', trackId);
 
       if (error) {
-        throw new AppError('DATABASE_ERROR', `Failed to remove track: ${error.message}`);
+        throw new AppError(
+          'DATABASE_ERROR',
+          `Failed to remove track: ${error.message}`
+        );
       }
 
       // Invalidate playlist cache
       if (track?.playlist_id) {
-        this.cache.delete(this.getCacheKey('playlist', { id: track.playlist_id }));
+        this.cache.delete(
+          this.getCacheKey('playlist', { id: track.playlist_id })
+        );
       }
     } catch (error) {
       throw normalizeError(error, {
@@ -505,7 +541,10 @@ export class BackendClient {
     this.checkRateLimit(options);
 
     if (!options.userId) {
-      throw new AppError('UNAUTHORIZED', 'User ID required for session creation');
+      throw new AppError(
+        'UNAUTHORIZED',
+        'User ID required for session creation'
+      );
     }
 
     try {
@@ -520,7 +559,10 @@ export class BackendClient {
         .single();
 
       if (error) {
-        throw new AppError('DATABASE_ERROR', `Failed to create session: ${error.message}`);
+        throw new AppError(
+          'DATABASE_ERROR',
+          `Failed to create session: ${error.message}`
+        );
       }
 
       return sessionToDTO(data);
@@ -548,7 +590,9 @@ export class BackendClient {
         .from('sessions')
         .update({
           ...(request.status && { status: request.status }),
-          ...(request.playlist_id !== undefined && { playlist_id: request.playlist_id }),
+          ...(request.playlist_id !== undefined && {
+            playlist_id: request.playlist_id,
+          }),
           ...(request.ended_at && { ended_at: request.ended_at }),
         })
         .eq('id', sessionId)
@@ -557,7 +601,10 @@ export class BackendClient {
         .single();
 
       if (error) {
-        throw new AppError('DATABASE_ERROR', `Failed to update session: ${error.message}`);
+        throw new AppError(
+          'DATABASE_ERROR',
+          `Failed to update session: ${error.message}`
+        );
       }
 
       return sessionToDTO(data);
@@ -579,31 +626,31 @@ export class BackendClient {
     const cached = this.cache.get<SessionDTO[]>(cacheKey);
     if (cached) return cached;
 
-    return this.withDeduplication(
-      `getUserSessions:${userId}`,
-      async () => {
-        try {
-          const { data, error } = await this.supabase
-            .from('sessions')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
+    return this.withDeduplication(`getUserSessions:${userId}`, async () => {
+      try {
+        const { data, error } = await this.supabase
+          .from('sessions')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
 
-          if (error) {
-            throw new AppError('DATABASE_ERROR', `Failed to get sessions: ${error.message}`);
-          }
-
-          const result = data.map(sessionToDTO);
-          this.cache.set(cacheKey, result, this.config.cacheConfig.defaultTtlMs);
-          return result;
-        } catch (error) {
-          throw normalizeError(error, {
-            code: 'SESSIONS_GET_ERROR',
-            message: 'Failed to get user sessions',
-          });
+        if (error) {
+          throw new AppError(
+            'DATABASE_ERROR',
+            `Failed to get sessions: ${error.message}`
+          );
         }
+
+        const result = data.map(sessionToDTO);
+        this.cache.set(cacheKey, result, this.config.cacheConfig.defaultTtlMs);
+        return result;
+      } catch (error) {
+        throw normalizeError(error, {
+          code: 'SESSIONS_GET_ERROR',
+          message: 'Failed to get user sessions',
+        });
       }
-    );
+    });
   }
 
   // =============================================================================
@@ -627,7 +674,9 @@ export class BackendClient {
 // FACTORY FUNCTION
 // =============================================================================
 
-export function createBackendClient(config: BackendClientConfig): BackendClient {
+export function createBackendClient(
+  config: BackendClientConfig
+): BackendClient {
   return new BackendClient(config);
 }
 
@@ -639,8 +688,11 @@ let defaultClient: BackendClient | null = null;
 
 export function getDefaultBackendClient(): BackendClient {
   if (!defaultClient) {
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const supabaseUrl =
+      process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey =
+      process.env.SUPABASE_ANON_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
       throw new AppError('MISSING_CONFIG', 'Supabase URL and key are required');

@@ -130,10 +130,12 @@ export function withIdempotency(handler: (req: any, res: any) => Promise<any>) {
 
     res.json = function (body: any) {
       // Fire and forget; do not block response
-      Promise.resolve(idempotencyManager.store(idempotencyKey, {
-        status: capturedStatus,
-        body,
-      })).catch(() => {});
+      Promise.resolve(
+        idempotencyManager.store(idempotencyKey, {
+          status: capturedStatus,
+          body,
+        })
+      ).catch(() => {});
       return originalJson.call(this, body);
     };
 

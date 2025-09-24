@@ -3,15 +3,17 @@ import { getServerSupabase } from './lib/supabaseServer.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    const envOk = !!(
-      process.env.VITE_SUPABASE_URL ||
-      process.env.PUBLIC_SUPABASE_URL ||
-      process.env.NEXT_PUBLIC_SUPABASE_URL
-    ) && !!(
-      process.env.VITE_SUPABASE_ANON_KEY ||
-      process.env.PUBLIC_SUPABASE_ANON_KEY ||
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    );
+    const envOk =
+      !!(
+        process.env.VITE_SUPABASE_URL ||
+        process.env.PUBLIC_SUPABASE_URL ||
+        process.env.NEXT_PUBLIC_SUPABASE_URL
+      ) &&
+      !!(
+        process.env.VITE_SUPABASE_ANON_KEY ||
+        process.env.PUBLIC_SUPABASE_ANON_KEY ||
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      );
 
     const supabase = getServerSupabase(req.headers.authorization);
     // Lightweight reachability check (RLS may return empty, that's fine)
@@ -30,4 +32,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ ok: false, error: e?.message || 'unknown' });
   }
 }
-

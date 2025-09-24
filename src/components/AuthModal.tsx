@@ -11,11 +11,15 @@ interface AuthModalProps {
 const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
-  initialMode = 'signin'
+  initialMode = 'signin',
 }) => {
   const [isSignUp, setIsSignUp] = useState(initialMode === 'signup');
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ email: '', password: '', name: '' });
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    name: '',
+  });
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,8 +48,8 @@ const AuthModal: React.FC<AuthModalProps> = ({
           options: {
             data: {
               name: formData.name || formData.email.split('@')[0],
-            }
-          }
+            },
+          },
         });
       } else {
         result = await supabase.auth.signInWithPassword({
@@ -89,9 +93,10 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-md transform overflow-hidden rounded-2xl
-                        glass-card p-8 shadow-2xl transition-all border border-glass">
-
+        <div
+          className="relative w-full max-w-md transform overflow-hidden rounded-2xl
+                        glass-card p-8 shadow-2xl transition-all border border-glass"
+        >
           {/* Close Button */}
           <button
             onClick={handleClose}
@@ -103,8 +108,10 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
           {/* Header */}
           <div className="text-center mb-6">
-            <div className="w-16 h-16 mx-auto mb-4 gradient-bg-secondary rounded-full
-                          flex items-center justify-center shadow-neon-pink">
+            <div
+              className="w-16 h-16 mx-auto mb-4 gradient-bg-secondary rounded-full
+                          flex items-center justify-center shadow-neon-pink"
+            >
               {isSignUp ? (
                 <UserPlus className="w-8 h-8 text-white" />
               ) : (
@@ -117,8 +124,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
             <p className="text-gray-400 mt-2">
               {isSignUp
                 ? 'Join MagicDJ and save your playlists to the cloud'
-                : 'Sign in to access your saved playlists'
-              }
+                : 'Sign in to access your saved playlists'}
             </p>
           </div>
 
@@ -133,7 +139,9 @@ const AuthModal: React.FC<AuthModalProps> = ({
                   type="text"
                   placeholder="Your name"
                   value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, name: e.target.value }))
+                  }
                   className="w-full px-4 py-3 bg-glass border border-glass rounded-lg text-white
                            placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-500
                            focus:border-transparent transition-all"
@@ -147,12 +155,17 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <Mail
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
                 <input
                   type="email"
                   placeholder="your@email.com"
                   value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, email: e.target.value }))
+                  }
                   className="w-full pl-11 pr-4 py-3 bg-glass border border-glass rounded-lg text-white
                            placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-500
                            focus:border-transparent transition-all"
@@ -167,12 +180,17 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <Lock
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
                 <input
                   type="password"
                   placeholder="••••••••"
                   value={formData.password}
-                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, password: e.target.value }))
+                  }
                   className="w-full pl-11 pr-4 py-3 bg-glass border border-glass rounded-lg text-white
                            placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-500
                            focus:border-transparent transition-all"

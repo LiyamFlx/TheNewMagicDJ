@@ -15,8 +15,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'POST') {
     try {
-      const bodyRaw = (typeof req.body === 'string') ? JSON.parse(req.body) : (req.body || {});
-      const { type, payload, session_id, playlist_id } = EventSchema.parse(bodyRaw);
+      const bodyRaw =
+        typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
+      const { type, payload, session_id, playlist_id } =
+        EventSchema.parse(bodyRaw);
 
       const { data: user } = await supabase.auth.getUser();
       const user_id = user?.user?.id;
@@ -24,7 +26,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const { data, error } = await supabase
         .from('events')
-        .insert([{ user_id, type, payload: payload ?? {}, session_id: session_id ?? null, playlist_id: playlist_id ?? null }])
+        .insert([
+          {
+            user_id,
+            type,
+            payload: payload ?? {},
+            session_id: session_id ?? null,
+            playlist_id: playlist_id ?? null,
+          },
+        ])
         .select('*')
         .single();
 

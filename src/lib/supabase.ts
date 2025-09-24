@@ -7,22 +7,36 @@ const supabaseUrl =
   (import.meta as any)?.env?.VITE_SUPABASE_URL ||
   (import.meta as any)?.env?.PUBLIC_SUPABASE_URL ||
   (import.meta as any)?.env?.NEXT_PUBLIC_SUPABASE_URL ||
-  (typeof process !== 'undefined' ? process.env.VITE_SUPABASE_URL : undefined) ||
-  (typeof process !== 'undefined' ? process.env.PUBLIC_SUPABASE_URL : undefined) ||
-  (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_SUPABASE_URL : undefined);
+  (typeof process !== 'undefined'
+    ? process.env.VITE_SUPABASE_URL
+    : undefined) ||
+  (typeof process !== 'undefined'
+    ? process.env.PUBLIC_SUPABASE_URL
+    : undefined) ||
+  (typeof process !== 'undefined'
+    ? process.env.NEXT_PUBLIC_SUPABASE_URL
+    : undefined);
 
 // @ts-ignore - import.meta.env keys are runtime-defined
 const supabaseAnonKey =
   (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY ||
   (import.meta as any)?.env?.PUBLIC_SUPABASE_ANON_KEY ||
   (import.meta as any)?.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  (typeof process !== 'undefined' ? process.env.VITE_SUPABASE_ANON_KEY : undefined) ||
-  (typeof process !== 'undefined' ? process.env.PUBLIC_SUPABASE_ANON_KEY : undefined) ||
-  (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY : undefined);
+  (typeof process !== 'undefined'
+    ? process.env.VITE_SUPABASE_ANON_KEY
+    : undefined) ||
+  (typeof process !== 'undefined'
+    ? process.env.PUBLIC_SUPABASE_ANON_KEY
+    : undefined) ||
+  (typeof process !== 'undefined'
+    ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    : undefined);
 
 // Fail loudly in production if env is missing; warn and use placeholder only in dev
 if ((!supabaseUrl || !supabaseAnonKey) && !import.meta.env.DEV) {
-  console._error('Supabase configuration missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+  console._error(
+    'Supabase configuration missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
+  );
 }
 
 const resolvedUrl = supabaseUrl || 'https://placeholder.supabase.co';
@@ -55,7 +69,9 @@ export const auth: any = supabase.auth;
 /* ===== Polyfills so existing code keeps working ===== */
 
 // auth.signIn(email, password) or auth.signIn({ email, password })
-const originalSignInWithPassword = supabase.auth.signInWithPassword.bind(supabase.auth);
+const originalSignInWithPassword = supabase.auth.signInWithPassword.bind(
+  supabase.auth
+);
 (auth as any).signIn = (...args: any[]) => {
   if (args.length === 1 && typeof args[0] === 'object') {
     const { email, password } = args[0] || {};

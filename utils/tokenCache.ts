@@ -79,7 +79,8 @@ export class TokenCache {
         }
 
         // Exponential backoff with jitter
-        const delay = retryDelayMs * Math.pow(2, attempt) + Math.random() * 1000;
+        const delay =
+          retryDelayMs * Math.pow(2, attempt) + Math.random() * 1000;
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
@@ -149,14 +150,16 @@ export class SpotifyTokenManager {
       throw new Error('Spotify credentials not configured');
     }
 
-    const credentials = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
+    const credentials = Buffer.from(
+      `${this.clientId}:${this.clientSecret}`
+    ).toString('base64');
 
     const response = await fetchWithRetry(
       'https://accounts.spotify.com/api/token',
       {
         method: 'POST',
         headers: {
-          'Authorization': `Basic ${credentials}`,
+          Authorization: `Basic ${credentials}`,
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: 'grant_type=client_credentials',
@@ -166,14 +169,16 @@ export class SpotifyTokenManager {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Spotify token request failed: ${response.status} ${errorText}`);
+      throw new Error(
+        `Spotify token request failed: ${response.status} ${errorText}`
+      );
     }
 
     const data = await response.json();
 
     return {
       accessToken: data.access_token,
-      expiresAt: Date.now() + (data.expires_in * 1000), // Convert to milliseconds
+      expiresAt: Date.now() + data.expires_in * 1000, // Convert to milliseconds
       tokenType: data.token_type || 'Bearer',
     };
   }
@@ -208,7 +213,10 @@ export const globalTokenCache = new TokenCache();
 /**
  * Create Spotify token manager with environment variables
  */
-export function createSpotifyTokenManager(clientId?: string, clientSecret?: string): SpotifyTokenManager {
+export function createSpotifyTokenManager(
+  clientId?: string,
+  clientSecret?: string
+): SpotifyTokenManager {
   const id = clientId || process.env.SPOTIFY_CLIENT_ID || '';
   const secret = clientSecret || process.env.SPOTIFY_CLIENT_SECRET || '';
 
@@ -219,13 +227,16 @@ export function createSpotifyTokenManager(clientId?: string, clientSecret?: stri
  * Request batching utility for external API calls
  */
 export class RequestBatcher {
-  private batches = new Map<string, {
-    requests: Array<{
-      resolve: (value: any) => void;
-      reject: (error: any) => void;
-    }>;
-    timeout: NodeJS.Timeout;
-  }>();
+  private batches = new Map<
+    string,
+    {
+      requests: Array<{
+        resolve: (value: any) => void;
+        reject: (error: any) => void;
+      }>;
+      timeout: NodeJS.Timeout;
+    }
+  >();
 
   /**
    * Batch multiple identical requests into a single API call
@@ -253,7 +264,7 @@ export class RequestBatcher {
             } catch (error) {
               currentBatch.requests.forEach(req => req.reject(error));
             }
-          }, delayMs)
+          }, delayMs),
         };
 
         this.batches.set(key, batch);
@@ -269,9 +280,7 @@ export class RequestBatcher {
   clear(): void {
     for (const [key, batch] of this.batches) {
       clearTimeout(batch.timeout);
-      batch.requests.forEach(req =>
-        req.reject(new Error('Batch cleared'))
-      );
+      batch.requests.forEach(req => req.reject(new Error('Batch cleared')));
     }
     this.batches.clear();
   }

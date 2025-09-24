@@ -20,4 +20,3 @@ export async function logEvent(type: string, payload?: Record<string, any>) {
     // best-effort logging; ignore errors
   }
 }
-

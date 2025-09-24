@@ -78,14 +78,17 @@ export function useDualDeckPlayer({
   }, [deckB, onDeckBStateChange]);
 
   // Helper to update deck state
-  const updateDeckState = useCallback((deckId: 'deckA' | 'deckB', updates: Partial<DeckState>) => {
-    const updater = deckId === 'deckA' ? setDeckA : setDeckB;
-    updater(prev => ({
-      ...prev,
-      ...updates,
-      _error: updates._error !== undefined ? updates._error : null,
-    }));
-  }, []);
+  const updateDeckState = useCallback(
+    (deckId: 'deckA' | 'deckB', updates: Partial<DeckState>) => {
+      const updater = deckId === 'deckA' ? setDeckA : setDeckB;
+      updater(prev => ({
+        ...prev,
+        ...updates,
+        _error: updates._error !== undefined ? updates._error : null,
+      }));
+    },
+    []
+  );
 
   // Initialize audio elements
   useEffect(() => {
@@ -100,7 +103,9 @@ export function useDualDeckPlayer({
 
       const updateTime = () => {
         const currentTime = audio.currentTime;
-        const progress = audio.duration ? (currentTime / audio.duration) * 100 : 0;
+        const progress = audio.duration
+          ? (currentTime / audio.duration) * 100
+          : 0;
         updateDeckState(deckId, { currentTime, progress });
       };
 
@@ -108,7 +113,7 @@ export function useDualDeckPlayer({
         updateDeckState(deckId, {
           duration: audio.duration,
           progress: 0,
-          isLoading: false
+          isLoading: false,
         });
       };
 
@@ -122,7 +127,7 @@ export function useDualDeckPlayer({
         updateDeckState(deckId, {
           _error,
           isLoading: false,
-          isPlaying: false
+          isPlaying: false,
         });
         onError?.(_error, deckId);
       };
@@ -154,157 +159,192 @@ export function useDualDeckPlayer({
   }, [onError, onTrackEnd, updateDeckState]);
 
   // Load sources for a deck
-  const loadSources = useCallback((deckId: 'deckA' | 'deckB', sources: AudioSource[], startIndex = 0) => {
-    if (!sources.length) return;
+  const loadSources = useCallback(
+    (deckId: 'deckA' | 'deckB', sources: AudioSource[], startIndex = 0) => {
+      if (!sources.length) return;
 
-    const validIndex = Math.max(0, Math.min(startIndex, sources.length - 1));
-    const currentSource = sources[validIndex];
+      const validIndex = Math.max(0, Math.min(startIndex, sources.length - 1));
+      const currentSource = sources[validIndex];
 
-    updateDeckState(deckId, {
-      sources,
-      currentIndex: validIndex,
-      currentSource,
-      currentTime: 0,
-      progress: 0,
-      isLoading: true,
-      _error: null,
-    });
-
-    const audio = audioRefs.current[deckId];
-    if (audio && currentSource) {
-      audio.src = currentSource.url;
-      audio.load();
-    }
-  }, [updateDeckState]);
-
-  // Play/pause control
-  const play = useCallback(async (deckId: 'deckA' | 'deckB') => {
-    const audio = audioRefs.current[deckId];
-    if (!audio) return;
-
-    try {
-      await audio.play();
-      updateDeckState(deckId, { isPlaying: true });
-    } catch (_error) {
-      const err = _error instanceof Error ? _error : new Error('Playback failed');
       updateDeckState(deckId, {
-        _error: err,
-        isPlaying: false
-      });
-      onError?.(err, deckId);
-    }
-  }, [onError, updateDeckState]);
-
-  const pause = useCallback((deckId: 'deckA' | 'deckB') => {
-    const audio = audioRefs.current[deckId];
-    if (audio) {
-      audio.pause();
-      updateDeckState(deckId, { isPlaying: false });
-    }
-  }, [updateDeckState]);
-
-  // Volume control
-  const setVolume = useCallback((deckId: 'deckA' | 'deckB', volume: number) => {
-    const normalizedVolume = Math.max(0, Math.min(100, volume)) / 100;
-    const audio = audioRefs.current[deckId];
-
-    if (audio) {
-      audio.volume = normalizedVolume;
-    }
-
-    updateDeckState(deckId, { volume });
-  }, [updateDeckState]);
-
-  // Playback control
-  const seek = useCallback((deckId: 'deckA' | 'deckB', time: number) => {
-    const audio = audioRefs.current[deckId];
-    if (audio) {
-      audio.currentTime = Math.max(0, Math.min(time, audio.duration || 0));
-      updateDeckState(deckId, {
-        currentTime: audio.currentTime
-      });
-    }
-  }, [updateDeckState]);
-
-  // Source management
-  const setSourceIndex = useCallback((deckId: 'deckA' | 'deckB', index: number) => {
-    const deck = deckId === 'deckA' ? deckA : deckB;
-
-    if (index >= 0 && index < deck.sources.length) {
-      updateDeckState(deckId, {
-        currentIndex: index,
-        currentSource: deck.sources[index],
+        sources,
+        currentIndex: validIndex,
+        currentSource,
         currentTime: 0,
         progress: 0,
-        isLoading: true
+        isLoading: true,
+        _error: null,
       });
 
       const audio = audioRefs.current[deckId];
-      if (audio && deck.sources[index]) {
-        audio.src = deck.sources[index].url;
+      if (audio && currentSource) {
+        audio.src = currentSource.url;
         audio.load();
       }
-    }
-  }, [deckA, deckB, updateDeckState]);
+    },
+    [updateDeckState]
+  );
+
+  // Play/pause control
+  const play = useCallback(
+    async (deckId: 'deckA' | 'deckB') => {
+      const audio = audioRefs.current[deckId];
+      if (!audio) return;
+
+      try {
+        await audio.play();
+        updateDeckState(deckId, { isPlaying: true });
+      } catch (_error) {
+        const err =
+          _error instanceof Error ? _error : new Error('Playback failed');
+        updateDeckState(deckId, {
+          _error: err,
+          isPlaying: false,
+        });
+        onError?.(err, deckId);
+      }
+    },
+    [onError, updateDeckState]
+  );
+
+  const pause = useCallback(
+    (deckId: 'deckA' | 'deckB') => {
+      const audio = audioRefs.current[deckId];
+      if (audio) {
+        audio.pause();
+        updateDeckState(deckId, { isPlaying: false });
+      }
+    },
+    [updateDeckState]
+  );
+
+  // Volume control
+  const setVolume = useCallback(
+    (deckId: 'deckA' | 'deckB', volume: number) => {
+      const normalizedVolume = Math.max(0, Math.min(100, volume)) / 100;
+      const audio = audioRefs.current[deckId];
+
+      if (audio) {
+        audio.volume = normalizedVolume;
+      }
+
+      updateDeckState(deckId, { volume });
+    },
+    [updateDeckState]
+  );
+
+  // Playback control
+  const seek = useCallback(
+    (deckId: 'deckA' | 'deckB', time: number) => {
+      const audio = audioRefs.current[deckId];
+      if (audio) {
+        audio.currentTime = Math.max(0, Math.min(time, audio.duration || 0));
+        updateDeckState(deckId, {
+          currentTime: audio.currentTime,
+        });
+      }
+    },
+    [updateDeckState]
+  );
+
+  // Source management
+  const setSourceIndex = useCallback(
+    (deckId: 'deckA' | 'deckB', index: number) => {
+      const deck = deckId === 'deckA' ? deckA : deckB;
+
+      if (index >= 0 && index < deck.sources.length) {
+        updateDeckState(deckId, {
+          currentIndex: index,
+          currentSource: deck.sources[index],
+          currentTime: 0,
+          progress: 0,
+          isLoading: true,
+        });
+
+        const audio = audioRefs.current[deckId];
+        if (audio && deck.sources[index]) {
+          audio.src = deck.sources[index].url;
+          audio.load();
+        }
+      }
+    },
+    [deckA, deckB, updateDeckState]
+  );
 
   // Cue points
-  const addCuePoint = useCallback((deckId: 'deckA' | 'deckB', time: number) => {
-    const deck = deckId === 'deckA' ? deckA : deckB;
-    if (!deck.cuePoints.includes(time)) {
-      const newCuePoints = [...deck.cuePoints, time].sort((a, b) => a - b);
-      updateDeckState(deckId, { cuePoints: newCuePoints });
-    }
-  }, [deckA, deckB, updateDeckState]);
+  const addCuePoint = useCallback(
+    (deckId: 'deckA' | 'deckB', time: number) => {
+      const deck = deckId === 'deckA' ? deckA : deckB;
+      if (!deck.cuePoints.includes(time)) {
+        const newCuePoints = [...deck.cuePoints, time].sort((a, b) => a - b);
+        updateDeckState(deckId, { cuePoints: newCuePoints });
+      }
+    },
+    [deckA, deckB, updateDeckState]
+  );
 
-  const clearCuePoints = useCallback((deckId: 'deckA' | 'deckB') => {
-    updateDeckState(deckId, { cuePoints: [] });
-  }, [updateDeckState]);
+  const clearCuePoints = useCallback(
+    (deckId: 'deckA' | 'deckB') => {
+      updateDeckState(deckId, { cuePoints: [] });
+    },
+    [updateDeckState]
+  );
 
   // Get deck state and controls
-  const getDeck = useCallback((deckId: 'deckA' | 'deckB') => ({
-    state: deckId === 'deckA' ? deckA : deckB,
-    controls: {
-      play: () => play(deckId),
-      pause: () => pause(deckId),
-      seek: (time: number) => seek(deckId, time),
-      setVolume: (volume: number) => setVolume(deckId, volume),
-      loadSources: (sources: AudioSource[], index = 0) => loadSources(deckId, sources, index),
-      setSourceIndex: (index: number) => setSourceIndex(deckId, index),
-      addCuePoint: (time: number) => addCuePoint(deckId, time),
-      clearCuePoints: () => clearCuePoints(deckId),
-    }
-  }), [
-    deckA,
-    deckB,
-    play,
-    pause,
-    seek,
-    setVolume,
-    loadSources,
-    setSourceIndex,
-    addCuePoint,
-    clearCuePoints
-  ]);
+  const getDeck = useCallback(
+    (deckId: 'deckA' | 'deckB') => ({
+      state: deckId === 'deckA' ? deckA : deckB,
+      controls: {
+        play: () => play(deckId),
+        pause: () => pause(deckId),
+        seek: (time: number) => seek(deckId, time),
+        setVolume: (volume: number) => setVolume(deckId, volume),
+        loadSources: (sources: AudioSource[], index = 0) =>
+          loadSources(deckId, sources, index),
+        setSourceIndex: (index: number) => setSourceIndex(deckId, index),
+        addCuePoint: (time: number) => addCuePoint(deckId, time),
+        clearCuePoints: () => clearCuePoints(deckId),
+      },
+    }),
+    [
+      deckA,
+      deckB,
+      play,
+      pause,
+      seek,
+      setVolume,
+      loadSources,
+      setSourceIndex,
+      addCuePoint,
+      clearCuePoints,
+    ]
+  );
 
   // Crossfader control
-  const setCrossfader = useCallback((value: number) => {
-    // Normalize to 0-1 range
-    const normalized = Math.max(-1, Math.min(1, value / 100));
+  const setCrossfader = useCallback(
+    (value: number) => {
+      // Normalize to 0-1 range
+      const normalized = Math.max(-1, Math.min(1, value / 100));
 
-    // Calculate volumes based on crossfader position
-    const deckAVolume = normalized <= 0 ? 1 : 1 - normalized;
-    const deckBVolume = normalized >= 0 ? 1 : 1 + normalized;
+      // Calculate volumes based on crossfader position
+      const deckAVolume = normalized <= 0 ? 1 : 1 - normalized;
+      const deckBVolume = normalized >= 0 ? 1 : 1 + normalized;
 
-    // Apply volumes
-    setVolume('deckA', deckA.volume * deckAVolume * 100);
-    setVolume('deckB', deckB.volume * deckBVolume * 100);
-  }, [deckA.volume, deckB.volume, setVolume]);
+      // Apply volumes
+      setVolume('deckA', deckA.volume * deckAVolume * 100);
+      setVolume('deckB', deckB.volume * deckBVolume * 100);
+    },
+    [deckA.volume, deckB.volume, setVolume]
+  );
 
   // Master volume control
-  const setMasterVolume = useCallback((volume: number) => {
-    setVolume('deckA', volume);
-    setVolume('deckB', volume);
-  }, [setVolume]);
+  const setMasterVolume = useCallback(
+    (volume: number) => {
+      setVolume('deckA', volume);
+      setVolume('deckB', volume);
+    },
+    [setVolume]
+  );
 
   // Sync decks
   const syncDecks = useCallback(() => {
@@ -315,7 +355,14 @@ export function useDualDeckPlayer({
         seek('deckB', deckA.currentTime % (deckB.duration || 1));
       }
     }
-  }, [deckA.isPlaying, deckB.isPlaying, deckA.currentTime, deckB.duration, deckB.currentTime, seek]);
+  }, [
+    deckA.isPlaying,
+    deckB.isPlaying,
+    deckA.currentTime,
+    deckB.duration,
+    deckB.currentTime,
+    seek,
+  ]);
 
   return {
     // Individual deck access

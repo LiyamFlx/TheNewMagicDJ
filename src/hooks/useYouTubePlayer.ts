@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { YouTubePlayerState, YouTubePlayerError } from '../components/YouTubePlayer';
+import {
+  YouTubePlayerState,
+  YouTubePlayerError,
+} from '../components/YouTubePlayer';
 
 interface UseYouTubePlayerOptions {
   autoplay?: boolean;
@@ -10,17 +13,25 @@ interface UseYouTubePlayerOptions {
   onTimeUpdate?: (currentTime: number) => void;
 }
 
-export const useYouTubePlayer = (videoId: string | null, options: UseYouTubePlayerOptions = {}) => {
+export const useYouTubePlayer = (
+  videoId: string | null,
+  options: UseYouTubePlayerOptions = {}
+) => {
   const playerRef = useRef<any>(null);
   const [isReady, setIsReady] = useState(false);
-  const readyPromiseRef = useRef<{ resolve: () => void; promise: Promise<void> } | null>(null);
+  const readyPromiseRef = useRef<{
+    resolve: () => void;
+    promise: Promise<void>;
+  } | null>(null);
   const timeUpdateInterval = useRef<NodeJS.Timeout>();
-  const playerId = useRef(`youtube-player-${Math.random().toString(36).substr(2, 9)}`);
+  const playerId = useRef(
+    `youtube-player-${Math.random().toString(36).substr(2, 9)}`
+  );
 
   // Initialize ready promise
   useEffect(() => {
     let resolve: () => void;
-    const promise = new Promise<void>((res) => {
+    const promise = new Promise<void>(res => {
       resolve = res;
     });
     readyPromiseRef.current = { resolve: resolve!, promise };
@@ -51,8 +62,10 @@ export const useYouTubePlayer = (videoId: string | null, options: UseYouTubePlay
   useEffect(() => {
     if (!videoId) return;
 
-    const existingScript = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
-    
+    const existingScript = document.querySelector(
+      'script[src="https://www.youtube.com/iframe_api"]'
+    );
+
     if (!existingScript) {
       const tag = document.createElement('script');
       tag.src = 'https://www.youtube.com/iframe_api';
@@ -61,10 +74,10 @@ export const useYouTubePlayer = (videoId: string | null, options: UseYouTubePlay
     }
 
     const originalOnYouTubeIframeAPIReady = window.onYouTubeIframeAPIReady;
-    
+
     window.onYouTubeIframeAPIReady = () => {
       if (originalOnYouTubeIframeAPIReady) originalOnYouTubeIframeAPIReady();
-      
+
       const player = new window.YT.Player(playerId.current, {
         videoId,
         playerVars: {
@@ -77,7 +90,7 @@ export const useYouTubePlayer = (videoId: string | null, options: UseYouTubePlay
           modestbranding: 1,
           rel: 0,
           showinfo: 0,
-          volume: options.volume || 50
+          volume: options.volume || 50,
         },
         events: {
           onReady: () => {
@@ -90,8 +103,8 @@ export const useYouTubePlayer = (videoId: string | null, options: UseYouTubePlay
           },
           onError: (event: any) => {
             options.onError?.(event.data);
-          }
-        }
+          },
+        },
       });
 
       playerRef.current = player;
@@ -159,6 +172,6 @@ export const useYouTubePlayer = (videoId: string | null, options: UseYouTubePlay
     getCurrentTime,
     getDuration,
     playerId: playerId.current,
-    waitForReady: () => readyPromiseRef.current?.promise || Promise.resolve()
+    waitForReady: () => readyPromiseRef.current?.promise || Promise.resolve(),
   };
 };

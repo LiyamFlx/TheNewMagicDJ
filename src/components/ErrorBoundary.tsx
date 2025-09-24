@@ -115,13 +115,15 @@ class ErrorBoundary extends Component<Props, State> {
             </h1>
 
             <p className="text-gray-300 mb-6 leading-relaxed font-inter">
-              We encountered an unexpected _error. Don't worry, our team has been
-              notified and we're working on a fix.
+              We encountered an unexpected _error. Don't worry, our team has
+              been notified and we're working on a fix.
             </p>
 
             {this.state._error && (
               <div className="glass-card p-md mb-6 text-left">
-                <p className="text-sm text-gray-400 mb-2 font-inter font-bold">ERROR DETAILS:</p>
+                <p className="text-sm text-gray-400 mb-2 font-inter font-bold">
+                  ERROR DETAILS:
+                </p>
                 <p className="text-xs text-red-300 font-mono break-all">
                   {this.state._error.message}
                 </p>

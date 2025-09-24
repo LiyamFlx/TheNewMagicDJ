@@ -35,7 +35,7 @@ interface AudioDebuggerProps {
 
 const AudioDebugger: React.FC<AudioDebuggerProps> = ({
   testAudioUrl = '',
-  className = ''
+  className = '',
 }) => {
   const [debugInfo, setDebugInfo] = useState<AudioDebugInfo | null>(null);
   const [isTestPlaying, setIsTestPlaying] = useState(false);
@@ -50,30 +50,31 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
         audioContext: {
           state: 'unknown',
           sampleRate: 0,
-          supported: false
+          supported: false,
         },
         htmlAudio: {
           supported: false,
           canPlayMP3: false,
           canPlayWAV: false,
-          canPlayAAC: false
+          canPlayAAC: false,
         },
         permissions: {
           autoplay: 'unknown',
-          microphone: 'unknown'
+          microphone: 'unknown',
         },
-        currentAudio: null
+        currentAudio: null,
       };
 
       // Check AudioContext support
       try {
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        const AudioContextClass =
+          window.AudioContext || (window as any).webkitAudioContext;
         if (AudioContextClass) {
           audioContextRef.current = new AudioContextClass();
           info.audioContext = {
             state: audioContextRef.current.state,
             sampleRate: audioContextRef.current.sampleRate,
-            supported: true
+            supported: true,
           };
         }
       } catch (_error) {
@@ -87,7 +88,7 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
           supported: true,
           canPlayMP3: testAudio.canPlayType('audio/mpeg') !== '',
           canPlayWAV: testAudio.canPlayType('audio/wav') !== '',
-          canPlayAAC: testAudio.canPlayType('audio/aac') !== ''
+          canPlayAAC: testAudio.canPlayType('audio/aac') !== '',
         };
       } catch (_error) {
         logger.warn('AudioDebugger', 'HTML Audio not supported', _error);
@@ -113,7 +114,9 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
 
       // Check microphone permission
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
         info.permissions.microphone = 'granted';
         stream.getTracks().forEach(track => track.stop());
       } catch (_error: any) {
@@ -136,21 +139,32 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
 
     const updateAudioInfo = () => {
       const audio = audioRef.current!;
-      setDebugInfo(prev => prev ? {
-        ...prev,
-        currentAudio: {
-          src: audio.src,
-          readyState: audio.readyState,
-          networkState: audio.networkState,
-          _error: audio._error?.message || null,
-          duration: audio.duration || 0,
-          volume: audio.volume
-        }
-      } : prev);
+      setDebugInfo(prev =>
+        prev
+          ? {
+              ...prev,
+              currentAudio: {
+                src: audio.src,
+                readyState: audio.readyState,
+                networkState: audio.networkState,
+                _error: audio._error?.message || null,
+                duration: audio.duration || 0,
+                volume: audio.volume,
+              },
+            }
+          : prev
+      );
     };
 
     const audio = audioRef.current;
-    const events = ['loadstart', 'loadedmetadata', 'canplay', 'canplaythrough', '_error', 'stalled'];
+    const events = [
+      'loadstart',
+      'loadedmetadata',
+      'canplay',
+      'canplaythrough',
+      '_error',
+      'stalled',
+    ];
 
     events.forEach(event => {
       audio.addEventListener(event, updateAudioInfo);
@@ -191,7 +205,9 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
 
   const generateTestTone = () => {
     try {
-      const audioContext = audioContextRef.current || new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioContext =
+        audioContextRef.current ||
+        new (window.AudioContext || (window as any).webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
 
@@ -200,7 +216,10 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
 
       oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4 note
       gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.01,
+        audioContext.currentTime + 1
+      );
 
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 1);
@@ -220,9 +239,16 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
     );
   }
 
-  const getStatusColor = (condition: boolean) => condition ? 'text-green-400' : 'text-red-400';
+  const getStatusColor = (condition: boolean) =>
+    condition ? 'text-green-400' : 'text-red-400';
   const getReadyStateText = (state: number) => {
-    const states = ['HAVE_NOTHING', 'HAVE_METADATA', 'HAVE_CURRENT_DATA', 'HAVE_FUTURE_DATA', 'HAVE_ENOUGH_DATA'];
+    const states = [
+      'HAVE_NOTHING',
+      'HAVE_METADATA',
+      'HAVE_CURRENT_DATA',
+      'HAVE_FUTURE_DATA',
+      'HAVE_ENOUGH_DATA',
+    ];
     return states[state] || 'UNKNOWN';
   };
 
@@ -230,12 +256,16 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
     <div className={`glass-card p-6 space-y-6 ${className}`}>
       <div className="flex items-center space-x-3 border-b border-glass pb-4">
         <Headphones className="w-6 h-6 text-cyan-400" />
-        <h3 className="text-xl font-bold text-white font-orbitron">AUDIO DIAGNOSTICS</h3>
+        <h3 className="text-xl font-bold text-white font-orbitron">
+          AUDIO DIAGNOSTICS
+        </h3>
       </div>
 
       {/* AudioContext Status */}
       <div className="space-y-2">
-        <h4 className="text-lg font-semibold text-cyan-400 font-orbitron">AudioContext</h4>
+        <h4 className="text-lg font-semibold text-cyan-400 font-orbitron">
+          AudioContext
+        </h4>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex justify-between">
             <span className="text-slate-400">Supported:</span>
@@ -249,14 +279,18 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
           </div>
           <div className="flex justify-between">
             <span className="text-slate-400">Sample Rate:</span>
-            <span className="text-white">{debugInfo.audioContext.sampleRate} Hz</span>
+            <span className="text-white">
+              {debugInfo.audioContext.sampleRate} Hz
+            </span>
           </div>
         </div>
       </div>
 
       {/* HTML Audio Support */}
       <div className="space-y-2">
-        <h4 className="text-lg font-semibold text-fuchsia-400 font-orbitron">HTML Audio</h4>
+        <h4 className="text-lg font-semibold text-fuchsia-400 font-orbitron">
+          HTML Audio
+        </h4>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex justify-between">
             <span className="text-slate-400">Supported:</span>
@@ -287,17 +321,31 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
 
       {/* Permissions */}
       <div className="space-y-2">
-        <h4 className="text-lg font-semibold text-yellow-400 font-orbitron">Permissions</h4>
+        <h4 className="text-lg font-semibold text-yellow-400 font-orbitron">
+          Permissions
+        </h4>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex justify-between">
             <span className="text-slate-400">Autoplay:</span>
-            <span className={debugInfo.permissions.autoplay === 'allowed' ? 'text-green-400' : 'text-red-400'}>
+            <span
+              className={
+                debugInfo.permissions.autoplay === 'allowed'
+                  ? 'text-green-400'
+                  : 'text-red-400'
+              }
+            >
               {debugInfo.permissions.autoplay.toUpperCase()}
             </span>
           </div>
           <div className="flex justify-between">
             <span className="text-slate-400">Microphone:</span>
-            <span className={debugInfo.permissions.microphone === 'granted' ? 'text-green-400' : 'text-red-400'}>
+            <span
+              className={
+                debugInfo.permissions.microphone === 'granted'
+                  ? 'text-green-400'
+                  : 'text-red-400'
+              }
+            >
               {debugInfo.permissions.microphone.toUpperCase()}
             </span>
           </div>
@@ -307,24 +355,34 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
       {/* Current Audio Status */}
       {debugInfo.currentAudio && (
         <div className="space-y-2">
-          <h4 className="text-lg font-semibold text-purple-400 font-orbitron">Current Audio</h4>
+          <h4 className="text-lg font-semibold text-purple-400 font-orbitron">
+            Current Audio
+          </h4>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-slate-400">Ready State:</span>
-              <span className="text-white">{getReadyStateText(debugInfo.currentAudio.readyState)}</span>
+              <span className="text-white">
+                {getReadyStateText(debugInfo.currentAudio.readyState)}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Duration:</span>
-              <span className="text-white">{debugInfo.currentAudio.duration.toFixed(2)}s</span>
+              <span className="text-white">
+                {debugInfo.currentAudio.duration.toFixed(2)}s
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Volume:</span>
-              <span className="text-white">{(debugInfo.currentAudio.volume * 100).toFixed(0)}%</span>
+              <span className="text-white">
+                {(debugInfo.currentAudio.volume * 100).toFixed(0)}%
+              </span>
             </div>
             {debugInfo.currentAudio._error && (
               <div className="flex items-start space-x-2">
                 <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                <span className="text-red-400 text-xs break-all">{debugInfo.currentAudio._error}</span>
+                <span className="text-red-400 text-xs break-all">
+                  {debugInfo.currentAudio._error}
+                </span>
               </div>
             )}
           </div>
@@ -333,7 +391,9 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
 
       {/* Test Controls */}
       <div className="space-y-4 border-t border-glass pt-4">
-        <h4 className="text-lg font-semibold text-white font-orbitron">Audio Tests</h4>
+        <h4 className="text-lg font-semibold text-white font-orbitron">
+          Audio Tests
+        </h4>
 
         <div className="flex space-x-4">
           <button
@@ -350,7 +410,11 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
               className="btn-primary px-4 py-2 text-sm font-bold flex items-center space-x-2"
               disabled={!debugInfo.htmlAudio.supported}
             >
-              {isTestPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              {isTestPlaying ? (
+                <Pause className="w-4 h-4" />
+              ) : (
+                <Play className="w-4 h-4" />
+              )}
               <span>{isTestPlaying ? 'STOP' : 'PLAY'} TEST</span>
             </button>
           )}

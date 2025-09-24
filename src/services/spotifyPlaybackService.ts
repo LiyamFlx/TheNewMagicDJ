@@ -50,10 +50,10 @@ class SpotifyPlaybackService {
       // Create player instance
       this.player = new window.Spotify.Player({
         name: 'MagicDJ Web Player',
-        getOAuthToken: (cb) => {
+        getOAuthToken: cb => {
           cb(this.accessToken!);
         },
-        volume: 0.5
+        volume: 0.5,
       });
 
       // Set up event listeners
@@ -63,13 +63,20 @@ class SpotifyPlaybackService {
       const success = await this.player.connect();
       if (success) {
         this.isReady = true;
-        logger.info('SpotifyPlaybackService', 'Connected to Spotify Web Playback SDK');
+        logger.info(
+          'SpotifyPlaybackService',
+          'Connected to Spotify Web Playback SDK'
+        );
         return true;
       }
 
       return false;
     } catch (_error) {
-      logger._error('SpotifyPlaybackService', 'Failed to initialize Spotify playback', _error);
+      logger._error(
+        'SpotifyPlaybackService',
+        'Failed to initialize Spotify playback',
+        _error
+      );
       return false;
     }
   }
@@ -99,23 +106,30 @@ class SpotifyPlaybackService {
     // Ready
     this.player.addListener('ready', ({ device_id }: { device_id: string }) => {
       this.deviceId = device_id;
-      logger.info('SpotifyPlaybackService', 'Device ready', { deviceId: device_id });
+      logger.info('SpotifyPlaybackService', 'Device ready', {
+        deviceId: device_id,
+      });
     });
 
     // Not Ready
-    this.player.addListener('not_ready', ({ device_id }: { device_id: string }) => {
-      logger.warn('SpotifyPlaybackService', 'Device not ready', { deviceId: device_id });
-    });
+    this.player.addListener(
+      'not_ready',
+      ({ device_id }: { device_id: string }) => {
+        logger.warn('SpotifyPlaybackService', 'Device not ready', {
+          deviceId: device_id,
+        });
+      }
+    );
 
     // Player state changes
-    this.player.addListener('player_state_changed', (state) => {
+    this.player.addListener('player_state_changed', state => {
       if (!state) return;
 
       logger.debug('SpotifyPlaybackService', 'Player state changed', {
         paused: state.paused,
         position: state.position,
         duration: state.duration,
-        trackName: state.track_window?.current_track?.name
+        trackName: state.track_window?.current_track?.name,
       });
     });
   }
@@ -127,24 +141,29 @@ class SpotifyPlaybackService {
     }
 
     try {
-      const response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${this.deviceId}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          uris: [spotifyUri]
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.accessToken}`
+      const response = await fetch(
+        `https://api.spotify.com/v1/me/player/play?device_id=${this.deviceId}`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            uris: [spotifyUri],
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this.accessToken}`,
+          },
         }
-      });
+      );
 
       if (response.ok) {
-        logger.info('SpotifyPlaybackService', 'Started playing track', { spotifyUri });
+        logger.info('SpotifyPlaybackService', 'Started playing track', {
+          spotifyUri,
+        });
         return true;
       } else {
         logger._error('SpotifyPlaybackService', 'Failed to play track', {
           status: response.status,
-          statusText: response.statusText
+          statusText: response.statusText,
         });
         return false;
       }

@@ -254,10 +254,14 @@ export class YouTubeService {
     seed: string,
     count: number
   ): Promise<Track[]> {
-    logger.warn('YouTubeService', 'YouTube API unavailable - no fallback tracks', {
-      seed,
-      count,
-    });
+    logger.warn(
+      'YouTubeService',
+      'YouTube API unavailable - no fallback tracks',
+      {
+        seed,
+        count,
+      }
+    );
     return [];
   }
 
@@ -390,7 +394,6 @@ export class YouTubeService {
       return null;
     }
   }
-
 
   /**
    * Handles YouTube API errors with specific _error codes

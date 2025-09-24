@@ -36,7 +36,12 @@ class MetricsCollector {
   private metrics: MetricPoint[] = [];
   private readonly maxMetrics = 1000;
 
-  record(name: string, value: number, unit?: string, tags?: Record<string, string>): void {
+  record(
+    name: string,
+    value: number,
+    unit?: string,
+    tags?: Record<string, string>
+  ): void {
     // Rotate metrics if we hit the limit
     if (this.metrics.length >= this.maxMetrics) {
       this.metrics.shift();
@@ -51,7 +56,11 @@ class MetricsCollector {
     });
   }
 
-  counter(name: string, value: number = 1, tags?: Record<string, string>): void {
+  counter(
+    name: string,
+    value: number = 1,
+    tags?: Record<string, string>
+  ): void {
     this.record(name, value, 'count', tags);
   }
 
@@ -91,7 +100,11 @@ export class PerformanceMonitor {
     this.operations.set(operationId, Date.now());
   }
 
-  endOperation(operationId: string, name: string, tags?: Record<string, string>): number {
+  endOperation(
+    operationId: string,
+    name: string,
+    tags?: Record<string, string>
+  ): number {
     const startTime = this.operations.get(operationId);
     if (!startTime) {
       console.warn(`No start time found for operation: ${operationId}`);
@@ -105,7 +118,11 @@ export class PerformanceMonitor {
     return duration;
   }
 
-  measureAsync<T>(name: string, fn: () => Promise<T>, tags?: Record<string, string>): Promise<T> {
+  measureAsync<T>(
+    name: string,
+    fn: () => Promise<T>,
+    tags?: Record<string, string>
+  ): Promise<T> {
     const startTime = Date.now();
     return fn()
       .then(result => {
@@ -142,7 +159,9 @@ export const performance = new PerformanceMonitor();
 /**
  * Check database connectivity and performance
  */
-export async function checkDatabase(supabaseClient: any): Promise<HealthCheckResult> {
+export async function checkDatabase(
+  supabaseClient: any
+): Promise<HealthCheckResult> {
   const startTime = Date.now();
 
   try {
@@ -188,7 +207,9 @@ export async function checkDatabase(supabaseClient: any): Promise<HealthCheckRes
 /**
  * Check Spotify API connectivity
  */
-export async function checkSpotifyAPI(spotifyToken?: string): Promise<HealthCheckResult> {
+export async function checkSpotifyAPI(
+  spotifyToken?: string
+): Promise<HealthCheckResult> {
   const startTime = Date.now();
 
   if (!spotifyToken) {
@@ -204,7 +225,7 @@ export async function checkSpotifyAPI(spotifyToken?: string): Promise<HealthChec
   try {
     const response = await fetch('https://api.spotify.com/v1/markets', {
       headers: {
-        'Authorization': `Bearer ${spotifyToken}`,
+        Authorization: `Bearer ${spotifyToken}`,
       },
     });
 
@@ -244,7 +265,9 @@ export async function checkSpotifyAPI(spotifyToken?: string): Promise<HealthChec
 /**
  * Check YouTube API connectivity
  */
-export async function checkYouTubeAPI(apiKey?: string): Promise<HealthCheckResult> {
+export async function checkYouTubeAPI(
+  apiKey?: string
+): Promise<HealthCheckResult> {
   const startTime = Date.now();
 
   if (!apiKey) {
@@ -358,7 +381,9 @@ export interface HealthCheckConfig {
   version?: string;
 }
 
-export async function performHealthCheck(config: HealthCheckConfig = {}): Promise<SystemHealth> {
+export async function performHealthCheck(
+  config: HealthCheckConfig = {}
+): Promise<SystemHealth> {
   const {
     includeDatabase = true,
     includeSpotify = true,
@@ -395,7 +420,7 @@ export async function performHealthCheck(config: HealthCheckConfig = {}): Promis
   // Wait for all checks to complete
   const results = await Promise.allSettled(checkPromises);
 
-  results.forEach((result) => {
+  results.forEach(result => {
     if (result.status === 'fulfilled') {
       checks.push(result.value);
     } else {
@@ -545,9 +570,10 @@ export function checkProductionReadiness(): ReadinessCheck[] {
   checks.push({
     name: 'Environment Variables',
     status: missingEnvVars.length === 0 ? 'pass' : 'fail',
-    message: missingEnvVars.length === 0
-      ? 'All required environment variables are set'
-      : `Missing environment variables: ${missingEnvVars.join(', ')}`,
+    message:
+      missingEnvVars.length === 0
+        ? 'All required environment variables are set'
+        : `Missing environment variables: ${missingEnvVars.join(', ')}`,
     details: { missing: missingEnvVars },
   });
 
@@ -563,14 +589,17 @@ export function checkProductionReadiness(): ReadinessCheck[] {
   });
 
   // Memory configuration
-  const memLimit = parseInt(process.env.NODE_OPTIONS?.match(/--max-old-space-size=(\d+)/)?.[1] || '0');
+  const memLimit = parseInt(
+    process.env.NODE_OPTIONS?.match(/--max-old-space-size=(\d+)/)?.[1] || '0'
+  );
 
   checks.push({
     name: 'Memory Configuration',
     status: memLimit > 0 ? 'pass' : 'warning',
-    message: memLimit > 0
-      ? `Memory limit set to ${memLimit}MB`
-      : 'No explicit memory limit set',
+    message:
+      memLimit > 0
+        ? `Memory limit set to ${memLimit}MB`
+        : 'No explicit memory limit set',
     details: { limit: memLimit },
   });
 

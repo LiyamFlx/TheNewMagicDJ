@@ -190,7 +190,11 @@ export interface RateLimitState {
 export class ApiRateLimiter {
   private buckets = new Map<string, RateLimitState>();
 
-  check(key: string, maxRequests: number, windowMs: number): {
+  check(
+    key: string,
+    maxRequests: number,
+    windowMs: number
+  ): {
     allowed: boolean;
     retryAfter?: number;
   } {
@@ -264,37 +268,43 @@ export class ApiLogger {
       method: req.method || 'UNKNOWN',
       url: req.url || 'unknown',
       userAgent: req.headers?.['user-agent'],
-      ip: req.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
-          req.socket?.remoteAddress,
+      ip:
+        req.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
+        req.socket?.remoteAddress,
       timestamp: Date.now(),
-      requestId: req.headers?.['x-request-id'] ||
-                 Math.random().toString(36).substr(2, 9),
+      requestId:
+        req.headers?.['x-request-id'] ||
+        Math.random().toString(36).substr(2, 9),
     };
   }
 
   static logRequest(context: RequestContext, message: string, data?: any) {
-    console.log(JSON.stringify({
-      level: 'info',
-      type: 'request',
-      message,
-      context,
-      data,
-    }));
+    console.log(
+      JSON.stringify({
+        level: 'info',
+        type: 'request',
+        message,
+        context,
+        data,
+      })
+    );
   }
 
   static logError(context: RequestContext, error: any, data?: any) {
-    console.error(JSON.stringify({
-      level: 'error',
-      type: 'request',
-      message: error.message || 'Unknown error',
-      context,
-      error: {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      },
-      data,
-    }));
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        type: 'request',
+        message: error.message || 'Unknown error',
+        context,
+        error: {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        },
+        data,
+      })
+    );
   }
 }
 

@@ -55,9 +55,9 @@ class PlaylistCache {
   }
 
   set(key: string, data: any): void {
-    this.cache.set(key, { 
-      data, 
-      expiry: Date.now() + this.TTL_MS 
+    this.cache.set(key, {
+      data,
+      expiry: Date.now() + this.TTL_MS,
     });
   }
 
@@ -89,7 +89,9 @@ const cache = new PlaylistCache();
 
 // Authentication helper
 class AuthHelper {
-  static async checkAuthentication(retries = 3): Promise<{ isAuthenticated: boolean; session: any }> {
+  static async checkAuthentication(
+    retries = 3
+  ): Promise<{ isAuthenticated: boolean; session: any }> {
     for (let i = 0; i < retries; i++) {
       try {
         const { data: sessionData } = await supabase.auth.getSession();
@@ -104,7 +106,11 @@ class AuthHelper {
         // Wait before retrying if authentication is not ready
         await new Promise(resolve => setTimeout(resolve, 100));
       } catch (_error) {
-        logger._error('supabasePlaylistService', 'Authentication check failed', _error as any);
+        logger._error(
+          'supabasePlaylistService',
+          'Authentication check failed',
+          _error as any
+        );
         if (i === retries - 1) {
           return { isAuthenticated: false, session: null };
         }
@@ -116,7 +122,10 @@ class AuthHelper {
   }
 
   static handleUnauthenticated(operation: string, fallbackValue: any = null) {
-    logger.warn('supabasePlaylistService', `Supabase not authenticated; skipping ${operation}.`);
+    logger.warn(
+      'supabasePlaylistService',
+      `Supabase not authenticated; skipping ${operation}.`
+    );
     return fallbackValue;
   }
 }
@@ -142,16 +151,26 @@ class ValidationHelper {
         title: track.title || 'Untitled',
         artist: track.artist || 'Unknown Artist',
         bpm: typeof track.bpm === 'number' ? Math.floor(track.bpm) : null,
-        energy: typeof track.energy === 'number' ? Math.floor(track.energy) : null,
-        duration: typeof track.duration === 'number' ? Math.floor(track.duration) : 180,
+        energy:
+          typeof track.energy === 'number' ? Math.floor(track.energy) : null,
+        duration:
+          typeof track.duration === 'number' ? Math.floor(track.duration) : 180,
         key: (track as any).key || null,
         genre: (track as any).genre || null,
-        position: typeof (track as any).position === 'number' ? (track as any).position : null,
+        position:
+          typeof (track as any).position === 'number'
+            ? (track as any).position
+            : null,
         spotify_id: (track as any).spotify_id ?? null,
         youtube_id: (track as any).youtube_id ?? null,
         preview_url: (track as any).preview_url ?? null,
         thumbnail: (track as any).thumbnail ?? null,
-        source_url: (track as any).source_url || track.url || (track as any).youtube_url || (track as any).preview_url || null,
+        source_url:
+          (track as any).source_url ||
+          track.url ||
+          (track as any).youtube_url ||
+          (track as any).preview_url ||
+          null,
       }))
       .filter(row => row.title);
   }
@@ -177,17 +196,27 @@ export const supabasePlaylistService = {
 
       return result;
     } catch (_error) {
-      logger._error('supabasePlaylistService', 'SavePlaylist _error', _error as any);
+      logger._error(
+        'supabasePlaylistService',
+        'SavePlaylist _error',
+        _error as any
+      );
       throw _error;
     }
   },
 
-  async _savePlaylistToDatabase(playlist: Playlist, userId: string): Promise<Playlist> {
+  async _savePlaylistToDatabase(
+    playlist: Playlist,
+    userId: string
+  ): Promise<Playlist> {
     const { id: playlistId, name, tracks = [] } = playlist;
 
     // Generate a proper UUID if the ID is not a valid UUID format
-    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(playlistId || '');
-    const finalPlaylistId = (playlistId && isValidUUID) ? playlistId : undefined;
+    const isValidUUID =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        playlistId || ''
+      );
+    const finalPlaylistId = playlistId && isValidUUID ? playlistId : undefined;
 
     // Save playlist
     const playlistPayload = {
@@ -204,7 +233,11 @@ export const supabasePlaylistService = {
       .single();
 
     if (playlistError) {
-      logger._error('supabasePlaylistService', 'Supabase playlist save _error', playlistError as any);
+      logger._error(
+        'supabasePlaylistService',
+        'Supabase playlist save _error',
+        playlistError as any
+      );
       throw new AppError('UPSTREAM_ERROR', 'Failed to save playlist', {
         details: { playlistError },
       });
@@ -220,7 +253,10 @@ export const supabasePlaylistService = {
     return { ...playlistData, tracks };
   },
 
-  async _saveTracksToDatabase(tracks: Track[], playlistId: string): Promise<void> {
+  async _saveTracksToDatabase(
+    tracks: Track[],
+    playlistId: string
+  ): Promise<void> {
     const trackData = ValidationHelper.sanitizeTrackData(tracks, playlistId);
 
     if (trackData.length === 0) return;
@@ -228,18 +264,27 @@ export const supabasePlaylistService = {
     // Group tracks by available conflict keys for idempotent upserts
     const spotifyGroup = trackData.filter(t => t.spotify_id);
     const youtubeGroup = trackData.filter(t => !t.spotify_id && t.youtube_id);
-    const positionGroup = trackData.filter(t => !t.spotify_id && !t.youtube_id && typeof t.position === 'number');
-    const insertGroup = trackData.filter(t => !spotifyGroup.includes(t) && !youtubeGroup.includes(t) && !positionGroup.includes(t));
+    const positionGroup = trackData.filter(
+      t => !t.spotify_id && !t.youtube_id && typeof t.position === 'number'
+    );
+    const insertGroup = trackData.filter(
+      t =>
+        !spotifyGroup.includes(t) &&
+        !youtubeGroup.includes(t) &&
+        !positionGroup.includes(t)
+    );
 
     let saved = 0;
 
     // Upsert by (playlist_id, spotify_id)
     if (spotifyGroup.length > 0) {
-      const { _error } = await supabase
-        .from('tracks')
-        .upsert(spotifyGroup);
+      const { _error } = await supabase.from('tracks').upsert(spotifyGroup);
       if (_error) {
-        logger._error('supabasePlaylistService', 'Tracks upsert _error (spotify_id)', _error as any);
+        logger._error(
+          'supabasePlaylistService',
+          'Tracks upsert _error (spotify_id)',
+          _error as any
+        );
       } else {
         saved += spotifyGroup.length;
       }
@@ -247,11 +292,13 @@ export const supabasePlaylistService = {
 
     // Upsert by (playlist_id, youtube_id)
     if (youtubeGroup.length > 0) {
-      const { _error } = await supabase
-        .from('tracks')
-        .upsert(youtubeGroup);
+      const { _error } = await supabase.from('tracks').upsert(youtubeGroup);
       if (_error) {
-        logger._error('supabasePlaylistService', 'Tracks upsert _error (youtube_id)', _error as any);
+        logger._error(
+          'supabasePlaylistService',
+          'Tracks upsert _error (youtube_id)',
+          _error as any
+        );
       } else {
         saved += youtubeGroup.length;
       }
@@ -259,11 +306,13 @@ export const supabasePlaylistService = {
 
     // Upsert by (playlist_id, position)
     if (positionGroup.length > 0) {
-      const { _error } = await supabase
-        .from('tracks')
-        .upsert(positionGroup);
+      const { _error } = await supabase.from('tracks').upsert(positionGroup);
       if (_error) {
-        logger._error('supabasePlaylistService', 'Tracks upsert _error (position)', _error as any);
+        logger._error(
+          'supabasePlaylistService',
+          'Tracks upsert _error (position)',
+          _error as any
+        );
       } else {
         saved += positionGroup.length;
       }
@@ -273,13 +322,20 @@ export const supabasePlaylistService = {
     if (insertGroup.length > 0) {
       const { _error } = await supabase.from('tracks').insert(insertGroup);
       if (_error) {
-        logger._error('supabasePlaylistService', 'Tracks insert _error (no conflict key)', _error as any);
+        logger._error(
+          'supabasePlaylistService',
+          'Tracks insert _error (no conflict key)',
+          _error as any
+        );
       } else {
         saved += insertGroup.length;
       }
     }
 
-    logger.info('supabasePlaylistService', `Saved/Upserted ${saved} tracks (playlist ${playlistId})`);
+    logger.info(
+      'supabasePlaylistService',
+      `Saved/Upserted ${saved} tracks (playlist ${playlistId})`
+    );
   },
 
   async getPlaylists(userId: string): Promise<Playlist[]> {
@@ -296,7 +352,8 @@ export const supabasePlaylistService = {
       // Wait a bit longer for authentication to be fully established
       await new Promise(resolve => setTimeout(resolve, 200));
 
-      const { isAuthenticated, session } = await AuthHelper.checkAuthentication();
+      const { isAuthenticated, session } =
+        await AuthHelper.checkAuthentication();
       const authUserId = await getCurrentUserId();
 
       logger.info('supabasePlaylistService', 'Auth check for playlists', {
@@ -304,15 +361,22 @@ export const supabasePlaylistService = {
         authUserId,
         requestedUserId: userId,
         sessionExists: !!session,
-        sessionUserId: session?.user?.id
+        sessionUserId: session?.user?.id,
       });
 
       if (authUserId && authUserId !== userId) {
-        logger.warn('supabasePlaylistService', 'Auth/userId mismatch detected during fetch', { authUserId, userId });
+        logger.warn(
+          'supabasePlaylistService',
+          'Auth/userId mismatch detected during fetch',
+          { authUserId, userId }
+        );
       }
 
       if (!isAuthenticated || !session?.user) {
-        const emptyResult = AuthHelper.handleUnauthenticated('playlist fetch', []);
+        const emptyResult = AuthHelper.handleUnauthenticated(
+          'playlist fetch',
+          []
+        );
         cache.set(cacheKey, emptyResult);
         return emptyResult;
       }
@@ -321,9 +385,12 @@ export const supabasePlaylistService = {
       if (session.user.id !== userId) {
         logger._error('supabasePlaylistService', 'Session user ID mismatch', {
           sessionUserId: session.user.id,
-          requestedUserId: userId
+          requestedUserId: userId,
         });
-        throw new AppError('UNAUTHORIZED', 'Authentication mismatch - please sign in again');
+        throw new AppError(
+          'UNAUTHORIZED',
+          'Authentication mismatch - please sign in again'
+        );
       }
 
       const playlists = await this._fetchPlaylistsFromDatabase(userId);
@@ -331,7 +398,11 @@ export const supabasePlaylistService = {
 
       return playlists;
     } catch (_error) {
-      logger._error('supabasePlaylistService', 'Supabase getPlaylists _error', _error as any);
+      logger._error(
+        'supabasePlaylistService',
+        'Supabase getPlaylists _error',
+        _error as any
+      );
       throw new AppError('UPSTREAM_ERROR', 'Failed to fetch playlists', {
         details: { _error },
       });
@@ -347,14 +418,19 @@ export const supabasePlaylistService = {
       .order('created_at', { ascending: false });
 
     if (playlistError) {
-      logger._error('supabasePlaylistService', 'Supabase playlist query _error', playlistError as any);
+      logger._error(
+        'supabasePlaylistService',
+        'Supabase playlist query _error',
+        playlistError as any
+      );
 
       // Provide more specific _error messages for common auth issues
-      if (playlistError.code === '42501' ||
-          playlistError.message?.includes('permission denied') ||
-          playlistError.message?.includes('Row Level Security') ||
-          playlistError.code === 'PGRST301') {
-
+      if (
+        playlistError.code === '42501' ||
+        playlistError.message?.includes('permission denied') ||
+        playlistError.message?.includes('Row Level Security') ||
+        playlistError.code === 'PGRST301'
+      ) {
         // Log additional context for debugging
         logger._error('supabasePlaylistService', 'RLS/Auth _error details', {
           errorCode: playlistError.code,
@@ -362,9 +438,13 @@ export const supabasePlaylistService = {
           userId,
         });
 
-        throw new AppError('UNAUTHORIZED', 'Access denied: Your session may have expired. Please sign out and sign in again.', {
-          details: { playlistError },
-        });
+        throw new AppError(
+          'UNAUTHORIZED',
+          'Access denied: Your session may have expired. Please sign out and sign in again.',
+          {
+            details: { playlistError },
+          }
+        );
       }
 
       throw new AppError('UPSTREAM_ERROR', 'Failed to fetch playlists', {
@@ -377,8 +457,10 @@ export const supabasePlaylistService = {
     }
 
     // Fetch tracks for all playlists
-    const tracks = await this._fetchTracksForPlaylists(playlists.map(p => p.id));
-    
+    const tracks = await this._fetchTracksForPlaylists(
+      playlists.map(p => p.id)
+    );
+
     // Combine playlists with tracks
     return this._combinePlaylistsWithTracks(playlists, tracks);
   },
@@ -391,7 +473,11 @@ export const supabasePlaylistService = {
       .order('created_at', { ascending: true });
 
     if (tracksError) {
-      logger._error('supabasePlaylistService', 'Supabase tracks query _error', tracksError as any);
+      logger._error(
+        'supabasePlaylistService',
+        'Supabase tracks query _error',
+        tracksError as any
+      );
       return []; // Return empty array rather than failing
     }
 
@@ -400,22 +486,26 @@ export const supabasePlaylistService = {
 
   _combinePlaylistsWithTracks(playlists: any[], tracks: Track[]): Playlist[] {
     // Group tracks by playlist ID
-    const tracksByPlaylist = tracks.reduce((acc: Record<string, Track[]>, track: any) => {
-      if (!acc[track.playlist_id]) {
-        acc[track.playlist_id] = [];
-      }
-      
-      acc[track.playlist_id].push({
-        id: track.id,
-        title: track.title,
-        artist: track.artist,
-        bpm: track.bpm ?? undefined,
-        energy: typeof track.energy === 'number' ? Number(track.energy) : undefined,
-        duration: track.duration ?? 180,
-      });
-      
-      return acc;
-    }, {});
+    const tracksByPlaylist = tracks.reduce(
+      (acc: Record<string, Track[]>, track: any) => {
+        if (!acc[track.playlist_id]) {
+          acc[track.playlist_id] = [];
+        }
+
+        acc[track.playlist_id].push({
+          id: track.id,
+          title: track.title,
+          artist: track.artist,
+          bpm: track.bpm ?? undefined,
+          energy:
+            typeof track.energy === 'number' ? Number(track.energy) : undefined,
+          duration: track.duration ?? 180,
+        });
+
+        return acc;
+      },
+      {}
+    );
 
     // Combine playlists with their tracks
     return playlists.map(playlist => ({
@@ -427,13 +517,13 @@ export const supabasePlaylistService = {
   async createPlaylist(userId: string, name: string): Promise<Playlist> {
     try {
       ValidationHelper.validateUserId(userId);
-      
+
       if (!name || !name.trim()) {
         throw new AppError('BAD_REQUEST', 'Playlist name is required');
       }
 
       const { isAuthenticated } = await AuthHelper.checkAuthentication();
-      
+
       if (!isAuthenticated) {
         return AuthHelper.handleUnauthenticated('remote create', {
           id: `local-${Date.now()}`,
@@ -446,7 +536,11 @@ export const supabasePlaylistService = {
 
       const authUserId = await getCurrentUserId();
       if (authUserId && authUserId !== userId) {
-        logger.warn('supabasePlaylistService', 'Auth/userId mismatch detected during create', { authUserId, userId });
+        logger.warn(
+          'supabasePlaylistService',
+          'Auth/userId mismatch detected during create',
+          { authUserId, userId }
+        );
       }
 
       const { data, _error } = await supabase
@@ -464,7 +558,11 @@ export const supabasePlaylistService = {
       cache.bustUserCache(userId);
       return { ...data, tracks: [] };
     } catch (_error) {
-      logger._error('supabasePlaylistService', 'Create playlist _error', _error as any);
+      logger._error(
+        'supabasePlaylistService',
+        'Create playlist _error',
+        _error as any
+      );
       throw _error;
     }
   },
@@ -476,18 +574,17 @@ export const supabasePlaylistService = {
       }
 
       const { isAuthenticated } = await AuthHelper.checkAuthentication();
-      
+
       if (!isAuthenticated) {
         return AuthHelper.handleUnauthenticated('remote delete', false);
       }
 
-      const query = supabase
-        .from('playlists')
-        .delete()
-        .eq('id', playlistId);
+      const query = supabase.from('playlists').delete().eq('id', playlistId);
 
       // Scope delete to owner if userId provided (defense-in-depth with RLS)
-      const { _error } = userId ? await query.eq('user_id', userId) : await query;
+      const { _error } = userId
+        ? await query.eq('user_id', userId)
+        : await query;
 
       if (_error) {
         throw new AppError('UPSTREAM_ERROR', 'Failed to delete playlist', {
@@ -504,24 +601,35 @@ export const supabasePlaylistService = {
 
       return true;
     } catch (_error) {
-      logger._error('supabasePlaylistService', 'Delete playlist _error', _error as any);
+      logger._error(
+        'supabasePlaylistService',
+        'Delete playlist _error',
+        _error as any
+      );
       throw _error;
     }
   },
 
   // Utility methods
-  async updatePlaylist(playlistId: string, updates: Partial<Playlist>, userId: string): Promise<Playlist> {
+  async updatePlaylist(
+    playlistId: string,
+    updates: Partial<Playlist>,
+    userId: string
+  ): Promise<Playlist> {
     try {
       ValidationHelper.validateUserId(userId);
-      
+
       if (!playlistId) {
         throw new AppError('BAD_REQUEST', 'Playlist ID is required');
       }
 
       const { isAuthenticated } = await AuthHelper.checkAuthentication();
-      
+
       if (!isAuthenticated) {
-        throw new AppError('UNAUTHORIZED', 'Authentication required for playlist updates');
+        throw new AppError(
+          'UNAUTHORIZED',
+          'Authentication required for playlist updates'
+        );
       }
 
       const { data, _error } = await supabase
@@ -545,7 +653,11 @@ export const supabasePlaylistService = {
       cache.bustUserCache(userId);
       return data;
     } catch (_error) {
-      logger._error('supabasePlaylistService', 'Update playlist _error', _error as any);
+      logger._error(
+        'supabasePlaylistService',
+        'Update playlist _error',
+        _error as any
+      );
       throw _error;
     }
   },

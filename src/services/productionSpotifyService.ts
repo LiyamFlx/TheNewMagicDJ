@@ -93,8 +93,16 @@ class ProductionSpotifyService {
           const ct = response.headers.get('content-type') || '';
           if (!ct.includes('application/json')) {
             const snippet = (await response.text()).slice(0, 120);
-            const err = { code: 'BAD_RESPONSE', message: 'Non-JSON token response', details: snippet } as any;
-            logger._error('ProductionSpotifyService', 'Authentication failed', err);
+            const err = {
+              code: 'BAD_RESPONSE',
+              message: 'Non-JSON token response',
+              details: snippet,
+            } as any;
+            logger._error(
+              'ProductionSpotifyService',
+              'Authentication failed',
+              err
+            );
             throw err;
           }
           const data: SpotifyAuthResponse = await response.json();
@@ -287,7 +295,6 @@ class ProductionSpotifyService {
       params
     );
   }
-
 }
 
 export const productionSpotifyService = new ProductionSpotifyService();

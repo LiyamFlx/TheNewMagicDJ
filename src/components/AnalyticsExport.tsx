@@ -321,7 +321,9 @@ Analytics:
           <div className="w-16 h-16 glass-card flex-center animate-pulse-glow shadow-neon-cyan mx-auto mb-4">
             <BarChart3 className="w-8 h-8 text-gradient-primary" />
           </div>
-          <p className="text-xl text-gray-300 font-orbitron">Analyzing your set...</p>
+          <p className="text-xl text-gray-300 font-orbitron">
+            Analyzing your set...
+          </p>
         </div>
       </div>
     );
@@ -349,7 +351,9 @@ Analytics:
                 <h1 className="text-xl lg:text-2xl font-bold text-gradient-primary font-orbitron tracking-wide">
                   SET ANALYTICS
                 </h1>
-                <p className="text-sm text-gradient-accent font-mono">{playlist.name}</p>
+                <p className="text-sm text-gradient-accent font-mono">
+                  {playlist.name}
+                </p>
               </div>
             </div>
           </div>
@@ -382,12 +386,19 @@ Analytics:
         {/* Overview Stats */}
         <div className="grid-4 mb-8">
           <div className="glass-card p-lg text-center hover-lift ease-smooth group">
-            <div className={`text-3xl font-bold text-gradient-accent mb-3 font-orbitron group-hover:scale-110 ease-bounce animate-count-up ${getEnergyColor(analytics.averageEnergy)}`}>
+            <div
+              className={`text-3xl font-bold text-gradient-accent mb-3 font-orbitron group-hover:scale-110 ease-bounce animate-count-up ${getEnergyColor(analytics.averageEnergy)}`}
+            >
               {analytics.averageEnergy.toFixed(1)}%
             </div>
-            <div className="text-sm text-gray-400 font-inter tracking-wide">AVERAGE ENERGY</div>
+            <div className="text-sm text-gray-400 font-inter tracking-wide">
+              AVERAGE ENERGY
+            </div>
             <div className="progress-bar h-2 max-w-16 mx-auto mt-3">
-              <div className="progress-fill gradient-bg-accent" style={{width: `${analytics.averageEnergy}%`}}></div>
+              <div
+                className="progress-fill gradient-bg-accent"
+                style={{ width: `${analytics.averageEnergy}%` }}
+              ></div>
             </div>
           </div>
 
@@ -395,7 +406,9 @@ Analytics:
             <div className="text-3xl font-bold text-gradient-primary mb-3 font-orbitron group-hover:scale-110 ease-bounce animate-count-up">
               {analytics.peakMoments.length}
             </div>
-            <div className="text-sm text-gray-400 font-inter tracking-wide">PEAK MOMENTS</div>
+            <div className="text-sm text-gray-400 font-inter tracking-wide">
+              PEAK MOMENTS
+            </div>
             <div className="progress-bar h-2 max-w-16 mx-auto mt-3">
               <div className="progress-fill gradient-bg-secondary"></div>
             </div>
@@ -405,7 +418,9 @@ Analytics:
             <div className="text-3xl font-bold text-gradient-accent mb-3 font-orbitron group-hover:scale-110 ease-bounce animate-count-up">
               {formatTime(analytics.totalDuration)}
             </div>
-            <div className="text-sm text-gray-400 font-inter tracking-wide">TOTAL DURATION</div>
+            <div className="text-sm text-gray-400 font-inter tracking-wide">
+              TOTAL DURATION
+            </div>
             <div className="progress-bar h-2 max-w-16 mx-auto mt-3">
               <div className="progress-fill gradient-bg-accent"></div>
             </div>
@@ -415,7 +430,9 @@ Analytics:
             <div className="text-3xl font-bold text-gradient-primary mb-3 font-orbitron group-hover:scale-110 ease-bounce animate-count-up">
               {analytics.tracksPlayed}
             </div>
-            <div className="text-sm text-gray-400 font-inter tracking-wide">TRACKS PLAYED</div>
+            <div className="text-sm text-gray-400 font-inter tracking-wide">
+              TRACKS PLAYED
+            </div>
             <div className="progress-bar h-2 max-w-16 mx-auto mt-3">
               <div className="progress-fill gradient-bg-secondary"></div>
             </div>
@@ -440,7 +457,9 @@ Analytics:
                 ))}
               </div>
             </div>
-            <div className="text-center text-sm text-gray-400 font-inter">Track progression over time</div>
+            <div className="text-center text-sm text-gray-400 font-inter">
+              Track progression over time
+            </div>
           </div>
 
           {/* Crowd Feedback */}
@@ -452,8 +471,12 @@ Analytics:
             <div className="space-y-6">
               <div>
                 <div className="flex-between mb-3">
-                  <span className="text-gray-400 font-inter font-bold">ENGAGEMENT</span>
-                  <span className={`font-bold font-mono ${getEnergyColor(analytics.crowdFeedback.engagement)}`}>
+                  <span className="text-gray-400 font-inter font-bold">
+                    ENGAGEMENT
+                  </span>
+                  <span
+                    className={`font-bold font-mono ${getEnergyColor(analytics.crowdFeedback.engagement)}`}
+                  >
                     {analytics.crowdFeedback.engagement.toFixed(1)}%
                   </span>
                 </div>
@@ -467,23 +490,33 @@ Analytics:
 
               <div>
                 <div className="flex-between mb-3">
-                  <span className="text-gray-400 font-inter font-bold">DANCEABILITY</span>
-                  <span className={`font-bold font-mono ${getEnergyColor(analytics.crowdFeedback.danceability)}`}>
+                  <span className="text-gray-400 font-inter font-bold">
+                    DANCEABILITY
+                  </span>
+                  <span
+                    className={`font-bold font-mono ${getEnergyColor(analytics.crowdFeedback.danceability)}`}
+                  >
                     {analytics.crowdFeedback.danceability.toFixed(1)}%
                   </span>
                 </div>
                 <div className="progress-bar h-3">
                   <div
                     className="progress-fill gradient-bg-accent ease-smooth"
-                    style={{ width: `${analytics.crowdFeedback.danceability}%` }}
+                    style={{
+                      width: `${analytics.crowdFeedback.danceability}%`,
+                    }}
                   />
                 </div>
               </div>
 
               <div>
                 <div className="flex-between mb-3">
-                  <span className="text-gray-400 font-inter font-bold">EXCITEMENT</span>
-                  <span className={`font-bold font-mono ${getEnergyColor(analytics.crowdFeedback.excitement)}`}>
+                  <span className="text-gray-400 font-inter font-bold">
+                    EXCITEMENT
+                  </span>
+                  <span
+                    className={`font-bold font-mono ${getEnergyColor(analytics.crowdFeedback.excitement)}`}
+                  >
                     {analytics.crowdFeedback.excitement.toFixed(1)}%
                   </span>
                 </div>
@@ -518,7 +551,9 @@ Analytics:
                       {(moment.time % 60).toString().padStart(2, '0')}
                     </p>
                   </div>
-                  <div className={`text-xl font-bold font-mono ${getEnergyColor(moment.energy)} group-hover:scale-110 ease-bounce`}>
+                  <div
+                    className={`text-xl font-bold font-mono ${getEnergyColor(moment.energy)} group-hover:scale-110 ease-bounce`}
+                  >
                     {moment.energy.toFixed(0)}%
                   </div>
                 </div>
@@ -538,7 +573,9 @@ Analytics:
                   key={index}
                   className="glass-card p-md hover-lift ease-smooth group"
                 >
-                  <p className="text-gradient-primary font-inter group-hover:text-gradient-accent ease-smooth">{moment}</p>
+                  <p className="text-gradient-primary font-inter group-hover:text-gradient-accent ease-smooth">
+                    {moment}
+                  </p>
                 </div>
               ))}
             </div>
