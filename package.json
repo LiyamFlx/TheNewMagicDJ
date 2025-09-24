@@ -67,7 +67,6 @@
     "validate": "npm run typecheck && npm run typecheck:api && npm run lint && npm run format:check && npm run test:build"
   },
   "dependencies": {
-    "zod": "^3.23.8",
     "@googleapis/youtube": "^29.0.0",
     "@supabase/supabase-js": "^2.57.4",
     "@types/react-router-dom": "^5.3.3",
@@ -77,11 +76,13 @@
     "npm-run-all": "^4.1.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^7.9.1"
+    "react-router-dom": "^7.9.1",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
     "@playwright/test": "^1.55.0",
+    "@rollup/rollup-darwin-arm64": "^4.52.2",
     "@types/node": "^24.5.2",
     "@types/react": "^18.3.24",
     "@types/react-dom": "^18.3.7",
