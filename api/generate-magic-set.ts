@@ -1,7 +1,54 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Get API key from environment
+// Get API keys from environment
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || process.env.VITE_YOUTUBE_API_KEY;
+const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || process.env.VITE_SPOTIFY_CLIENT_ID;
+const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || process.env.VITE_SPOTIFY_CLIENT_SECRET;
+
+// Get Spotify access token
+async function getSpotifyToken(): Promise<string> {
+  if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) {
+    throw new Error('Spotify credentials not configured');
+  }
+
+  const response = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': `Basic ${Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64')}`
+    },
+    body: 'grant_type=client_credentials'
+  });
+
+  if (!response.ok) {
+    throw new Error(`Spotify auth failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.access_token;
+}
+
+// Search Spotify for tracks with preview URLs
+async function searchSpotify(query: string, token: string, maxResults: number = 1) {
+  const searchUrl = new URL('https://api.spotify.com/v1/search');
+  searchUrl.searchParams.set('q', query);
+  searchUrl.searchParams.set('type', 'track');
+  searchUrl.searchParams.set('limit', maxResults.toString());
+
+  const response = await fetch(searchUrl.toString(), {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Spotify search failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.tracks?.items || [];
+}
 
 // Search YouTube for real tracks
 async function searchYouTube(query: string, maxResults: number = 1) {
@@ -74,16 +121,81 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const tracks = [];
     const searchQueries = getSearchQueries(vibe, energyLevel);
-    let sourceCount = 0;
-    const sourceTypes: string[] = [];
+    let totalSourceCount = 0;
+    const allSourceTypes = new Set<string>();
 
-    // Generate tracks with real YouTube sources
+    // Get Spotify access token for multi-provider resolution
+    let spotifyToken: string | null = null;
+    try {
+      spotifyToken = await getSpotifyToken();
+      console.log(`[Magic Set] ✅ Spotify API authenticated`);
+    } catch (error) {
+      console.warn(`[Magic Set] ⚠️ Spotify authentication failed, using YouTube only:`, error);
+    }
+
+    // Generate tracks with multi-provider sources (Spotify + YouTube)
     for (let i = 0; i < trackCount && i < searchQueries.length; i++) {
-      try {
-        const query = searchQueries[i];
-        console.log(`[Magic Set] Searching YouTube for: "${query}"`);
+      const query = searchQueries[i];
+      console.log(`[Magic Set] Multi-provider search for: "${query}"`);
 
-        const youtubeResults = await searchYouTube(query, 1);
+      let trackSourceCount = 0;
+      const trackSourceTypes: string[] = [];
+      let trackData: any = {
+        id: `track-${Date.now()}-${i}`,
+        title: `${vibe} Track ${i + 1}`,
+        artist: 'Unknown Artist',
+        album: 'Magic DJ Generated',
+        duration: 180 + Math.floor(Math.random() * 120),
+        bpm: 120 + Math.floor(Math.random() * 20),
+        energy: energyLevel === 'low' ? 40 + Math.random() * 20 : energyLevel === 'high' ? 80 + Math.random() * 20 : 60 + Math.random() * 20,
+        key: ['C', 'D', 'E', 'F', 'G', 'A', 'B'][Math.floor(Math.random() * 7)],
+        genre: vibe,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        // Initialize source fields
+        youtube_id: null,
+        youtube_url: null,
+        spotify_id: null,
+        preview_url: null,
+        source_url: null,
+        thumbnail: null
+      };
+
+      // Try Spotify first for better metadata and preview URLs
+      if (spotifyToken) {
+        try {
+          console.log(`[Magic Set] Searching Spotify for: "${query}"`);
+          const spotifyResults = await searchSpotify(query, spotifyToken, 1);
+
+          if (spotifyResults && spotifyResults.length > 0) {
+            const track = spotifyResults[0];
+            trackData.title = track.name || trackData.title;
+            trackData.artist = track.artists?.[0]?.name || trackData.artist;
+            trackData.album = track.album?.name || trackData.album;
+            trackData.duration = Math.floor((track.duration_ms || 180000) / 1000);
+            trackData.spotify_id = track.id;
+            trackData.thumbnail = track.album?.images?.[1]?.url || track.album?.images?.[0]?.url;
+
+            // Add Spotify preview URL if available
+            if (track.preview_url) {
+              trackData.preview_url = track.preview_url;
+              trackData.source_url = track.preview_url; // Primary source
+              trackSourceCount++;
+              trackSourceTypes.push('spotify');
+              allSourceTypes.add('spotify');
+              console.log(`[Magic Set] ✅ Spotify preview resolved: trackId="${trackData.id}", preview_url="${track.preview_url}"`);
+            }
+          }
+        } catch (error) {
+          console.warn(`[Magic Set] Spotify search failed for "${query}":`, error);
+        }
+      }
+
+      // Try YouTube as secondary/fallback source
+      try {
+        console.log(`[Magic Set] Searching YouTube for: "${trackData.title} ${trackData.artist}"`);
+        const youtubeQuery = `${trackData.title} ${trackData.artist}`;
+        const youtubeResults = await searchYouTube(youtubeQuery, 1);
 
         if (youtubeResults && youtubeResults.length > 0) {
           const video = youtubeResults[0];
@@ -91,56 +203,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
           if (videoId) {
             const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
+            trackData.youtube_id = videoId;
+            trackData.youtube_url = youtubeUrl;
 
-            tracks.push({
-              id: `track-${Date.now()}-${i}`,
-              title: video.snippet?.title || `${vibe} Track ${i + 1}`,
-              artist: video.snippet?.channelTitle || 'Unknown Artist',
-              album: 'Magic DJ Generated',
-              duration: 180 + Math.floor(Math.random() * 120),
-              bpm: 120 + Math.floor(Math.random() * 20),
-              energy: energyLevel === 'low' ? 40 + Math.random() * 20 : energyLevel === 'high' ? 80 + Math.random() * 20 : 60 + Math.random() * 20,
-              key: ['C', 'D', 'E', 'F', 'G', 'A', 'B'][Math.floor(Math.random() * 7)],
-              genre: vibe,
-              // REAL AUDIO SOURCES
-              youtube_id: videoId,
-              youtube_url: youtubeUrl,
-              source_url: youtubeUrl,
-              thumbnail: video.snippet?.thumbnails?.medium?.url || video.snippet?.thumbnails?.default?.url,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-
-            sourceCount++;
-            if (!sourceTypes.includes('youtube')) {
-              sourceTypes.push('youtube');
+            // Use YouTube as primary source if no Spotify preview
+            if (!trackData.source_url) {
+              trackData.source_url = youtubeUrl;
             }
 
-            console.log(`[Magic Set] ✅ Resolved audio source: trackId="${tracks[tracks.length-1].id}", sourceCount=1, sourceTypes=["youtube"], url="${youtubeUrl}"`);
+            trackSourceCount++;
+            trackSourceTypes.push('youtube');
+            allSourceTypes.add('youtube');
+            console.log(`[Magic Set] ✅ YouTube resolved: trackId="${trackData.id}", youtube_url="${youtubeUrl}"`);
           }
         }
       } catch (error) {
-        console.error(`[Magic Set] Failed to resolve source for query "${searchQueries[i]}":`, error);
-        // Add fallback track without source
-        tracks.push({
-          id: `track-${Date.now()}-${i}`,
-          title: `${vibe} Track ${i + 1}`,
-          artist: 'AI Generator',
-          album: 'Magic DJ Generated',
-          duration: 180 + Math.floor(Math.random() * 120),
-          bpm: 120 + Math.floor(Math.random() * 20),
-          energy: energyLevel === 'low' ? 40 + Math.random() * 20 : energyLevel === 'high' ? 80 + Math.random() * 20 : 60 + Math.random() * 20,
-          key: ['C', 'D', 'E', 'F', 'G', 'A', 'B'][Math.floor(Math.random() * 7)],
-          genre: vibe,
-          // NO AUDIO SOURCES - placeholder
-          youtube_id: null,
-          youtube_url: null,
-          source_url: null,
-          thumbnail: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-        console.log(`[Magic Set] ❌ Failed to resolve audio source: trackId="${tracks[tracks.length-1].id}", sourceCount=0, sourceTypes=[]`);
+        console.warn(`[Magic Set] YouTube search failed for "${trackData.title}":`, error);
+      }
+
+      // Add track regardless of source resolution (with clear logging)
+      tracks.push(trackData);
+      totalSourceCount += trackSourceCount;
+
+      if (trackSourceCount > 0) {
+        console.log(`[Magic Set] ✅ Multi-provider resolution: trackId="${trackData.id}", sourceCount=${trackSourceCount}, sourceTypes=${JSON.stringify(trackSourceTypes)}`);
+      } else {
+        console.log(`[Magic Set] ❌ No sources resolved: trackId="${trackData.id}", sourceCount=0, sourceTypes=[]`);
       }
     }
 
@@ -187,12 +275,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    console.log(`[Magic Set] Generation complete: ${tracks.length} tracks, ${sourceCount} with sources`);
+    // Calculate final statistics
+    const tracksWithSources = tracks.filter(track => track.source_url).length;
+    const sourceTypesArray = Array.from(allSourceTypes);
+
+    console.log(`[Magic Set] Generation complete: ${tracks.length} tracks, ${tracksWithSources} with sources, ${totalSourceCount} total sources`);
 
     const playlist = {
       id: `playlist-${Date.now()}`,
       name: `Magic ${vibe} Set (${energyLevel} energy)`,
-      description: `AI-generated ${vibe} playlist with ${energyLevel} energy level. ${sourceCount}/${tracks.length} tracks have playable sources.`,
+      description: `AI-generated ${vibe} playlist with ${energyLevel} energy level. Multi-provider sources: ${sourceTypesArray.join(', ')}. ${tracksWithSources}/${tracks.length} tracks playable.`,
       tracks: tracks,
       total_duration: tracks.reduce((sum, track) => sum + track.duration, 0),
       user_id: 'api-generated',
@@ -200,16 +292,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       energy_level: energyLevel,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      // AUDIO SOURCE METADATA
+      // MULTI-PROVIDER AUDIO SOURCE METADATA
       source_metadata: {
         total_tracks: tracks.length,
-        sourced_tracks: sourceCount,
-        source_types: sourceTypes,
-        source_coverage: Math.round((sourceCount / tracks.length) * 100)
+        sourced_tracks: tracksWithSources,
+        total_sources: totalSourceCount,
+        source_types: sourceTypesArray,
+        source_coverage: Math.round((tracksWithSources / tracks.length) * 100),
+        multi_provider: sourceTypesArray.length > 1,
+        providers_available: sourceTypesArray.length
       }
     };
 
-    console.log(`[Magic Set] Final result: totalTracks=${playlist.source_metadata.total_tracks}, sourcedTracks=${playlist.source_metadata.sourced_tracks}, sourceTypes=${JSON.stringify(playlist.source_metadata.source_types)}, coverage=${playlist.source_metadata.source_coverage}%`);
+    console.log(`[Magic Set] MULTI-PROVIDER RESULT: totalTracks=${playlist.source_metadata.total_tracks}, sourcedTracks=${playlist.source_metadata.sourced_tracks}, totalSources=${playlist.source_metadata.total_sources}, sourceTypes=${JSON.stringify(playlist.source_metadata.source_types)}, multiProvider=${playlist.source_metadata.multi_provider}, coverage=${playlist.source_metadata.source_coverage}%`);
 
     res.status(200).json(playlist);
   } catch (error) {

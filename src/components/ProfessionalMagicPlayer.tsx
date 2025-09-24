@@ -696,11 +696,35 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       handleSourceError('A', new Error('Audio load failed'));
     };
 
+    // REALITY-BOUND DIRECTIVE: Spotify Preview Playback Logging
+    const onPlay = () => {
+      const currentTrack = currentPlaylist?.tracks[state.currentTrackIndex];
+      if (currentTrack && currentTrack.preview_url) {
+        const duration = audio.duration || currentTrack.duration || 30; // Spotify previews are 30s
+        logger.info('ProfessionalMagicPlayer', 'SPOTIFY PLAYBACK STARTED', {
+          trackId: currentTrack.id,
+          title: currentTrack.title,
+          artist: currentTrack.artist,
+          playback: 'started',
+          duration: duration,
+          sourceUrl: currentTrack.preview_url,
+          sourceTypes: [
+            currentTrack.youtube_url ? 'youtube' : null,
+            currentTrack.preview_url ? 'spotify' : null
+          ].filter(Boolean),
+          provider: 'spotify'
+        });
+
+        console.log(`[PLAYBACK] ✅ Started: trackId="${currentTrack.id}", title="${currentTrack.title}", duration=${duration}s, provider=spotify, url="${currentTrack.preview_url}"`);
+      }
+    };
+
     // Add listeners
     audio.addEventListener('loadedmetadata', onLoadedMetadata);
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('ended', handleTrackEnd);
     audio.addEventListener('error', onError);
+    audio.addEventListener('play', onPlay); // Add playback start logging
 
     audioARef.current = audio;
     dispatch({ type: 'SET_LOADING', payload: true });
@@ -1492,11 +1516,48 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                       logger.info('ProfessionalMagicPlayer', 'YouTube A player ready');
                     }}
                     onStateChange={(youtubeState) => {
+                      const currentTrack = currentPlaylist?.tracks[state.currentTrackIndex];
+
                       if (youtubeState === YouTubePlayerState.PLAYING) {
                         onPlayPause(true);
+
+                        // REALITY-BOUND DIRECTIVE: PLAYBACK START LOGGING
+                        if (currentTrack) {
+                          const duration = youtubeARef.current?.getDuration() || currentTrack.duration || 0;
+                          logger.info('ProfessionalMagicPlayer', 'PLAYBACK STARTED', {
+                            trackId: currentTrack.id,
+                            title: currentTrack.title,
+                            artist: currentTrack.artist,
+                            playback: 'started',
+                            duration: duration,
+                            sourceUrl: currentTrack.source_url,
+                            sourceTypes: [
+                              currentTrack.youtube_url ? 'youtube' : null,
+                              currentTrack.preview_url ? 'spotify' : null
+                            ].filter(Boolean),
+                            provider: 'youtube'
+                          });
+
+                          console.log(`[PLAYBACK] ✅ Started: trackId="${currentTrack.id}", title="${currentTrack.title}", duration=${duration}s, provider=youtube, url="${currentTrack.youtube_url || currentTrack.source_url}"`);
+                        }
                       } else if (youtubeState === YouTubePlayerState.PAUSED) {
                         onPlayPause(false);
+
+                        if (currentTrack) {
+                          logger.info('ProfessionalMagicPlayer', 'PLAYBACK PAUSED', {
+                            trackId: currentTrack.id,
+                            playback: 'paused',
+                            currentTime: youtubeARef.current?.getCurrentTime() || 0
+                          });
+                        }
                       } else if (youtubeState === YouTubePlayerState.ENDED) {
+                        if (currentTrack) {
+                          logger.info('ProfessionalMagicPlayer', 'PLAYBACK ENDED', {
+                            trackId: currentTrack.id,
+                            playback: 'ended',
+                            duration: youtubeARef.current?.getDuration() || 0
+                          });
+                        }
                         handleTrackEnd();
                       }
                     }}
