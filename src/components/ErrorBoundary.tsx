@@ -37,7 +37,7 @@ class ErrorBoundary extends Component<Props, State> {
     const errorId = this.state.errorId || 'unknown';
 
     // Log the _error
-    logger._error('ErrorBoundary', 'React component _error caught', {
+    logger.error('ErrorBoundary', 'React component _error caught', {
       _error,
       errorInfo,
       errorId,
@@ -119,13 +119,13 @@ class ErrorBoundary extends Component<Props, State> {
               been notified and we're working on a fix.
             </p>
 
-            {this.state._error && (
+            {this.state.error && (
               <div className="glass-card p-md mb-6 text-left">
                 <p className="text-sm text-gray-400 mb-2 font-inter font-bold">
                   ERROR DETAILS:
                 </p>
                 <p className="text-xs text-red-300 font-mono break-all">
-                  {this.state._error.message}
+                  {this.state.error.message}
                 </p>
                 {this.state.errorId && (
                   <p className="text-xs text-gray-500 mt-2 font-mono">

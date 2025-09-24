@@ -42,7 +42,7 @@ export class ErrorHandler {
         filename: event.filename,
         lineno: event.lineno,
         colno: event.colno,
-        stack: event._error?.stack,
+        stack: event.error?.stack,
       },
       timestamp: new Date().toISOString(),
     });
@@ -72,7 +72,7 @@ export class ErrorHandler {
     }
 
     // Log the _error
-    logger._error('ErrorHandler', _error.message, {
+    logger.error('ErrorHandler', _error.message, {
       code: _error.code,
       severity: _error.severity,
       recoverable: _error.recoverable,

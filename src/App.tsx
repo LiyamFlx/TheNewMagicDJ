@@ -60,7 +60,7 @@ const Logger = {
   _error: (...args: any[]) => {
     const [message, ...rest] = args;
     const err = rest.find((r: any) => r instanceof Error) ?? rest[0];
-    logger._error('App', String(message), err);
+    logger.error('App', String(message), err);
   },
 };
 
@@ -197,7 +197,7 @@ function AppContent() {
         }
         return false;
       } catch (_error) {
-        Logger._error('Lazy Spotify initialization failed', _error);
+        Logger.error('Lazy Spotify initialization failed', _error);
         return false;
       }
     }, [fetchSpotifyTokenLazy]);
@@ -258,7 +258,7 @@ function AppContent() {
         dispatch({ type: 'SET_SESSIONS', payload: mockSessions });
         Logger.info('MagicDJ initialized');
       } catch (err) {
-        Logger._error('Init _error', err);
+        Logger.error('Init _error', err);
         dispatch({
           type: 'SET_ERROR',
           payload: 'Failed to load application data',
@@ -348,7 +348,7 @@ function AppContent() {
   const loadUserData = useCallback(
     async (userId: string) => {
       if (!userId) {
-        Logger._error('loadUserData', 'No user ID provided');
+        Logger.error('loadUserData', 'No user ID provided');
         return;
       }
 
@@ -395,7 +395,7 @@ function AppContent() {
           }
         }
       } catch (err) {
-        Logger._error('Load user data _error', err);
+        Logger.error('Load user data _error', err);
 
         // Graceful fallback - don't crash the app
         dispatch({ type: 'SET_PLAYLISTS', payload: [] });
@@ -419,7 +419,7 @@ function AppContent() {
   useEffect(() => {
     if (state.user?.id) {
       loadUserData(state.user.id).catch(err => {
-        Logger._error('Load user data _error', err);
+        Logger.error('Load user data _error', err);
         showToast('Failed to load user data', '_error');
       });
     }
@@ -429,7 +429,7 @@ function AppContent() {
   const saveCurrentPlaylist = useCallback(
     async (playlist: Playlist) => {
       if (!playlist || !playlist.id) {
-        Logger._error(
+        Logger.error(
           'saveCurrentPlaylist',
           'Invalid playlist provided',
           playlist
@@ -486,7 +486,7 @@ function AppContent() {
           throw new Error('Invalid saved playlist response');
         }
       } catch (err) {
-        Logger._error('Save playlist _error', err);
+        Logger.error('Save playlist _error', err);
 
         const errorMessage =
           err instanceof Error ? err.message : 'Unknown _error';
@@ -552,7 +552,7 @@ function AppContent() {
 
   const handleTrackReorder = (fromIndex: number, toIndex: number) => {
     if (!state.currentPlaylist || !state.currentPlaylist.tracks) {
-      Logger._error('handleTrackReorder', 'No playlist or tracks available');
+      Logger.error('handleTrackReorder', 'No playlist or tracks available');
       showToast('Cannot reorder tracks: No playlist selected', '_error');
       return;
     }
@@ -564,7 +564,7 @@ function AppContent() {
       toIndex < 0 ||
       toIndex >= state.currentPlaylist.tracks.length
     ) {
-      Logger._error('handleTrackReorder', 'Invalid track indices', {
+      Logger.error('handleTrackReorder', 'Invalid track indices', {
         fromIndex,
         toIndex,
         trackCount: state.currentPlaylist.tracks.length,
@@ -586,21 +586,21 @@ function AppContent() {
       dispatch({ type: 'SET_PLAYLIST', payload: updatedPlaylist });
       saveCurrentPlaylistDebounced(updatedPlaylist);
     } catch (_error) {
-      Logger._error('handleTrackReorder', 'Failed to reorder tracks', _error);
+      Logger.error('handleTrackReorder', 'Failed to reorder tracks', _error);
       showToast('Failed to reorder tracks', '_error');
     }
   };
 
   const handleTrackRemove = (index: number) => {
     if (!state.currentPlaylist || !state.currentPlaylist.tracks) {
-      Logger._error('handleTrackRemove', 'No playlist or tracks available');
+      Logger.error('handleTrackRemove', 'No playlist or tracks available');
       showToast('Cannot remove track: No playlist selected', '_error');
       return;
     }
 
     // Validate index
     if (index < 0 || index >= state.currentPlaylist.tracks.length) {
-      Logger._error('handleTrackRemove', 'Invalid track index', {
+      Logger.error('handleTrackRemove', 'Invalid track index', {
         index,
         trackCount: state.currentPlaylist.tracks.length,
       });
@@ -621,7 +621,7 @@ function AppContent() {
       saveCurrentPlaylistDebounced(updatedPlaylist);
       showToast('Track removed successfully', 'success');
     } catch (_error) {
-      Logger._error('handleTrackRemove', 'Failed to remove track', _error);
+      Logger.error('handleTrackRemove', 'Failed to remove track', _error);
       showToast('Failed to remove track', '_error');
     }
   };
@@ -659,7 +659,7 @@ function AppContent() {
         onAuthClick={handleAuthClick}
       />
 
-      {state._error && (
+      {state.error && (
         <div className="mx-4 mt-4">
           <div className="glass-card p-4 bg-red-500/10 border-red-500/20">
             <div className="flex items-center justify-between">
@@ -671,7 +671,7 @@ function AppContent() {
                   <p className="text-red-400 font-medium">
                     Something went wrong
                   </p>
-                  <p className="text-red-300 text-sm">{state._error}</p>
+                  <p className="text-red-300 text-sm">{state.error}</p>
                 </div>
               </div>
               <button

@@ -45,7 +45,7 @@ class AudioProcessingService {
             'Microphone capture started successfully'
           );
         } catch (_error) {
-          logger._error(
+          logger.error(
             'AudioProcessingService',
             'Failed to start microphone capture',
             _error
@@ -94,7 +94,7 @@ class AudioProcessingService {
 
           return result;
         } catch (_error) {
-          logger._error(
+          logger.error(
             'AudioProcessingService',
             'Advanced audio processing failed, falling back to basic processing',
             _error

@@ -82,7 +82,7 @@ class ProductionSpotifyService {
           if (!response.ok) {
             const errorText = await response.text();
             const err = await errorFromResponse(response, errorText);
-            logger._error(
+            logger.error(
               'ProductionSpotifyService',
               'Authentication failed',
               err
@@ -98,7 +98,7 @@ class ProductionSpotifyService {
               message: 'Non-JSON token response',
               details: snippet,
             } as any;
-            logger._error(
+            logger.error(
               'ProductionSpotifyService',
               'Authentication failed',
               err
@@ -116,7 +116,7 @@ class ProductionSpotifyService {
 
           return this.accessToken;
         } catch (_error) {
-          logger._error(
+          logger.error(
             'ProductionSpotifyService',
             'Authentication request failed',
             _error
@@ -225,7 +225,7 @@ class ProductionSpotifyService {
           if (!response.ok) {
             const errorText = await response.text();
             const err = await errorFromResponse(response, errorText);
-            logger._error(
+            logger.error(
               'ProductionSpotifyService',
               'Recommendations API failed',
               { ...err, url, params }
@@ -282,7 +282,7 @@ class ProductionSpotifyService {
           });
           return tracks;
         } catch (_error) {
-          logger._error(
+          logger.error(
             'ProductionSpotifyService',
             'Recommendations failed - no fallback available',
             _error

@@ -84,7 +84,7 @@ class AdvancedAudioService {
             { config: captureConfig }
           );
         } catch (_error) {
-          logger._error(
+          logger.error(
             'AdvancedAudioService',
             'Failed to initialize audio capture',
             _error

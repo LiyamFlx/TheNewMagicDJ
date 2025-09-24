@@ -108,7 +108,7 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(
       if (!isReady) return;
 
       if (autoplay) {
-        play().catch(console._error);
+        play().catch(console.error);
       } else {
         pause();
       }
@@ -121,7 +121,7 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(
           try {
             await play();
           } catch (_error) {
-            console._error('Error playing video:', _error);
+            console.error('Error playing video:', _error);
             throw _error;
           }
         },
@@ -129,28 +129,28 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(
           try {
             pause();
           } catch (_error) {
-            console._error('Error pausing video:', _error);
+            console.error('Error pausing video:', _error);
           }
         },
         seekTo: (seconds: number) => {
           try {
             seekToPlayer(seconds);
           } catch (_error) {
-            console._error('Error seeking video:', _error);
+            console.error('Error seeking video:', _error);
           }
         },
         setVolume: (vol: number) => {
           try {
             setPlayerVolume(vol);
           } catch (_error) {
-            console._error('Error setting volume:', _error);
+            console.error('Error setting volume:', _error);
           }
         },
         getCurrentTime: () => {
           try {
             return getCurrentTime();
           } catch (_error) {
-            console._error('Error getting current time:', _error);
+            console.error('Error getting current time:', _error);
             return 0;
           }
         },
@@ -158,7 +158,7 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(
           try {
             return getDuration();
           } catch (_error) {
-            console._error('Error getting duration:', _error);
+            console.error('Error getting duration:', _error);
             return 0;
           }
         },

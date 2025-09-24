@@ -34,7 +34,7 @@ const supabaseAnonKey =
 
 // Fail loudly in production if env is missing; warn and use placeholder only in dev
 if ((!supabaseUrl || !supabaseAnonKey) && !import.meta.env.DEV) {
-  console._error(
+  console.error(
     'Supabase configuration missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
   );
 }

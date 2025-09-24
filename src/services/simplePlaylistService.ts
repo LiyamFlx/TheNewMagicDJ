@@ -136,7 +136,7 @@ export class SimplePlaylistService {
 
       return playlist;
     } catch (_error) {
-      logger._error(
+      logger.error(
         'SimplePlaylistService',
         'Magic Match generation failed, using fallback',
         _error

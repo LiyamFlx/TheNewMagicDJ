@@ -312,7 +312,7 @@ class PlaylistService {
         params.userId
       );
       if (!savedPlaylist) {
-        logger._error('PlaylistService', 'Failed to save playlist to database');
+        logger.error('PlaylistService', 'Failed to save playlist to database');
         return null;
       }
 
@@ -331,7 +331,7 @@ class PlaylistService {
       }
       return savedPlaylist as import('../types/index').Playlist;
     } catch (_error) {
-      logger._error('PlaylistService', 'Failed to create playlist', _error);
+      logger.error('PlaylistService', 'Failed to create playlist', _error);
       return null;
     }
   }
@@ -410,7 +410,7 @@ class PlaylistService {
 
       return typedPlaylist;
     } catch (_error) {
-      logger._error('PlaylistService', 'Failed to get playlist', _error);
+      logger.error('PlaylistService', 'Failed to get playlist', _error);
       return null;
     }
   }
@@ -494,7 +494,7 @@ class PlaylistService {
 
       return typedPlaylists;
     } catch (_error) {
-      logger._error('PlaylistService', 'Failed to get user playlists', _error);
+      logger.error('PlaylistService', 'Failed to get user playlists', _error);
       return null;
     }
   }
@@ -563,7 +563,7 @@ class PlaylistService {
         params.userId
       );
       if (!savedPlaylist) {
-        logger._error('PlaylistService', 'Failed to save updated playlist');
+        logger.error('PlaylistService', 'Failed to save updated playlist');
         return null;
       }
 
@@ -582,7 +582,7 @@ class PlaylistService {
       }
       return savedPlaylist as import('../types/index').Playlist;
     } catch (_error) {
-      logger._error('PlaylistService', 'Failed to update playlist', _error);
+      logger.error('PlaylistService', 'Failed to update playlist', _error);
       return null;
     }
   }
@@ -625,7 +625,7 @@ class PlaylistService {
       // Delete from database
       const deleted = await supabasePlaylistService.deletePlaylist(playlistId);
       if (!deleted) {
-        logger._error(
+        logger.error(
           'PlaylistService',
           'Failed to delete playlist from database'
         );
@@ -643,7 +643,7 @@ class PlaylistService {
 
       return true;
     } catch (_error) {
-      logger._error('PlaylistService', 'Failed to delete playlist', _error);
+      logger.error('PlaylistService', 'Failed to delete playlist', _error);
       return false;
     }
   }
@@ -734,7 +734,7 @@ class PlaylistService {
         params.userId
       );
       if (!savedPlaylist) {
-        logger._error(
+        logger.error(
           'PlaylistService',
           'Failed to save playlist after adding track'
         );
@@ -757,7 +757,7 @@ class PlaylistService {
       }
       return savedPlaylist as import('../types/index').Playlist;
     } catch (_error) {
-      logger._error(
+      logger.error(
         'PlaylistService',
         'Failed to add track to playlist',
         _error
@@ -832,7 +832,7 @@ class PlaylistService {
         params.userId
       );
       if (!savedPlaylist) {
-        logger._error(
+        logger.error(
           'PlaylistService',
           'Failed to save playlist after removing track'
         );
@@ -859,7 +859,7 @@ class PlaylistService {
       }
       return savedPlaylist as import('../types/index').Playlist;
     } catch (_error) {
-      logger._error(
+      logger.error(
         'PlaylistService',
         'Failed to remove track from playlist',
         _error
@@ -964,7 +964,7 @@ class PlaylistService {
         params.userId
       );
       if (!savedPlaylist) {
-        logger._error(
+        logger.error(
           'PlaylistService',
           'Failed to save playlist after reordering tracks'
         );
@@ -988,7 +988,7 @@ class PlaylistService {
       }
       return savedPlaylist as import('../types/index').Playlist;
     } catch (_error) {
-      logger._error(
+      logger.error(
         'PlaylistService',
         'Failed to reorder tracks in playlist',
         _error
@@ -1302,7 +1302,7 @@ class PlaylistService {
               count: tracks.length,
             });
           } catch (fallbackError) {
-            logger._error(
+            logger.error(
               'PlaylistService',
               'Both YouTube and Spotify failed - no real music available',
               fallbackError

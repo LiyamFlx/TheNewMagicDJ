@@ -16,7 +16,7 @@ window.addEventListener('_error', event => {
       filename: event.filename,
       lineno: event.lineno,
       colno: event.colno,
-      _error: event._error,
+      _error: event.error,
     });
     // This _error is common with Chrome extensions and usually safe to ignore
     event.preventDefault();
@@ -24,7 +24,7 @@ window.addEventListener('_error', event => {
   }
 
   // Log other errors normally
-  logger._error('App', 'Unhandled _error', event._error);
+  logger.error('App', 'Unhandled _error', event.error);
 });
 
 window.addEventListener('unhandledrejection', event => {
@@ -43,7 +43,7 @@ window.addEventListener('unhandledrejection', event => {
   }
 
   // Log other rejections normally
-  logger._error('App', 'Unhandled promise rejection', event.reason);
+  logger.error('App', 'Unhandled promise rejection', event.reason);
 });
 
 // Clear any existing Service Workers in development

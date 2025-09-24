@@ -320,7 +320,7 @@ function playerReducer(state: PlayerState, action: PlayerAction): PlayerState {
         ...state,
         _error: {
           message: action.payload.message,
-          isDegraded: action.payload.isDegraded ?? state._error.isDegraded,
+          isDegraded: action.payload.isDegraded ?? state.error.isDegraded,
         },
       };
 
@@ -416,7 +416,7 @@ const useAudioSources = () => {
 
         return sources;
       } catch (_error) {
-        logger._error(
+        logger.error(
           'ProfessionalMagicPlayer',
           'Failed to load audio sources',
           {
@@ -525,13 +525,13 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
   // Error auto-clear effect
   useEffect(() => {
-    if (state._error.message) {
+    if (state.error.message) {
       const timeout = setTimeout(() => {
         dispatch({ type: 'RESET_ERROR' });
       }, 5000);
       return () => clearTimeout(timeout);
     }
-  }, [state._error.message]);
+  }, [state.error.message]);
 
   // Log session information
   useEffect(() => {
@@ -961,7 +961,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     };
 
     const onError = (e: Event) => {
-      handleSourceError('B', (e.target as HTMLAudioElement)._error);
+      handleSourceError('B', (e.target as HTMLAudioElement).error);
     };
 
     // Add listeners
@@ -1249,7 +1249,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     }
 
     audioB.play().catch(e => {
-      logger._error('Next track play failed', e);
+      logger.error('Next track play failed', e);
     });
 
     fadeIntervalRef.current = window.setInterval(() => {
@@ -1504,7 +1504,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           });
         }
       } catch (_error) {
-        logger._error(
+        logger.error(
           'ProfessionalMagicPlayer',
           'Deck B playback _error',
           _error
@@ -1582,7 +1582,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                 <h1 className="text-xl lg:text-2xl font-bold text-white tracking-wide font-orbitron">
                   PROFESSIONAL PLAYER
                 </h1>
-                {state._error.isDegraded && (
+                {state.error.isDegraded && (
                   <span className="text-xs px-2 py-1 bg-yellow-900/50 border border-yellow-400 text-yellow-400 rounded font-orbitron">
                     DEMO
                   </span>
@@ -1683,11 +1683,11 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             <span className="hidden sm:inline">DANCER</span>
           </button>
 
-          {state._error.message ? (
+          {state.error.message ? (
             <div className="flex items-center space-x-2 px-3 lg:px-4 py-2 glass-card border-yellow-400 shadow-yellow-400/20">
               <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
               <span className="text-xs lg:text-sm font-bold tracking-wider text-yellow-400">
-                {state._error.message}
+                {state.error.message}
               </span>
             </div>
           ) : (
@@ -1931,7 +1931,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                       }
                     }}
                     onError={_error => {
-                      logger._error(
+                      logger.error(
                         'ProfessionalMagicPlayer',
                         'YouTube A player _error',
                         _error
@@ -2293,7 +2293,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                       );
                     }}
                     onError={_error => {
-                      logger._error(
+                      logger.error(
                         'ProfessionalMagicPlayer',
                         'YouTube B player _error',
                         _error

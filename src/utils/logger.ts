@@ -84,7 +84,7 @@ class Logger {
     const logData = { ...data, sessionId: this.sessionId, correlationId };
 
     if (level === '_error') {
-      console._error(logMessage, logData, _error);
+      console.error(logMessage, logData, _error);
     } else if (level === 'warn') {
       console.warn(logMessage, logData);
     } else if (level === 'debug') {
@@ -248,7 +248,7 @@ class Logger {
     } catch (_error) {
       const duration = Date.now() - startTime;
 
-      this._error(
+      this.error(
         component,
         `Failed ${operation}`,
         _error,

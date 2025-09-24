@@ -214,7 +214,7 @@ export class YouTubeService {
 
       return tracks;
     } catch (_error) {
-      logger._error('YouTubeService', 'Search operation failed', _error);
+      logger.error('YouTubeService', 'Search operation failed', _error);
       return null;
     }
   }
@@ -307,7 +307,7 @@ export class YouTubeService {
 
     if (!response.ok) {
       const errorInfo = await this.handleApiError(response);
-      logger._error('YouTubeService', 'Search API call failed', errorInfo);
+      logger.error('YouTubeService', 'Search API call failed', errorInfo);
       return null;
     }
 
@@ -390,7 +390,7 @@ export class YouTubeService {
 
       return await response.json();
     } catch (_error) {
-      logger._error('YouTubeService', 'Failed to fetch video details', _error);
+      logger.error('YouTubeService', 'Failed to fetch video details', _error);
       return null;
     }
   }

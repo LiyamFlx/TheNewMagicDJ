@@ -187,7 +187,7 @@ Analytics:
         format: exportFormat,
       });
     } catch (_error) {
-      logger._error('AnalyticsExport', 'Export failed', _error);
+      logger.error('AnalyticsExport', 'Export failed', _error);
     } finally {
       setIsExporting(false);
     }
@@ -286,7 +286,7 @@ Analytics:
             files: [file],
           });
         } catch (_error) {
-          console._error('Share failed:', _error);
+          console.error('Share failed:', _error);
           downloadFlyer(canvas);
         }
       } else {

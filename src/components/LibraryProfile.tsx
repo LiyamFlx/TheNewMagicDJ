@@ -117,7 +117,7 @@ const LibraryProfile: React.FC<LibraryProfileProps> = ({
       await supabasePlaylistService.deletePlaylist(id);
       setLibrary(prev => prev.filter(item => item.id !== id));
     } catch (_error) {
-      console._error('Failed to delete playlist:', _error);
+      console.error('Failed to delete playlist:', _error);
     }
   };
 

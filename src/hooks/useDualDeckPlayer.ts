@@ -84,7 +84,7 @@ export function useDualDeckPlayer({
       updater(prev => ({
         ...prev,
         ...updates,
-        _error: updates._error !== undefined ? updates._error : null,
+        _error: updates.error !== undefined ? updates.error : null,
       }));
     },
     []
