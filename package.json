@@ -53,6 +53,7 @@
     "deploy": "npm run test:build && vercel --prod",
     "deploy:preview": "vercel",
     "ops:env": "bash scripts/ops/verify-vercel-env.sh",
+    "ops:verify:endpoints": "bash scripts/ops/verify-endpoints.sh ${VERCEL_URL:-} ${TOKEN:-}",
     "ops:health": "curl -s ${VERCEL_URL:-http://localhost:5174}/api/health | jq || curl -s ${VERCEL_URL:-http://localhost:5174}/api/health",
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",
