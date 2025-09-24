@@ -11,11 +11,13 @@ async function getSpotifyToken(): Promise<string> {
     throw new Error('Spotify credentials not configured');
   }
 
+  const credentials = btoa(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`);
+
   const response = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': `Basic ${Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64')}`
+      'Authorization': `Basic ${credentials}`
     },
     body: 'grant_type=client_credentials'
   });
@@ -263,7 +265,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               updated_at: new Date().toISOString()
             });
 
-            sourceCount++;
+            totalSourceCount++;
             console.log(`[Magic Set] ✅ Additional source resolved: trackId="${tracks[tracks.length-1].id}", sourceCount=1, sourceTypes=["youtube"], url="${youtubeUrl}"`);
           }
         } else {
