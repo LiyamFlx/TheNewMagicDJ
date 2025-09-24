@@ -24,7 +24,7 @@ window.addEventListener('error', (event: ErrorEvent) => {
   }
 
   // Log other errors normally
-  logger._error('App', 'Unhandled error', event.error);
+  logger.error('App', 'Unhandled error', event.error);
 });
 
 window.addEventListener('unhandledrejection', event => {
@@ -43,7 +43,7 @@ window.addEventListener('unhandledrejection', event => {
   }
 
   // Log other rejections normally
-  logger._error('App', 'Unhandled promise rejection', event.reason);
+  logger.error('App', 'Unhandled promise rejection', event.reason);
 });
 
 // Clear any existing Service Workers in development

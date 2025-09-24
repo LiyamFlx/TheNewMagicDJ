@@ -54,12 +54,12 @@ class AudDService {
         // Check rate limit
         const limitCheck = await rateLimiter.checkLimit('audd');
         if (!limitCheck.allowed) {
-          const _error = errorHandler.createRateLimitError(
+          const error = errorHandler.createRateLimitError(
             'AudD',
             limitCheck.retryAfter || 12000
           );
-          errorHandler.handleError(_error);
-          throw new Error(_error.message);
+          errorHandler.handleError(error);
+          throw new Error(error.message);
         }
 
         const formData = new FormData();
@@ -90,14 +90,14 @@ class AudDService {
           logger.trackAPICall('audd', 'recognize', responseTime, response.ok);
 
           if (!response.ok) {
-            const _error = errorHandler.createAPIError(
+            const error = errorHandler.createAPIError(
               'AudD',
               'recognize',
               response.status,
               response.statusText
             );
-            errorHandler.handleError(_error);
-            throw new Error(_error.message);
+            errorHandler.handleError(error);
+            throw new Error(error.message);
           }
 
           const data: AudDResponse = await response.json();
@@ -130,14 +130,14 @@ class AudDService {
           const responseTime = Date.now() - startTime;
           logger.trackAPICall('audd', 'recognize', responseTime, false);
 
-          if (_error instanceof TypeError && _error.message.includes('fetch')) {
+          if (error instanceof TypeError && error.message.includes('fetch')) {
             const networkError =
               errorHandler.createNetworkError('AudD recognition');
             errorHandler.handleError(networkError);
             throw new Error(networkError.message);
           }
 
-          throw _error;
+          throw error;
         }
       },
       {

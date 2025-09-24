@@ -4,7 +4,7 @@ import { AppError } from '../utils/errorHandler';
 
 interface Notification {
   id: string;
-  type: 'success' | '_error' | 'warning' | 'info';
+  type: 'success' | 'error' | 'warning' | 'info';
   title: string;
   message: string;
   duration?: number;
@@ -23,29 +23,29 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
   useEffect(() => {
     // Listen for app errors
     const handleAppError = (event: CustomEvent<AppError>) => {
-      const _error = event.detail;
+      const error = event.detail;
 
-      if (_error.severity === 'high' || _error.severity === 'critical') {
+      if (error.severity === 'high' || error.severity === 'critical') {
         addNotification({
-          type: '_error',
+          type: 'error',
           title: 'Error',
-          message: _error.userMessage,
-          persistent: _error.severity === 'critical',
+          message: error.userMessage,
+          persistent: error.severity === 'critical',
         });
-      } else if (_error.severity === 'medium') {
+      } else if (error.severity === 'medium') {
         addNotification({
           type: 'warning',
           title: 'Warning',
-          message: _error.userMessage,
+          message: error.userMessage,
           duration: 8000,
         });
       }
     };
 
-    window.addEventListener('app-_error', handleAppError as EventListener);
+    window.addEventListener('app-error', handleAppError as EventListener);
 
     return () => {
-      window.removeEventListener('app-_error', handleAppError as EventListener);
+      window.removeEventListener('app-error', handleAppError as EventListener);
     };
   }, []);
 
@@ -78,7 +78,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
     switch (type) {
       case 'success':
         return <CheckCircle className="w-5 h-5 text-green-400" />;
-      case '_error':
+      case 'error':
         return <AlertTriangle className="w-5 h-5 text-red-400" />;
       case 'warning':
         return <AlertCircle className="w-5 h-5 text-yellow-400" />;
@@ -91,7 +91,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
     switch (type) {
       case 'success':
         return 'bg-green-900/50 border-green-500/50';
-      case '_error':
+      case 'error':
         return 'bg-red-900/50 border-red-500/50';
       case 'warning':
         return 'bg-yellow-900/50 border-yellow-500/50';

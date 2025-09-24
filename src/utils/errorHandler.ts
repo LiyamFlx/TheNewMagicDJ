@@ -23,7 +23,7 @@ export class ErrorHandler {
   }
 
   private constructor() {
-    // Global _error handlers
+    // Global error handlers
     window.addEventListener('error', this.handleGlobalError.bind(this));
     window.addEventListener(
       'unhandledrejection',
@@ -64,48 +64,48 @@ export class ErrorHandler {
     });
   }
 
-  handleError(_error: AppError): void {
+  handleError(error: AppError): void {
     // Add to queue
-    this.errorQueue.push(_error);
+    this.errorQueue.push(error);
     if (this.errorQueue.length > this.maxErrors) {
       this.errorQueue.shift();
     }
 
-    // Log the _error
-    logger._error('Context', 'Error message', {
-      code: _error.code,
-      severity: _error.severity,
-      recoverable: _error.recoverable,
-      context: _error.context,
+    // Log the error
+    logger.error('Context', 'Error message', {
+      code: error.code,
+      severity: error.severity,
+      recoverable: error.recoverable,
+      context: error.context,
     });
 
-    // Track _error analytics
+    // Track error analytics
     logger.trackEvent('error_occurred', {
-      code: _error.code,
-      severity: _error.severity,
-      recoverable: _error.recoverable,
-      userMessage: _error.userMessage,
+      code: error.code,
+      severity: error.severity,
+      recoverable: error.recoverable,
+      userMessage: error.userMessage,
     });
 
     // Notify user if appropriate
-    if (_error.severity === 'high' || _error.severity === 'critical') {
-      this.notifyUser(_error);
+    if (error.severity === 'high' || error.severity === 'critical') {
+      this.notifyUser(error);
     }
   }
 
-  private notifyUser(_error: AppError): void {
+  private notifyUser(error: AppError): void {
     // This would integrate with your notification system
-    console.warn('User notification:', _error.userMessage);
+    console.warn('User notification:', error.userMessage);
 
     // You could dispatch a custom event here for UI components to listen to
     window.dispatchEvent(
-      new CustomEvent('app-_error', {
-        detail: _error,
+      new CustomEvent('app-error', {
+        detail: error,
       })
     );
   }
 
-  // Specific _error creators
+  // Specific error creators
   createAPIError(
     service: string,
     endpoint: string,
@@ -114,7 +114,7 @@ export class ErrorHandler {
   ): AppError {
     return {
       code: `API_ERROR_${service.toUpperCase()}`,
-      message: `${service} API _error: ${message}`,
+      message: `${service} API error: ${message}`,
       userMessage: `Unable to connect to ${service}. Please check your internet connection and try again.`,
       severity: status >= 500 ? 'high' : 'medium',
       recoverable: true,
@@ -167,7 +167,7 @@ export class ErrorHandler {
   createNetworkError(operation: string): AppError {
     return {
       code: 'NETWORK_ERROR',
-      message: `Network _error during ${operation}`,
+      message: `Network error during ${operation}`,
       userMessage:
         'Network connection failed. Please check your internet connection and try again.',
       severity: 'medium',
@@ -179,7 +179,7 @@ export class ErrorHandler {
 
   getErrors(severity?: AppError['severity']): AppError[] {
     if (severity) {
-      return this.errorQueue.filter(_error => _error.severity === severity);
+      return this.errorQueue.filter(error => error.severity === severity);
     }
     return [...this.errorQueue];
   }
@@ -190,8 +190,8 @@ export class ErrorHandler {
 
   getErrorStats(): Record<string, number> {
     const stats: Record<string, number> = {};
-    this.errorQueue.forEach(_error => {
-      stats[_error.code] = (stats[_error.code] || 0) + 1;
+    this.errorQueue.forEach(error => {
+      stats[error.code] = (stats[error.code] || 0) + 1;
     });
     return stats;
   }

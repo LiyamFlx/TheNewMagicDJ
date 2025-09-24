@@ -40,7 +40,7 @@ interface YouTubePlayerProps {
   volume?: number;
   onReady?: () => void;
   onStateChange?: (state: YouTubePlayerState) => void;
-  onError?: (_error: YouTubePlayerError) => void;
+  onError?: (error: YouTubePlayerError) => void;
   onTimeUpdate?: (currentTime: number) => void;
   className?: string;
 }
@@ -122,7 +122,7 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(
             await play();
           } catch (error) {
             console.error('Error playing video:', error);
-            throw _error;
+            throw error;
           }
         },
         pause: () => {

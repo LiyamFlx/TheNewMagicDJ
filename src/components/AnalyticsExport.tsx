@@ -187,7 +187,7 @@ Analytics:
         format: exportFormat,
       });
     } catch (error) {
-      logger._error('AnalyticsExport', 'Export failed', error);
+      logger.error('AnalyticsExport', 'Export failed', error);
     } finally {
       setIsExporting(false);
     }

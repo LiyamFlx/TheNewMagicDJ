@@ -18,7 +18,7 @@ export interface DeckState {
 
   // UI state
   isLoading: boolean;
-  _error: Error | null;
+  error: Error | null;
 
   // DJ features
   cuePoints: number[];
@@ -37,7 +37,7 @@ interface UseDualDeckPlayerProps {
   // Callbacks
   onDeckAStateChange?: (state: DeckState) => void;
   onDeckBStateChange?: (state: DeckState) => void;
-  onError?: (_error: Error, deck: 'deckA' | 'deckB') => void;
+  onError?: (error: Error, deck: 'deckA' | 'deckB') => void;
   onTrackEnd?: (deck: 'deckA' | 'deckB') => void;
 
   // Features
@@ -84,7 +84,7 @@ export function useDualDeckPlayer({
       updater(prev => ({
         ...prev,
         ...updates,
-        _error: updates._error !== undefined ? updates._error : null,
+        error: updates.error !== undefined ? updates.error : null,
       }));
     },
     []
@@ -123,25 +123,25 @@ export function useDualDeckPlayer({
       };
 
       const handleError = () => {
-        const _error = new Error(`Audio playback _error on ${deckId}`);
+        const error = new Error(`Audio playback error on ${deckId}`);
         updateDeckState(deckId, {
-          _error,
+          error,
           isLoading: false,
           isPlaying: false,
         });
-        onError?.(_error, deckId);
+        onError?.(error, deckId);
       };
 
       audio.addEventListener('timeupdate', updateTime);
       audio.addEventListener('loadedmetadata', handleLoadedMetadata);
       audio.addEventListener('ended', handleEnded);
-      audio.addEventListener('_error', handleError);
+      audio.addEventListener('error', handleError);
 
       return () => {
         audio.removeEventListener('timeupdate', updateTime);
         audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
         audio.removeEventListener('ended', handleEnded);
-        audio.removeEventListener('_error', handleError);
+        audio.removeEventListener('error', handleError);
       };
     };
 
@@ -173,7 +173,7 @@ export function useDualDeckPlayer({
         currentTime: 0,
         progress: 0,
         isLoading: true,
-        _error: null,
+        error: null,
       });
 
       const audio = audioRefs.current[deckId];
@@ -196,9 +196,9 @@ export function useDualDeckPlayer({
         updateDeckState(deckId, { isPlaying: true });
       } catch (error) {
         const err =
-          _error instanceof Error ? _error : new Error('Playback failed');
+          error instanceof Error ? error : new Error('Playback failed');
         updateDeckState(deckId, {
-          _error: err,
+          error: err,
           isPlaying: false,
         });
         onError?.(err, deckId);
@@ -405,7 +405,7 @@ function createInitialDeckState(
 
     // UI state
     isLoading: false,
-    _error: null,
+    error: null,
 
     // DJ features
     cuePoints: [],

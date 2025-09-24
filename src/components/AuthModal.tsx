@@ -69,8 +69,8 @@ const AuthModal: React.FC<AuthModalProps> = ({
       onClose();
       setFormData({ email: '', password: '', name: '' });
     } catch (error) {
-      console.error('Auth _error:', error);
-      alert(_error instanceof Error ? _error.message : 'Authentication failed');
+      console.error('Auth error:', error);
+      alert(error instanceof Error ? error.message : 'Authentication failed');
     } finally {
       setLoading(false);
     }

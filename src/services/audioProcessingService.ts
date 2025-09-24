@@ -45,10 +45,10 @@ class AudioProcessingService {
             'Microphone capture started successfully'
           );
         } catch (error) {
-          logger._error(
+          logger.error(
             'AudioProcessingService',
             'Failed to start microphone capture',
-            _error
+            error
           );
           throw new Error('Microphone access denied or not available');
         }
@@ -94,10 +94,10 @@ class AudioProcessingService {
 
           return result;
         } catch (error) {
-          logger._error(
+          logger.error(
             'AudioProcessingService',
             'Advanced audio processing failed, falling back to basic processing',
-            _error
+            error
           );
 
           // Fallback to basic processing
@@ -153,7 +153,7 @@ class AudioProcessingService {
             logger.warn(
               'AudioProcessingService',
               'AcoustID recognition failed',
-              _error
+              error
             );
           }
         }
@@ -201,7 +201,7 @@ class AudioProcessingService {
             logger.warn(
               'AudioProcessingService',
               'AudD file recognition failed',
-              _error
+              error
             );
           }
         }
@@ -226,7 +226,7 @@ class AudioProcessingService {
             logger.warn(
               'AudioProcessingService',
               'AcoustID file recognition failed',
-              _error
+              error
             );
           }
         }

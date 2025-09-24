@@ -108,7 +108,7 @@ export function withIdempotency(handler: (req: any, res: any) => Promise<any>) {
 
     if (!idempotencyManager.isValidKey(idempotencyKey)) {
       return res.status(400).json({
-        _error: 'Invalid Idempotency-Key header. Must be 16-255 characters.',
+        error: 'Invalid Idempotency-Key header. Must be 16-255 characters.',
       });
     }
 

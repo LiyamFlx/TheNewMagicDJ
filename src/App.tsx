@@ -60,7 +60,7 @@ const Logger = {
   error: (...args: any[]) => {
     const [message, ...rest] = args;
     const err = rest.find((r: any) => r instanceof Error) ?? rest[0];
-    logger._error('App', String(message), err);
+    logger.error('App', String(message), err);
   },
 };
 
@@ -258,12 +258,12 @@ function AppContent() {
         dispatch({ type: 'SET_SESSIONS', payload: mockSessions });
         Logger.info('MagicDJ initialized');
       } catch (err) {
-        Logger.error('Init _error', err);
+        Logger.error('Init error', err);
         dispatch({
           type: 'SET_ERROR',
           payload: 'Failed to load application data',
         });
-        showToast('Failed to load application data', '_error');
+        showToast('Failed to load application data', 'error');
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
       }
@@ -395,18 +395,18 @@ function AppContent() {
           }
         }
       } catch (err) {
-        Logger.error('Load user data _error', err);
+        Logger.error('Load user data error', err);
 
         // Graceful fallback - don't crash the app
         dispatch({ type: 'SET_PLAYLISTS', payload: [] });
 
         const errorMessage =
-          err instanceof Error ? err.message : 'Unknown _error';
+          err instanceof Error ? err.message : 'Unknown error';
         if (
           errorMessage.includes('network') ||
           errorMessage.includes('fetch')
         ) {
-          showToast('Network _error - working offline', 'warning');
+          showToast('Network error - working offline', 'warning');
         } else {
           showToast('Failed to load playlists - working offline', 'warning');
         }
@@ -419,8 +419,8 @@ function AppContent() {
   useEffect(() => {
     if (state.user?.id) {
       loadUserData(state.user.id).catch(err => {
-        Logger.error('Load user data _error', err);
-        showToast('Failed to load user data', '_error');
+        Logger.error('Load user data error', err);
+        showToast('Failed to load user data', 'error');
       });
     }
   }, [state.user?.id]); // Remove function dependencies to prevent infinite loop
@@ -486,17 +486,17 @@ function AppContent() {
           throw new Error('Invalid saved playlist response');
         }
       } catch (err) {
-        Logger.error('Save playlist _error', err);
+        Logger.error('Save playlist error', err);
 
         const errorMessage =
-          err instanceof Error ? err.message : 'Unknown _error';
+          err instanceof Error ? err.message : 'Unknown error';
         if (
           errorMessage.includes('network') ||
           errorMessage.includes('fetch')
         ) {
-          showToast('Network _error - playlist saved locally', 'warning');
+          showToast('Network error - playlist saved locally', 'warning');
         } else {
-          showToast('Failed to save playlist to cloud', '_error');
+          showToast('Failed to save playlist to cloud', 'error');
         }
       }
     },
@@ -553,7 +553,7 @@ function AppContent() {
   const handleTrackReorder = (fromIndex: number, toIndex: number) => {
     if (!state.currentPlaylist || !state.currentPlaylist.tracks) {
       Logger.error('handleTrackReorder', 'No playlist or tracks available');
-      showToast('Cannot reorder tracks: No playlist selected', '_error');
+      showToast('Cannot reorder tracks: No playlist selected', 'error');
       return;
     }
 
@@ -569,7 +569,7 @@ function AppContent() {
         toIndex,
         trackCount: state.currentPlaylist.tracks.length,
       });
-      showToast('Cannot reorder tracks: Invalid track position', '_error');
+      showToast('Cannot reorder tracks: Invalid track position', 'error');
       return;
     }
 
@@ -587,14 +587,14 @@ function AppContent() {
       saveCurrentPlaylistDebounced(updatedPlaylist);
     } catch (error) {
       Logger.error('handleTrackReorder', 'Failed to reorder tracks', error);
-      showToast('Failed to reorder tracks', '_error');
+      showToast('Failed to reorder tracks', 'error');
     }
   };
 
   const handleTrackRemove = (index: number) => {
     if (!state.currentPlaylist || !state.currentPlaylist.tracks) {
       Logger.error('handleTrackRemove', 'No playlist or tracks available');
-      showToast('Cannot remove track: No playlist selected', '_error');
+      showToast('Cannot remove track: No playlist selected', 'error');
       return;
     }
 
@@ -604,7 +604,7 @@ function AppContent() {
         index,
         trackCount: state.currentPlaylist.tracks.length,
       });
-      showToast('Cannot remove track: Invalid track position', '_error');
+      showToast('Cannot remove track: Invalid track position', 'error');
       return;
     }
 
@@ -622,7 +622,7 @@ function AppContent() {
       showToast('Track removed successfully', 'success');
     } catch (error) {
       Logger.error('handleTrackRemove', 'Failed to remove track', error);
-      showToast('Failed to remove track', '_error');
+      showToast('Failed to remove track', 'error');
     }
   };
 

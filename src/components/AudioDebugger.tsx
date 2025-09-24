@@ -22,7 +22,7 @@ interface AudioDebugInfo {
     src: string;
     readyState: number;
     networkState: number;
-    _error: string | null;
+    error: string | null;
     duration: number;
     volume: number;
   } | null;
@@ -104,8 +104,8 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
           info.permissions.autoplay = 'allowed';
           testAudio.pause();
         }
-      } catch (_error: any) {
-        if (_error.name === 'NotAllowedError') {
+      } catch (error: any) {
+        if (error.name === 'NotAllowedError') {
           info.permissions.autoplay = 'blocked';
         } else {
           info.permissions.autoplay = 'unknown';
@@ -119,8 +119,8 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
         });
         info.permissions.microphone = 'granted';
         stream.getTracks().forEach(track => track.stop());
-      } catch (_error: any) {
-        if (_error.name === 'NotAllowedError') {
+      } catch (error: any) {
+        if (error.name === 'NotAllowedError') {
           info.permissions.microphone = 'denied';
         } else {
           info.permissions.microphone = 'unknown';
@@ -147,7 +147,7 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
                 src: audio.src,
                 readyState: audio.readyState,
                 networkState: audio.networkState,
-                _error: audio.error?.message || null,
+                error: audio.error?.message || null,
                 duration: audio.duration || 0,
                 volume: audio.volume,
               },
@@ -162,7 +162,7 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
       'loadedmetadata',
       'canplay',
       'canplaythrough',
-      '_error',
+      'error',
       'stalled',
     ];
 
@@ -199,7 +199,7 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
       }
     } catch (error: any) {
       setTestError(error.message);
-      logger._error('AudioDebugger', 'Test playback failed', error);
+      logger.error('AudioDebugger', 'Test playback failed', error);
     }
   };
 
@@ -226,7 +226,7 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
 
       logger.info('AudioDebugger', 'Test tone generated');
     } catch (error) {
-      logger._error('AudioDebugger', 'Failed to generate test tone', error);
+      logger.error('AudioDebugger', 'Failed to generate test tone', error);
       setTestError('Failed to generate test tone');
     }
   };
@@ -377,11 +377,11 @@ const AudioDebugger: React.FC<AudioDebuggerProps> = ({
                 {(debugInfo.currentAudio.volume * 100).toFixed(0)}%
               </span>
             </div>
-            {debugInfo.currentAudio._error && (
+            {debugInfo.currentAudio.error && (
               <div className="flex items-start space-x-2">
                 <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
                 <span className="text-red-400 text-xs break-all">
-                  {debugInfo.currentAudio._error}
+                  {debugInfo.currentAudio.error}
                 </span>
               </div>
             )}

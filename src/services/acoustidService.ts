@@ -64,12 +64,12 @@ class AcoustIDService {
         // Check rate limit
         const limitCheck = await rateLimiter.checkLimit('acoustid');
         if (!limitCheck.allowed) {
-          const _error = errorHandler.createRateLimitError(
+          const error = errorHandler.createRateLimitError(
             'AcoustID',
             limitCheck.retryAfter || 20000
           );
-          errorHandler.handleError(_error);
-          throw new Error(_error.message);
+          errorHandler.handleError(error);
+          throw new Error(error.message);
         }
 
         const params = new URLSearchParams({
@@ -101,14 +101,14 @@ class AcoustIDService {
           logger.trackAPICall('acoustid', 'lookup', responseTime, response.ok);
 
           if (!response.ok) {
-            const _error = errorHandler.createAPIError(
+            const error = errorHandler.createAPIError(
               'AcoustID',
               'lookup',
               response.status,
               response.statusText
             );
-            errorHandler.handleError(_error);
-            throw new Error(_error.message);
+            errorHandler.handleError(error);
+            throw new Error(error.message);
           }
 
           const data: AcoustIDResponse = await response.json();
@@ -155,7 +155,7 @@ class AcoustIDService {
           const responseTime = Date.now() - startTime;
           logger.trackAPICall('acoustid', 'lookup', responseTime, false);
 
-          if (_error instanceof TypeError && _error.message.includes('fetch')) {
+          if (error instanceof TypeError && error.message.includes('fetch')) {
             const networkError = errorHandler.createNetworkError(
               'AcoustID recognition'
             );
@@ -163,7 +163,7 @@ class AcoustIDService {
             throw new Error(networkError.message);
           }
 
-          throw _error;
+          throw error;
         }
       },
       { fingerprintLength: fingerprint.length, duration }

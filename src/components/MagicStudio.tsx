@@ -199,7 +199,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
           logger.warn(
             'MagicStudio',
             'Microphone access failed, using mock data',
-            _error
+            error
           );
           fingerprint = 'mock_mic_' + Date.now().toString(16);
           setStatusMessage('Audio captured (simulated)');
@@ -249,7 +249,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
         );
         onPlaylistGenerated(playlist);
       } catch (error) {
-        logger._error(
+        logger.error(
           'MagicStudio',
           'Failed to generate MagicMatch playlist',
           error
@@ -264,7 +264,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
         return;
       }
     } catch (error) {
-      logger._error('MagicStudio', 'MagicMatch recognition failed', error);
+      logger.error('MagicStudio', 'MagicMatch recognition failed', error);
       setStatusMessage(
         'Recognition failed. Please try again or check your microphone permissions.'
       );
@@ -312,7 +312,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
       setStatusMessage('Recording... Click stop when ready');
       logger.info('MagicStudio', 'Advanced recording started');
     } catch (error) {
-      logger._error(
+      logger.error(
         'MagicStudio',
         'Failed to start advanced recording',
         error
@@ -358,7 +358,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
         genre: result.features?.genre,
       });
     } catch (error) {
-      logger._error('MagicStudio', 'Failed to process recording', error);
+      logger.error('MagicStudio', 'Failed to process recording', error);
       setStatusMessage('Processing failed. Please try again.');
       setIsRecording(false);
     }
@@ -389,7 +389,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
         genre: audioFeatures.genre,
       });
     } catch (error) {
-      logger._error(
+      logger.error(
         'MagicStudio',
         'Failed to generate playlist from features',
         error
@@ -469,7 +469,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
 
         onPlaylistGenerated(enhancedPlaylist);
       } catch (error) {
-        logger._error(
+        logger.error(
           'MagicStudio',
           'Failed to generate MagicSet playlist',
           error
@@ -484,7 +484,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
         return;
       }
     } catch (error) {
-      logger._error('MagicStudio', 'MagicSet generation failed', error);
+      logger.error('MagicStudio', 'MagicSet generation failed', error);
       setStatusMessage(
         'Generation failed. Please check your API configuration and try again.'
       );
@@ -563,7 +563,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
           onPlaylistGenerated(playlist);
         })
         .catch(async (error: any) => {
-          logger._error('MagicStudio', 'File processing failed', error);
+          logger.error('MagicStudio', 'File processing failed', error);
           setStatusMessage(
             'File processing failed. Please try a different audio file.'
           );

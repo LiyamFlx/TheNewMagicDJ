@@ -37,7 +37,7 @@ class ErrorBoundary extends Component<Props, State> {
     const errorId = this.state.errorId || 'unknown';
 
     // Log the error
-    logger._error('ErrorBoundary', 'React component error caught', {
+    logger.error('ErrorBoundary', 'React component error caught', {
       error,
       errorInfo,
       errorId,

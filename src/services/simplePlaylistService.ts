@@ -55,7 +55,7 @@ export class SimplePlaylistService {
       logger.warn(
         'SimplePlaylistService',
         'API unavailable, using enhanced local generation',
-        _error
+        error
       );
 
       // Enhanced local generation with YouTube-like tracks
@@ -136,10 +136,10 @@ export class SimplePlaylistService {
 
       return playlist;
     } catch (error) {
-      logger._error(
+      logger.error(
         'SimplePlaylistService',
         'Magic Match generation failed, using fallback',
-        _error
+        error
       );
 
       // Return fallback playlist

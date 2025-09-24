@@ -9,7 +9,7 @@ import { logger } from '../utils/logger';
 // =============================================================================
 
 /**
- * Standard _error response format for playlist operations
+ * Standard error response format for playlist operations
  */
 export interface PlaylistServiceError {
   readonly code: string;
@@ -117,7 +117,7 @@ const MAX_TRACKS_PER_PLAYLIST = 1000;
 /**
  * Validates playlist name
  * @param name - Playlist name to validate
- * @returns Validation _error or null if valid
+ * @returns Validation error or null if valid
  */
 function validatePlaylistName(name: string): PlaylistServiceError | null {
   if (!name || typeof name !== 'string') {
@@ -151,7 +151,7 @@ function validatePlaylistName(name: string): PlaylistServiceError | null {
 /**
  * Validates user ID
  * @param userId - User ID to validate
- * @returns Validation _error or null if valid
+ * @returns Validation error or null if valid
  */
 function validateUserId(userId: string): PlaylistServiceError | null {
   if (!userId || typeof userId !== 'string' || userId.trim().length === 0) {
@@ -167,7 +167,7 @@ function validateUserId(userId: string): PlaylistServiceError | null {
 /**
  * Validates playlist ID
  * @param playlistId - Playlist ID to validate
- * @returns Validation _error or null if valid
+ * @returns Validation error or null if valid
  */
 function validatePlaylistId(playlistId: string): PlaylistServiceError | null {
   if (
@@ -187,7 +187,7 @@ function validatePlaylistId(playlistId: string): PlaylistServiceError | null {
 /**
  * Validates track object
  * @param track - Track to validate
- * @returns Validation _error or null if valid
+ * @returns Validation error or null if valid
  */
 function validateTrack(track: Track): PlaylistServiceError | null {
   if (!track || typeof track !== 'object') {
@@ -223,7 +223,7 @@ function validateTrack(track: Track): PlaylistServiceError | null {
 
 /**
  * Comprehensive playlist service with full CRUD operations, caching,
- * validation, and _error handling
+ * validation, and error handling
  */
 class PlaylistService {
   private readonly primaryMusicService = youtubeService;
@@ -237,7 +237,7 @@ class PlaylistService {
   /**
    * Creates a new playlist
    * @param params - Creation parameters
-   * @returns Promise resolving to created playlist or null if _error
+   * @returns Promise resolving to created playlist or null if error
    */
   public async createPlaylist(
     params: CreatePlaylistParams
@@ -312,7 +312,7 @@ class PlaylistService {
         params.userId
       );
       if (!savedPlaylist) {
-        logger._error('PlaylistService', 'Failed to save playlist to database');
+        logger.error('PlaylistService', 'Failed to save playlist to database');
         return null;
       }
 
@@ -331,7 +331,7 @@ class PlaylistService {
       }
       return savedPlaylist as import('../types/index').Playlist;
     } catch (error) {
-      logger._error('PlaylistService', 'Failed to create playlist', error);
+      logger.error('PlaylistService', 'Failed to create playlist', error);
       return null;
     }
   }
@@ -410,7 +410,7 @@ class PlaylistService {
 
       return typedPlaylist;
     } catch (error) {
-      logger._error('PlaylistService', 'Failed to get playlist', error);
+      logger.error('PlaylistService', 'Failed to get playlist', error);
       return null;
     }
   }
@@ -418,7 +418,7 @@ class PlaylistService {
   /**
    * Gets all playlists for a user with pagination
    * @param params - Query parameters
-   * @returns Promise resolving to array of playlists or null if _error
+   * @returns Promise resolving to array of playlists or null if error
    */
   public async getUserPlaylists(
     params: GetPlaylistsParams
@@ -494,7 +494,7 @@ class PlaylistService {
 
       return typedPlaylists;
     } catch (error) {
-      logger._error('PlaylistService', 'Failed to get user playlists', error);
+      logger.error('PlaylistService', 'Failed to get user playlists', error);
       return null;
     }
   }
@@ -502,7 +502,7 @@ class PlaylistService {
   /**
    * Updates an existing playlist
    * @param params - Update parameters
-   * @returns Promise resolving to updated playlist or null if _error
+   * @returns Promise resolving to updated playlist or null if error
    */
   public async updatePlaylist(
     params: UpdatePlaylistParams
@@ -563,7 +563,7 @@ class PlaylistService {
         params.userId
       );
       if (!savedPlaylist) {
-        logger._error('PlaylistService', 'Failed to save updated playlist');
+        logger.error('PlaylistService', 'Failed to save updated playlist');
         return null;
       }
 
@@ -582,7 +582,7 @@ class PlaylistService {
       }
       return savedPlaylist as import('../types/index').Playlist;
     } catch (error) {
-      logger._error('PlaylistService', 'Failed to update playlist', error);
+      logger.error('PlaylistService', 'Failed to update playlist', error);
       return null;
     }
   }
@@ -591,7 +591,7 @@ class PlaylistService {
    * Deletes a playlist
    * @param playlistId - Playlist ID to delete
    * @param userId - User ID for permission checking
-   * @returns Promise resolving to true if deleted, false if _error
+   * @returns Promise resolving to true if deleted, false if error
    */
   public async deletePlaylist(
     playlistId: string,
@@ -625,7 +625,7 @@ class PlaylistService {
       // Delete from database
       const deleted = await supabasePlaylistService.deletePlaylist(playlistId);
       if (!deleted) {
-        logger._error(
+        logger.error(
           'PlaylistService',
           'Failed to delete playlist from database'
         );
@@ -643,7 +643,7 @@ class PlaylistService {
 
       return true;
     } catch (error) {
-      logger._error('PlaylistService', 'Failed to delete playlist', error);
+      logger.error('PlaylistService', 'Failed to delete playlist', error);
       return false;
     }
   }
@@ -655,7 +655,7 @@ class PlaylistService {
   /**
    * Adds a track to a playlist
    * @param params - Add track parameters
-   * @returns Promise resolving to updated playlist or null if _error
+   * @returns Promise resolving to updated playlist or null if error
    */
   public async addTrackToPlaylist(
     params: AddTrackParams
@@ -734,7 +734,7 @@ class PlaylistService {
         params.userId
       );
       if (!savedPlaylist) {
-        logger._error(
+        logger.error(
           'PlaylistService',
           'Failed to save playlist after adding track'
         );
@@ -757,10 +757,10 @@ class PlaylistService {
       }
       return savedPlaylist as import('../types/index').Playlist;
     } catch (error) {
-      logger._error(
+      logger.error(
         'PlaylistService',
         'Failed to add track to playlist',
-        _error
+        error
       );
       return null;
     }
@@ -769,7 +769,7 @@ class PlaylistService {
   /**
    * Removes a track from a playlist
    * @param params - Remove track parameters
-   * @returns Promise resolving to updated playlist or null if _error
+   * @returns Promise resolving to updated playlist or null if error
    */
   public async removeTrackFromPlaylist(
     params: RemoveTrackParams
@@ -832,7 +832,7 @@ class PlaylistService {
         params.userId
       );
       if (!savedPlaylist) {
-        logger._error(
+        logger.error(
           'PlaylistService',
           'Failed to save playlist after removing track'
         );
@@ -859,10 +859,10 @@ class PlaylistService {
       }
       return savedPlaylist as import('../types/index').Playlist;
     } catch (error) {
-      logger._error(
+      logger.error(
         'PlaylistService',
         'Failed to remove track from playlist',
-        _error
+        error
       );
       return null;
     }
@@ -871,7 +871,7 @@ class PlaylistService {
   /**
    * Reorders tracks within a playlist
    * @param params - Reorder parameters
-   * @returns Promise resolving to updated playlist or null if _error
+   * @returns Promise resolving to updated playlist or null if error
    */
   public async reorderTracksInPlaylist(
     params: ReorderTracksParams
@@ -964,7 +964,7 @@ class PlaylistService {
         params.userId
       );
       if (!savedPlaylist) {
-        logger._error(
+        logger.error(
           'PlaylistService',
           'Failed to save playlist after reordering tracks'
         );
@@ -988,10 +988,10 @@ class PlaylistService {
       }
       return savedPlaylist as import('../types/index').Playlist;
     } catch (error) {
-      logger._error(
+      logger.error(
         'PlaylistService',
         'Failed to reorder tracks in playlist',
-        _error
+        error
       );
       return null;
     }
@@ -1038,7 +1038,7 @@ class PlaylistService {
             logger.warn(
               'PlaylistService',
               'Track recognition failed, using seed track',
-              _error
+              error
             );
           }
         }
@@ -1103,7 +1103,7 @@ class PlaylistService {
             logger.warn(
               'PlaylistService',
               'Failed to get track-based recommendations, using genre-based',
-              _error
+              error
             );
           }
         }
@@ -1160,7 +1160,7 @@ class PlaylistService {
             logger.warn(
               'PlaylistService',
               'Primary recommendation service failed, trying YouTube',
-              _error
+              error
             );
 
             try {
@@ -1288,7 +1288,7 @@ class PlaylistService {
           logger.warn(
             'PlaylistService',
             'YouTube recommendations failed, trying Spotify fallback',
-            _error
+            error
           );
 
           // Fallback to Spotify
@@ -1302,7 +1302,7 @@ class PlaylistService {
               count: tracks.length,
             });
           } catch (fallbackError) {
-            logger._error(
+            logger.error(
               'PlaylistService',
               'Both YouTube and Spotify failed - no real music available',
               fallbackError
