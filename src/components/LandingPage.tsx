@@ -324,11 +324,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onStartMixing, onWatchDemo, s
                      shadow-fuchsia-500/50 group hover-lift animate-button-glow
                      border border-fuchsia-500/50 backdrop-blur-sm
                      hover:shadow-[0_0_50px_rgba(236,72,153,0.8)] font-orbitron"
-            aria-label="Start your free AI DJ trial - No credit card required"
+            aria-label="Create your AI-generated magic set - Start mixing now"
           >
             <div className="flex items-center space-x-3">
               <Play className="w-7 h-7 group-hover:scale-110 transition-transform" />
-              <span className="tracking-wide">START FREE TRIAL</span>
+              <span className="tracking-wide">CREATE MAGIC SET</span>
               <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </div>
             <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-400 to-purple-400 rounded-xl
@@ -537,16 +537,16 @@ const FinalCTASection: React.FC<FinalCTASectionProps> = ({ onStartMixing, recent
           <button
             onClick={onStartMixing}
             className="btn-primary flex items-center space-x-3 text-xl hover-lift mx-auto px-12 py-6 font-bold shadow-neon-pink hover:shadow-neon-pink-lg transition-all duration-300 group"
-            aria-label="Start your free trial - Join thousands of DJs"
+            aria-label="Create your AI-generated magic set - Start mixing now"
           >
             <Play className="w-7 h-7 group-hover:scale-110 transition-transform" />
-            <span>Start Free Trial</span>
+            <span>Create Magic Set</span>
             <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
           </button>
           
           <div className="text-sm text-gray-500 space-y-1">
-            <p>✓ No credit card required • ✓ Instant access • ✓ Cancel anytime</p>
-            <p>✓ 30-day money-back guarantee • ✓ Premium support included</p>
+            <p>✓ No sign-up required • ✓ Instant access • ✓ Real music sources</p>
+            <p>✓ AI-powered matching • ✓ Multi-provider playlists</p>
           </div>
         </div>
       </div>

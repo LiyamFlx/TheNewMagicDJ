@@ -295,7 +295,7 @@ function AppContent() {
       const last = lastRoute || '/';
       const within12h = (Date.now() - (Number(localStorage.getItem('last-resume-at')) || 0)) < (12 * 60 * 60 * 1000);
       const canResume = state.currentPlaylist || lastPlaylistId;
-      if (canResume && (last.startsWith('/create') || last.startsWith('/play')) && within12h) {
+      if (canResume && (last.startsWith('/create') || last.startsWith('/edit') || last.startsWith('/play')) && within12h) {
         showToast('Resuming where you left off', 'info');
         navigate(last);
       }
@@ -478,6 +478,7 @@ function AppContent() {
     dispatch({ type: 'SET_EDITING', payload: true });
     saveCurrentPlaylist(pl);
     showToast('Playlist generated!', 'success');
+    navigate('/edit');
   };
 
   const handlePlaylistEdited = (pl: Playlist) => {
@@ -491,7 +492,7 @@ function AppContent() {
     dispatch({ type: 'SET_PLAYLIST', payload: pl });
     dispatch({ type: 'SET_EDITING', payload: true });
     setLastPlaylistId(pl.id);
-    navigate('/create');
+    navigate('/edit');
   };
 
   const handleTrackReorder = (fromIndex: number, toIndex: number) => {
@@ -656,7 +657,22 @@ function AppContent() {
             path="/create"
             element={
               <ErrorBoundary>
-                {state.isEditingPlaylist && state.currentPlaylist ? (
+                <MagicStudio
+                  user={state.user}
+                  onPlaylistGenerated={handlePlaylistGenerated}
+                  onBack={() => navigate('/')}
+                  onLibraryAccess={() => navigate('/library')}
+                  recentSessions={state.recentSessions}
+                />
+              </ErrorBoundary>
+            }
+          />
+
+          <Route
+            path="/edit"
+            element={
+              <ErrorBoundary>
+                {state.currentPlaylist ? (
                   <PlaylistEditor
                     playlist={state.currentPlaylist}
                     currentTrackIndex={0}
@@ -675,13 +691,7 @@ function AppContent() {
                     }
                   />
                 ) : (
-                  <MagicStudio
-                    user={state.user}
-                    onPlaylistGenerated={handlePlaylistGenerated}
-                    onBack={() => window.history.back()}
-                    onLibraryAccess={() => navigate('/library')}
-                    recentSessions={state.recentSessions}
-                  />
+                  <Navigate to="/create" replace />
                 )}
               </ErrorBoundary>
             }
@@ -700,7 +710,7 @@ function AppContent() {
                       dispatch({ type: 'SET_PLAYING', payload: playing })
                     }
                     onSessionEnd={handleSessionEnd}
-                    onBack={() => navigate('/create')}
+                    onBack={() => navigate('/edit')}
                     onSavePlaylist={saveCurrentPlaylist}
                   />
                 ) : (
@@ -735,7 +745,7 @@ function AppContent() {
                     session={state.currentSession}
                     onBack={() => window.history.back()}
                     onSaveToLibrary={saveCurrentPlaylist}
-                    onEditAgain={() => navigate('/create')}
+                    onEditAgain={() => navigate('/edit')}
                   />
                 ) : (
                   <Navigate to="/" replace />

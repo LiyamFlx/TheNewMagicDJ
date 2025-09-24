@@ -70,13 +70,20 @@ const Navigation: React.FC<NavigationProps> = ({
     },
     {
       path: '/create',
-      label: 'Studio',
+      label: 'Create',
       icon: Wand2,
       description: 'AI Magic Studio',
     },
     {
+      path: '/edit',
+      label: 'Edit',
+      icon: Music,
+      description: 'Edit Playlist',
+      requiresData: true, // Requires playlist
+    },
+    {
       path: '/play',
-      label: 'Player',
+      label: 'Play',
       icon: Play,
       description: 'DJ Player & Controls',
       requiresData: true, // Requires playlist
@@ -99,8 +106,8 @@ const Navigation: React.FC<NavigationProps> = ({
   const isItemDisabled = (item: NavigationItem) => {
     if (!item.requiresData) return false;
 
-    // Play requires playlist
-    if (item.path === '/play') return !hasPlaylist;
+    // Edit and Play require playlist
+    if (item.path === '/edit' || item.path === '/play') return !hasPlaylist;
 
     // Analytics requires session
     if (item.path === '/analytics') return !hasSession;
@@ -181,7 +188,7 @@ const Navigation: React.FC<NavigationProps> = ({
                       <div
                         key={item.path}
                         className="nav-item opacity-50 cursor-not-allowed relative group"
-                        title={`${item.description} (${item.path === '/play' ? 'Create a playlist first' : 'Start a session first'})`}
+                        title={`${item.description} (${item.path === '/edit' || item.path === '/play' ? 'Create a playlist first' : 'Start a session first'})`}
                       >
                         <Icon className="w-4 h-4" />
                         <span className="text-sm font-semibold font-orbitron">
@@ -192,7 +199,7 @@ const Navigation: React.FC<NavigationProps> = ({
                           <div className="glass-card px-3 py-2 text-xs whitespace-nowrap">
                             <p className="text-white">{item.description}</p>
                             <p className="text-yellow-400 mt-1">
-                              {item.path === '/play' ? '→ Create playlist in Studio first' : '→ Start playing a set first'}
+                              {item.path === '/edit' || item.path === '/play' ? '→ Create playlist in Studio first' : '→ Start playing a set first'}
                             </p>
                           </div>
                         </div>
@@ -349,7 +356,7 @@ const Navigation: React.FC<NavigationProps> = ({
                         </div>
                         <div className="text-xs opacity-75">
                           {item.description} -{' '}
-                          {item.path === '/play'
+                          {item.path === '/edit' || item.path === '/play'
                             ? 'Requires playlist'
                             : 'Requires session data'}
                         </div>
