@@ -698,7 +698,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
     // REALITY-BOUND DIRECTIVE: Spotify Preview Playback Logging
     const onPlay = () => {
-      const currentTrack = currentPlaylist?.tracks[state.currentTrackIndex];
+      const currentTrack = playlist?.tracks[state.currentTrackIndex];
       if (currentTrack && currentTrack.preview_url) {
         const duration = audio.duration || currentTrack.duration || 30; // Spotify previews are 30s
         logger.info('ProfessionalMagicPlayer', 'SPOTIFY PLAYBACK STARTED', {
@@ -1516,7 +1516,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
                       logger.info('ProfessionalMagicPlayer', 'YouTube A player ready');
                     }}
                     onStateChange={(youtubeState) => {
-                      const currentTrack = currentPlaylist?.tracks[state.currentTrackIndex];
+                      const currentTrack = playlist?.tracks[state.currentTrackIndex];
 
                       if (youtubeState === YouTubePlayerState.PLAYING) {
                         onPlayPause(true);
