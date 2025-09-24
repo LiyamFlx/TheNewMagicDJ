@@ -48,20 +48,8 @@ class AudioSourceService {
       });
     }
 
-    // If we have Spotify ID, we can create Spotify Web Playback source
-    if (track.spotify_id) {
-      sources.push({
-        type: 'spotify' as AudioSourceType,
-        url: `spotify:track:${track.spotify_id}`,
-        title: track.title,
-        duration: track.duration,
-        quality: 'high',
-        metadata: {
-          spotify_id: track.spotify_id,
-          requires_premium: true
-        }
-      });
-    }
+    // Do NOT push a spotify: URI as an audio element source; browsers block it.
+    // Full-track playback should be handled via Spotify Web Playback SDK separately.
 
     // If no real sources available, return empty array
     // This forces the application to get real tracks instead of playing demos
