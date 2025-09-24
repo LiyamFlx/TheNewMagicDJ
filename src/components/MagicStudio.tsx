@@ -44,6 +44,8 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
   const [selectedEnergy, setSelectedEnergy] = useState<
     'low' | 'medium' | 'high' | ''
   >('');
+  const [trackCount, setTrackCount] = useState<number>(10);
+  const [uiError, setUiError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Advanced recognition state
@@ -126,6 +128,36 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
       description: 'High energy and intense',
     },
   ];
+
+  // Quick generate handler (streamlined UX)
+  const handleQuickGenerate = async () => {
+    try {
+      setUiError('');
+      if (!selectedVibe || !selectedEnergy) {
+        setUiError('Pick a vibe and an energy level to get started.');
+        return;
+      }
+      setIsProcessing(true);
+      setStatusMessage('Summoning your Magic Set...');
+      setProgress(20);
+      const playlist = await simplePlaylistService.generateMagicSetPlaylist({
+        vibe: selectedVibe as any,
+        energyLevel: selectedEnergy as any,
+        userId: user?.id,
+      });
+      // Trim to desired length if API returned different count
+      if (Array.isArray(playlist.tracks) && playlist.tracks.length > trackCount) {
+        playlist.tracks = playlist.tracks.slice(0, trackCount);
+      }
+      onPlaylistGenerated(playlist);
+    } catch (e: any) {
+      setUiError(e?.message || 'Failed to generate playlist. Please try again.');
+    } finally {
+      setIsProcessing(false);
+      setProgress(0);
+      setStatusMessage('');
+    }
+  };
 
   const handleMagicMatch = async (source: 'mic' | 'file' | 'stream') => {
     logger.info('MagicStudio', `Starting MagicMatch with source: ${source}`);
@@ -740,7 +772,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
         {/* Glass Mode Selection */}
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 max-w-6xl mx-auto mb-16">
           {/* Glass MagicMatch */}
-          <div className="group hover-lift">
+          <div className="group hover-lift order-2">
             <div className="glass-card p-8 lg:p-10">
               <div className="flex items-center justify-center w-20 h-20 lg:w-24 lg:h-24 gradient-bg-accent rounded-xl mb-8 mx-auto group-hover:scale-110 transition-transform shadow-neon-cyan animate-pulse-glow">
                 <Zap className="w-12 h-12 lg:w-14 lg:h-14 text-white" />
@@ -871,7 +903,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
           </div>
 
           {/* Glass MagicSet */}
-          <div className="group hover-lift">
+          <div className="group hover-lift order-1">
             <div className="glass-card p-8 lg:p-10">
               <div className="flex items-center justify-center w-20 h-20 lg:w-24 lg:h-24 gradient-bg-secondary rounded-xl mb-8 mx-auto group-hover:scale-110 transition-transform shadow-neon-pink animate-pulse-glow">
                 <Wand2 className="w-12 h-12 lg:w-14 lg:h-14 text-white" />
@@ -889,19 +921,19 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
                 <p className="text-sm text-gray-400 text-center font-orbitron">QUICK PRESETS</p>
                 <div className="grid grid-cols-1 gap-3">
                   <button
-                    onClick={() => handleMagicSet('electronic', 'high')}
+                    onClick={() => handleMagicSet('Electronic', 'high')}
                     className="btn-accent btn-sm w-full flex-center space-sm ease-bounce"
                   >
                     🔥 HIGH-ENERGY ELECTRONIC
                   </button>
                   <button
-                    onClick={() => handleMagicSet('house', 'medium')}
+                    onClick={() => handleMagicSet('House', 'medium')}
                     className="btn-secondary btn-sm w-full flex-center space-sm ease-bounce"
                   >
                     🎵 GROOVY HOUSE VIBES
                   </button>
                   <button
-                    onClick={() => handleMagicSet('hip-hop', 'low')}
+                    onClick={() => handleMagicSet('Hip-Hop', 'low')}
                     className="btn-ghost btn-sm w-full flex-center space-sm ease-bounce"
                   >
                     😎 CHILL HIP-HOP
