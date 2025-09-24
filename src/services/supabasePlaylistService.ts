@@ -185,9 +185,13 @@ export const supabasePlaylistService = {
   async _savePlaylistToDatabase(playlist: Playlist, userId: string): Promise<Playlist> {
     const { id: playlistId, name, tracks = [] } = playlist;
 
+    // Generate a proper UUID if the ID is not a valid UUID format
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(playlistId || '');
+    const finalPlaylistId = (playlistId && isValidUUID) ? playlistId : undefined;
+
     // Save playlist
     const playlistPayload = {
-      id: playlistId || undefined,
+      id: finalPlaylistId,
       name: name.trim(),
       user_id: userId,
       description: playlist.description || null,
