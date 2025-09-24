@@ -1,5 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { z } from 'zod';
 import { getServerSupabase } from './lib/supabaseServer.js';
+
+const CreateSessionSchema = z.object({
+  name: z.string().min(1).max(200),
+  playlist_id: z.string().uuid().optional(),
+});
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const auth = req.headers.authorization;
@@ -22,12 +28,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method === 'POST') {
-    const body = (typeof req.body === 'string') ? JSON.parse(req.body) : req.body || {};
-    const { name, playlist_id } = body;
+    const raw = (typeof req.body === 'string') ? JSON.parse(req.body) : req.body || {};
+    const { name, playlist_id } = CreateSessionSchema.parse(raw);
     const { data: user } = await supabase.auth.getUser();
     const user_id = user?.user?.id;
     if (!user_id) return res.status(401).json({ error: 'Unauthorized' });
-    if (!name) return res.status(400).json({ error: 'name is required' });
 
     const { data, error } = await supabase
       .from('sessions')
@@ -42,4 +47,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Allow', 'GET, POST');
   return res.status(405).json({ error: 'Method not allowed' });
 }
-

@@ -67,6 +67,7 @@
     "validate": "npm run typecheck && npm run typecheck:api && npm run lint && npm run format:check && npm run test:build"
   },
   "dependencies": {
+    "zod": "^3.23.8",
     "@googleapis/youtube": "^29.0.0",
     "@supabase/supabase-js": "^2.57.4",
     "@types/react-router-dom": "^5.3.3",

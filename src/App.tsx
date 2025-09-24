@@ -18,6 +18,7 @@ import NotFound from './components/NotFound';
 import { Playlist, User, Session } from './types/index';
 import { supabasePlaylistService } from './services/supabasePlaylistService';
 import { spotifyService } from './services/spotifyService';
+import { logEvent } from './services/eventsService';
 import { supabase } from './lib/supabase';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useSpotifyToken } from './hooks/useSpotifyToken';
@@ -706,9 +707,11 @@ function AppContent() {
                     playlist={state.currentPlaylist}
                     session={state.currentSession}
                     isPlaying={state.isPlaying}
-                    onPlayPause={playing =>
-                      dispatch({ type: 'SET_PLAYING', payload: playing })
-                    }
+                    onPlayPause={async (playing) => {
+                      dispatch({ type: 'SET_PLAYING', payload: playing });
+                      // best-effort event
+                      logEvent(playing ? 'player.play' : 'player.pause');
+                    }}
                     onSessionEnd={handleSessionEnd}
                     onBack={() => navigate('/edit')}
                     onSavePlaylist={saveCurrentPlaylist}

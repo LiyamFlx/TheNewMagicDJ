@@ -1,5 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { z } from 'zod';
 import { getServerSupabase } from './lib/supabaseServer.js';
+
+const EventSchema = z.object({
+  type: z.string().min(1).max(100),
+  payload: z.record(z.any()).optional().default({}),
+  session_id: z.string().uuid().optional(),
+  playlist_id: z.string().uuid().optional(),
+});
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const auth = req.headers.authorization; // Expect 'Bearer <jwt>' from client
@@ -7,9 +15,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'POST') {
     try {
-      const body = (typeof req.body === 'string') ? JSON.parse(req.body) : req.body || {};
-      const { type, payload, session_id, playlist_id } = body;
-      if (!type) return res.status(400).json({ error: 'type is required' });
+      const bodyRaw = (typeof req.body === 'string') ? JSON.parse(req.body) : (req.body || {});
+      const { type, payload, session_id, playlist_id } = EventSchema.parse(bodyRaw);
 
       const { data: user } = await supabase.auth.getUser();
       const user_id = user?.user?.id;
@@ -24,7 +31,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (error) return res.status(500).json({ error: error.message });
       return res.status(200).json({ ok: true, event: data });
     } catch (e: any) {
-      return res.status(500).json({ error: e?.message || 'unknown' });
+      const message = e?.message || 'invalid_request';
+      const code = e?.name === 'ZodError' ? 400 : 500;
+      return res.status(code).json({ error: message });
     }
   }
 
@@ -51,4 +60,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Allow', 'GET, POST');
   return res.status(405).json({ error: 'Method not allowed' });
 }
-
