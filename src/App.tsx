@@ -290,16 +290,19 @@ function AppContent() {
     }
   }, [location.pathname, fetchSpotifyTokenLazy]);
 
-  // Auto-resume recent work when landing on home
+  // Optional resume: only when user explicitly enables it (prevents home → create jump)
   useEffect(() => {
-    if (location.pathname === '/') {
-      const last = lastRoute || '/';
-      const within12h = (Date.now() - (Number(localStorage.getItem('last-resume-at')) || 0)) < (12 * 60 * 60 * 1000);
-      const canResume = state.currentPlaylist || lastPlaylistId;
-      if (canResume && (last.startsWith('/create') || last.startsWith('/edit') || last.startsWith('/play')) && within12h) {
-        showToast('Resuming where you left off', 'info');
-        navigate(last);
-      }
+    if (location.pathname !== '/') return;
+
+    const autoResumeEnabled = localStorage.getItem('auto-resume-enabled') === 'true';
+    if (!autoResumeEnabled) return; // disabled by default
+
+    const last = lastRoute || '/';
+    const within12h = (Date.now() - (Number(localStorage.getItem('last-resume-at')) || 0)) < (12 * 60 * 60 * 1000);
+    const canResume = state.currentPlaylist || lastPlaylistId;
+    if (canResume && (last.startsWith('/create') || last.startsWith('/edit') || last.startsWith('/play')) && within12h) {
+      showToast('Resuming where you left off', 'info');
+      navigate(last);
     }
   }, [location.pathname, lastRoute, state.currentPlaylist, lastPlaylistId, navigate, showToast]);
 
