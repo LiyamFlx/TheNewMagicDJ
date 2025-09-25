@@ -1,7 +1,7 @@
 import { Track } from '../types/index';
 import { spotifyPlaybackService } from './spotifyPlaybackService';
 
-export type AudioSourceType = 'youtube' | 'spotify';
+export type AudioSourceType = 'youtube' | 'spotify' | 'direct';
 
 export interface AudioSource {
   type: AudioSourceType;
@@ -23,15 +23,38 @@ class AudioSourceService {
     const sources: AudioSource[] = [];
 
     // Priority 1: YouTube tracks (full-length via iframe player)
-    if (track.album === 'YouTube' && track.id) {
+    // Accept multiple hints: album === 'YouTube', youtube_id, youtube_url
+    const videoIdFromUrl = (url?: string) => {
+      if (!url) return '';
+      try {
+        const u = new URL(url);
+        if (u.hostname.includes('youtu.be')) return u.pathname.slice(1);
+        if (u.hostname.includes('youtube.com')) {
+          const v = u.searchParams.get('v');
+          if (v) return v;
+          // Shorts or embed
+          const parts = u.pathname.split('/');
+          const idx = parts.findIndex(p => p === 'shorts' || p === 'embed');
+          if (idx >= 0 && parts[idx + 1]) return parts[idx + 1];
+        }
+      } catch {}
+      return '';
+    };
+
+    const videoId =
+      (track.youtube_id as string) ||
+      videoIdFromUrl(track.youtube_url) ||
+      (track.album === 'YouTube' ? track.id : '');
+
+    if (videoId) {
       sources.push({
         type: 'youtube' as AudioSourceType,
-        url: '', // No direct URL - iframe player handles this
+        url: '', // Iframe player handles playback
         title: track.title,
         duration: track.duration || 180,
         quality: 'high',
         metadata: {
-          videoId: track.id, // YouTube video ID for iframe player
+          videoId, // YouTube video ID for iframe player
         },
       });
     }
@@ -45,6 +68,25 @@ class AudioSourceService {
         duration: 30, // Spotify previews are 30 seconds
         quality: 'high',
       });
+    }
+
+    // Priority 3: Direct source URL (proxy, local, or pre-resolved)
+    if (track.source_url && typeof track.source_url === 'string') {
+      const url = track.source_url;
+      const isAudio =
+        url.startsWith('blob:') ||
+        url.startsWith('data:audio/') ||
+        /\.(mp3|wav|m4a|ogg|aac)(\?.*)?$/i.test(url) ||
+        url.startsWith('https://');
+      if (isAudio) {
+        sources.push({
+          type: 'direct',
+          url,
+          title: track.title,
+          duration: track.duration || 180,
+          quality: 'medium',
+        });
+      }
     }
 
     // Do NOT push a spotify: URI as an audio element source; browsers block it.

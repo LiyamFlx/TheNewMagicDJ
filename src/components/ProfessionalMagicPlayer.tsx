@@ -694,14 +694,16 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       try {
         const sources = await loadAudioSources(currentTrack);
 
-        // Validate sources have proper URLs
+        // Validate sources but allow YouTube without a direct URL (iframe playback)
         const validSources = sources.filter(source => {
+          if (source.type === 'youtube') {
+            return !!source.metadata?.videoId;
+          }
           if (!source.url || typeof source.url !== 'string') return false;
-          // Check for valid audio URLs (direct audio files or generated blobs)
           return (
             source.url.startsWith('blob:') ||
             source.url.startsWith('data:audio/') ||
-            source.url.match(/\.(mp3|wav|m4a|ogg|aac)$/i) ||
+            /\.(mp3|wav|m4a|ogg|aac)(\?.*)?$/i.test(source.url) ||
             source.url.startsWith('https://')
           );
         });
@@ -761,11 +763,16 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     const loadSources = async () => {
       try {
         const sources = await loadAudioSources(nextTrack);
+        const validSources = sources.filter(source =>
+          source.type === 'youtube'
+            ? !!source.metadata?.videoId
+            : !!source.url
+        );
 
-        if (!cancelled && sources.length > 0) {
+        if (!cancelled && validSources.length > 0) {
           dispatch({
             type: 'SET_SOURCES',
-            payload: { deck: 'deckB', sources, index: 0 },
+            payload: { deck: 'deckB', sources: validSources, index: 0 },
           });
         }
       } catch (error) {

@@ -3,6 +3,7 @@ import { getServerSupabase } from './lib/supabaseServer.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
+    const start = Date.now();
     const envOk =
       !!(
         process.env.VITE_SUPABASE_URL ||
@@ -18,6 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const supabase = getServerSupabase(req.headers.authorization);
     // Lightweight reachability check (RLS may return empty, that's fine)
     const { error } = await supabase.from('playlists').select('id').limit(1);
+    const dbLatencyMs = Date.now() - start;
 
     const ok = envOk && !error;
     res.setHeader('Cache-Control', 'no-store');
@@ -25,6 +27,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ok,
       envOk,
       dbOk: !error,
+      dbLatencyMs,
+      env: process.env.VERCEL_ENV || process.env.NODE_ENV || 'unknown',
+      commit: process.env.VERCEL_GIT_COMMIT_SHA || null,
+      version: process.env.npm_package_version || null,
       timestamp: new Date().toISOString(),
       error: error?.message || null,
     });
