@@ -1005,6 +1005,38 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
     }
   }, [volumeCalculations]);
 
+  // Basic BPM sync: adjust Deck B playback rate to match current track's BPM
+  useEffect(() => {
+    if (!state.settings.bpmSync) {
+      if (audioBRef.current) audioBRef.current.playbackRate = 1;
+      if (youtubeBRef.current && youtubeBRef.current.isReady) {
+        // @ts-ignore extended by YouTubePlayerRef
+        youtubeBRef.current.setPlaybackRate?.(1);
+      }
+      return;
+    }
+
+    const baseBpm = currentTrack?.bpm;
+    const incomingBpm = nextTrack?.bpm;
+    if (!baseBpm || !incomingBpm) return;
+
+    const ratio = Math.max(0.5, Math.min(1.5, baseBpm / incomingBpm));
+
+    if (state.sources.deckBCurrent?.type === 'youtube') {
+      if (youtubeBRef.current && youtubeBRef.current.isReady) {
+        // @ts-ignore extended by YouTubePlayerRef
+        const rates = youtubeBRef.current.getAvailablePlaybackRates?.() || [0.5, 0.75, 1, 1.25, 1.5];
+        const closest = rates.reduce((prev: number, curr: number) =>
+          Math.abs(curr - ratio) < Math.abs(prev - ratio) ? curr : prev
+        , rates[0]);
+        // @ts-ignore extended by YouTubePlayerRef
+        youtubeBRef.current.setPlaybackRate?.(closest);
+      }
+    } else if (state.sources.deckBCurrent && audioBRef.current) {
+      audioBRef.current.playbackRate = ratio;
+    }
+  }, [state.settings.bpmSync, currentTrack?.bpm, nextTrack?.bpm, state.sources.deckBCurrent]);
+
   // Play/pause control
   useEffect(() => {
     const handlePlayPause = async () => {

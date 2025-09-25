@@ -143,6 +143,25 @@ export const useYouTubePlayer = (
     }
   }, []);
 
+  const setPlaybackRate = useCallback((rate: number) => {
+    if (playerRef.current && typeof playerRef.current.setPlaybackRate === 'function') {
+      try {
+        playerRef.current.setPlaybackRate(rate);
+      } catch {}
+    }
+  }, []);
+
+  const getAvailablePlaybackRates = useCallback((): number[] => {
+    if (playerRef.current && typeof playerRef.current.getAvailablePlaybackRates === 'function') {
+      try {
+        return playerRef.current.getAvailablePlaybackRates() as number[];
+      } catch {
+        return [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
+      }
+    }
+    return [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
+  }, []);
+
   const seekTo = useCallback((seconds: number) => {
     if (playerRef.current) {
       playerRef.current.seekTo(seconds, true);
@@ -168,6 +187,8 @@ export const useYouTubePlayer = (
     play,
     pause,
     setVolume,
+    setPlaybackRate,
+    getAvailablePlaybackRates,
     seekTo,
     getCurrentTime,
     getDuration,

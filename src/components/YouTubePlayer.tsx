@@ -29,6 +29,8 @@ export interface YouTubePlayerRef {
   pause: () => void;
   seekTo: (seconds: number) => void;
   setVolume: (volume: number) => void;
+  setPlaybackRate: (rate: number) => void;
+  getAvailablePlaybackRates: () => number[];
   getCurrentTime: () => number;
   getDuration: () => number;
   isReady: boolean;
@@ -84,6 +86,8 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(
       pause,
       seekTo: seekToPlayer,
       setVolume: setPlayerVolume,
+      setPlaybackRate,
+      getAvailablePlaybackRates,
       getCurrentTime,
       getDuration,
       playerId: playerElementId,
@@ -146,6 +150,21 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(
             console.error('Error setting volume:', error);
           }
         },
+        setPlaybackRate: (rate: number) => {
+          try {
+            setPlaybackRate(rate);
+          } catch (error) {
+            console.error('Error setting playback rate:', error);
+          }
+        },
+        getAvailablePlaybackRates: () => {
+          try {
+            return getAvailablePlaybackRates();
+          } catch (error) {
+            console.error('Error getting available playback rates:', error);
+            return [1];
+          }
+        },
         getCurrentTime: () => {
           try {
             return getCurrentTime();
@@ -170,6 +189,8 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(
         pause,
         seekToPlayer,
         setPlayerVolume,
+        setPlaybackRate,
+        getAvailablePlaybackRates,
         getCurrentTime,
         getDuration,
       ]
