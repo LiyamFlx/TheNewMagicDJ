@@ -16,10 +16,44 @@ export interface AudioSource {
  * Audio source service that provides real audio sources for tracks from streaming platforms
  */
 class AudioSourceService {
+  // Simple in-memory cache for resolved sources per track
+  private resolveCache = new Map<string, { sources: AudioSource[]; expiry: number }>();
+  private readonly TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+  private resolvePriority(sources: AudioSource[]): AudioSource[] {
+    // Priority: youtube (full) > direct (full) > spotify (preview)
+    const weight: Record<AudioSourceType, number> = {
+      youtube: 0,
+      direct: 1,
+      spotify: 2,
+    } as const;
+
+    // Deduplicate by a stable key (prefer metadata.videoId or url)
+    const seen = new Set<string>();
+    const keyOf = (s: AudioSource) =>
+      s.type === 'youtube' ? `yt:${s.metadata?.videoId || ''}` : `url:${s.url}`;
+
+    const filtered = sources.filter(s => {
+      const k = keyOf(s);
+      if (!k) return false;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+
+    return filtered.sort((a, b) => (weight[a.type] ?? 99) - (weight[b.type] ?? 99));
+  }
   /**
    * Get real audio sources for a track from streaming platforms
    */
   async getAudioSourcesForTrack(track: Track): Promise<AudioSource[]> {
+    const cacheKey = String(track.id || track.title || '');
+    const now = Date.now();
+    const cached = this.resolveCache.get(cacheKey);
+    if (cached && cached.expiry > now) {
+      return cached.sources;
+    }
+
     const sources: AudioSource[] = [];
 
     // Priority 1: YouTube tracks (full-length via iframe player)
@@ -100,7 +134,9 @@ class AudioSourceService {
       );
     }
 
-    return sources;
+    const resolved = this.resolvePriority(sources);
+    this.resolveCache.set(cacheKey, { sources: resolved, expiry: now + this.TTL_MS });
+    return resolved;
   }
 
   /**
