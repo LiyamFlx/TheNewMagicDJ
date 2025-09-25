@@ -18,11 +18,16 @@ function getServiceClient() {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const hasServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
   const supabase = getServiceClient();
   const method = req.method || 'GET';
   const action = (req.query.action as string) || (req.body as any)?.action;
 
   try {
+    if (!hasServiceKey && method !== 'GET') {
+      res.setHeader('X-MagicDJ-Hint', 'Set SUPABASE_SERVICE_ROLE_KEY on server');
+      return res.status(500).json({ error: 'Server missing SUPABASE_SERVICE_ROLE_KEY. Cannot write to playlists with anon key under RLS.' });
+    }
     if (method === 'GET' && (action === 'list' || !action)) {
       const userId = (req.query.userId as string) || (req.query.user_id as string) || '';
       if (!userId) return res.status(400).json({ error: 'Missing userId' });
@@ -132,4 +137,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: e?.message || 'unknown' });
   }
 }
-
