@@ -115,8 +115,8 @@ class ErrorBoundary extends Component<Props, State> {
             </h1>
 
             <p className="text-gray-300 mb-6 leading-relaxed font-inter">
-              We encountered an unexpected error. Don't worry, our team has
-              been notified and we're working on a fix.
+              We encountered an unexpected error. Don't worry, our team has been
+              notified and we're working on a fix.
             </p>
 
             {this.state.error && (

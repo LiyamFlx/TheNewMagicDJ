@@ -118,7 +118,7 @@ export async function fetchWithRetry(
   }
 
   let attempt = 0;
-  // eslint-disable-next-line no-constant-condition
+
   while (true) {
     try {
       const res = await fetchWithTimeout(input, init, timeoutMs);

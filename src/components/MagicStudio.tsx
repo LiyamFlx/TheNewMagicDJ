@@ -87,7 +87,6 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
         }
       }
     } catch {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const vibes = [
@@ -312,11 +311,7 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
       setStatusMessage('Recording... Click stop when ready');
       logger.info('MagicStudio', 'Advanced recording started');
     } catch (error) {
-      logger.error(
-        'MagicStudio',
-        'Failed to start advanced recording',
-        error
-      );
+      logger.error('MagicStudio', 'Failed to start advanced recording', error);
       setStatusMessage(
         'Failed to start recording. Check microphone permissions.'
       );

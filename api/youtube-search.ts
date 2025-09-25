@@ -48,11 +48,9 @@ async function youtubeSearchHandler(req: VercelRequest, res: VercelResponse) {
         Math.ceil(decision.retryAfter / 1000).toString()
       );
       res.setHeader('Content-Type', 'application/json');
-      return res
-        .status(429)
-        .json({
-          error: { code: 'RATE_LIMITED', message: 'Too many requests' },
-        });
+      return res.status(429).json({
+        error: { code: 'RATE_LIMITED', message: 'Too many requests' },
+      });
     }
 
     const { q: query, maxResults } = validateYouTubeSearch(req.query);

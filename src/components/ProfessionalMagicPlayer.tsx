@@ -1504,11 +1504,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
           });
         }
       } catch (error) {
-        logger.error(
-          'ProfessionalMagicPlayer',
-          'Deck B playback error',
-          error
-        );
+        logger.error('ProfessionalMagicPlayer', 'Deck B playback error', error);
         handleSourceError('B', error);
         setDeckBPlaying(false);
       }

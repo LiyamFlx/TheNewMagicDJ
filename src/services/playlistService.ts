@@ -757,11 +757,7 @@ class PlaylistService {
       }
       return savedPlaylist as import('../types/index').Playlist;
     } catch (error) {
-      logger.error(
-        'PlaylistService',
-        'Failed to add track to playlist',
-        error
-      );
+      logger.error('PlaylistService', 'Failed to add track to playlist', error);
       return null;
     }
   }

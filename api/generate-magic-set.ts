@@ -174,7 +174,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       let trackSourceCount = 0;
       const trackSourceTypes: string[] = [];
-      let trackData: any = {
+      const trackData: any = {
         id: `track-${Date.now()}-${i}`,
         title: `${vibe} Track ${i + 1}`,
         artist: 'Unknown Artist',

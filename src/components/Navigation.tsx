@@ -15,6 +15,7 @@ import {
   LogIn,
   UserPlus,
 } from 'lucide-react';
+import { FeatureStatusBadge } from './FeatureStatus';
 
 interface NavigationItem {
   path: string;
@@ -165,12 +166,18 @@ const Navigation: React.FC<NavigationProps> = ({
                   <Music className="w-7 h-7 text-fuchsia-400" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold font-orbitron text-gradient-primary tracking-wider">
-                    MagicDJ
-                  </h1>
-                  <p className="text-xs text-slate-400 font-orbitron hidden sm:block">
-                    AI-Powered DJ Platform
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-2xl font-bold font-orbitron text-gradient-primary tracking-wider">
+                      MagicDJ
+                    </h1>
+                    <FeatureStatusBadge className="hidden sm:inline-flex" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-slate-400 font-orbitron hidden sm:block">
+                      AI-Powered DJ Platform
+                    </p>
+                    <FeatureStatusBadge className="sm:hidden" />
+                  </div>
                 </div>
               </Link>
             </div>

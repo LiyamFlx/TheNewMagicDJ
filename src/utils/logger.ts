@@ -263,8 +263,7 @@ class Logger {
           metadata,
           correlationId,
           success: false,
-          errorMessage:
-            error instanceof Error ? error.message : String(error),
+          errorMessage: error instanceof Error ? error.message : String(error),
         },
         userId,
         correlationId

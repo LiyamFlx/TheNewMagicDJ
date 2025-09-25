@@ -432,11 +432,16 @@ export const supabasePlaylistService = {
         playlistError.code === 'PGRST301'
       ) {
         // Log additional context for debugging
-        logger.error('Context', 'Error message', {
-          errorCode: playlistError.code,
-          errorMessage: playlistError.message,
-          userId,
-        }, playlistError.message ?? JSON.stringify(playlistError));
+        logger.error(
+          'Context',
+          'Error message',
+          {
+            errorCode: playlistError.code,
+            errorMessage: playlistError.message,
+            userId,
+          },
+          playlistError.message ?? JSON.stringify(playlistError)
+        );
 
         throw new AppError(
           'UNAUTHORIZED',
