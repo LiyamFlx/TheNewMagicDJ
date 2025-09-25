@@ -12,6 +12,7 @@ const EventSchema = z.object({
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const auth = req.headers.authorization; // Expect 'Bearer <jwt>' from client
   const supabase = getServerSupabase(auth);
+  const getUserId = async () => (await supabase.auth.getUser()).data?.user?.id;
 
   if (req.method === 'POST') {
     try {
@@ -20,8 +21,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { type, payload, session_id, playlist_id } =
         EventSchema.parse(bodyRaw);
 
-      const { data: user } = await supabase.auth.getUser();
-      const user_id = user?.user?.id;
+      const user_id = await getUserId();
       if (!user_id) return res.status(401).json({ error: 'Unauthorized' });
 
       const { data, error } = await supabase
@@ -49,16 +49,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'GET') {
     try {
-      const { data: user } = await supabase.auth.getUser();
-      const user_id = user?.user?.id;
+      const user_id = await getUserId();
       if (!user_id) return res.status(401).json({ error: 'Unauthorized' });
 
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .eq('user_id', user_id)
+      const { session_id, playlist_id, type, limit } = req.query as Record<string, string | undefined>;
+      const resultLimit = Math.max(1, Math.min(Number(limit) || 100, 500));
+
+      let query = supabase.from('events').select('*').eq('user_id', user_id);
+      if (session_id) query = query.eq('session_id', session_id);
+      if (playlist_id) query = query.eq('playlist_id', playlist_id);
+      if (type) query = query.eq('type', type);
+
+      const { data, error } = await query
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(resultLimit);
 
       if (error) return res.status(500).json({ error: error.message });
       return res.status(200).json({ ok: true, events: data });
