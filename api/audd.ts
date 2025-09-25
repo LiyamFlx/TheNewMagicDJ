@@ -122,9 +122,7 @@ async function auddHandler(req: VercelRequest, res: VercelResponse) {
         try {
           const json = JSON.parse(text);
           const normalized = normalizeAudd(json);
-          if (persist === '1' && normalized) {
-            await persistTrack(req, normalized);
-          }
+          // Track persistence removed - tracks require playlist_id
           res.setHeader('Cache-Control', 'no-store');
           return res.status(200).json({ ok: true, recognition: normalized });
         } catch {
@@ -156,9 +154,7 @@ async function auddHandler(req: VercelRequest, res: VercelResponse) {
         try {
           const json = JSON.parse(text);
           const normalized = normalizeAudd(json);
-          if (persist === '1' && normalized) {
-            await persistTrack(req, normalized);
-          }
+          // Track persistence removed - tracks require playlist_id
           res.setHeader('Cache-Control', 'no-store');
           return res.status(200).json({ ok: true, recognition: normalized });
         } catch {}
@@ -207,19 +203,5 @@ function parseTimecode(tc: string): number | undefined {
   return Number(m[1]) * 60 + Number(m[2]);
 }
 
-async function persistTrack(req: VercelRequest, track: any) {
-  try {
-    const supabase = getServerSupabase(req.headers.authorization);
-    const { data: user } = await supabase.auth.getUser();
-    const user_id = user?.user?.id || null;
-    const insert = {
-      title: track.title,
-      artist: track.artist,
-      duration: track.duration || null,
-      spotify_id: track.spotify_id || null,
-      preview_url: track.preview_url || null,
-      user_id,
-    };
-    await supabase.from('tracks').insert([insert]);
-  } catch {}
-}
+// Note: Track persistence removed as tracks require playlist_id in schema
+// Recognition results are returned to client for manual playlist addition

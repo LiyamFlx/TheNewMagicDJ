@@ -80,6 +80,8 @@ export interface Database {
           youtube_url: string | null
           preview_url: string | null
           thumbnail: string | null
+          source_url: string | null
+          user_id: string | null
           created_at: string
           updated_at: string
         }
@@ -101,6 +103,8 @@ export interface Database {
           youtube_url?: string | null
           preview_url?: string | null
           thumbnail?: string | null
+          source_url?: string | null
+          user_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -122,6 +126,8 @@ export interface Database {
           youtube_url?: string | null
           preview_url?: string | null
           thumbnail?: string | null
+          source_url?: string | null
+          user_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -176,6 +182,58 @@ export interface Database {
           },
           {
             foreignKeyName: "sessions_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      events: {
+        Row: {
+          id: string
+          user_id: string
+          session_id: string | null
+          playlist_id: string | null
+          type: string
+          payload: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          session_id?: string | null
+          playlist_id?: string | null
+          type: string
+          payload?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          session_id?: string | null
+          playlist_id?: string | null
+          type?: string
+          payload?: Json
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_playlist_id_fkey"
             columns: ["playlist_id"]
             isOneToOne: false
             referencedRelation: "playlists"
@@ -298,3 +356,7 @@ export type TrackUpdate = TablesUpdate<'tracks'>
 export type Session = Tables<'sessions'>
 export type SessionInsert = TablesInsert<'sessions'>
 export type SessionUpdate = TablesUpdate<'sessions'>
+
+export type Event = Tables<'events'>
+export type EventInsert = TablesInsert<'events'>
+export type EventUpdate = TablesUpdate<'events'>
