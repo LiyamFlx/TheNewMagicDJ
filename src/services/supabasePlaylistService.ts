@@ -218,39 +218,25 @@ export const supabasePlaylistService = {
       );
     const finalPlaylistId = playlistId && isValidUUID ? playlistId : undefined;
 
-    // Save playlist
-    const playlistPayload = {
-      id: finalPlaylistId,
-      name: name.trim(),
-      user_id: userId,
-      description: playlist.description || null,
-    };
-
-    const { data: playlistData, error: playlistError } = await supabase
-      .from('playlists')
-      .upsert(playlistPayload)
-      .select()
-      .single();
-
-    if (playlistError) {
-      logger.error(
-        'supabasePlaylistService',
-        'Supabase playlist save error',
-        playlistError as any
-      );
-      throw new AppError('UPSTREAM_ERROR', 'Failed to save playlist', {
-        details: { playlistError },
+    // Save via server proxy to avoid client RLS/auth issues
+    try {
+      const response = await fetch('/api/playlist-proxy?action=save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playlist: { id: finalPlaylistId, name, description: playlist.description, tracks },
+          userId,
+        }),
       });
+      const json = await response.json();
+      if (!response.ok || !json?.ok) {
+        throw new Error(json?.error || 'Server save failed');
+      }
+      return json.playlist as Playlist;
+    } catch (e: any) {
+      logger.error('supabasePlaylistService', 'Proxy save error', e);
+      throw new AppError('UPSTREAM_ERROR', 'Failed to save playlist', { details: { error: e?.message } });
     }
-
-    logger.info('supabasePlaylistService', 'Playlist saved', playlistData);
-
-    // Save tracks if provided
-    if (tracks.length > 0) {
-      await this._saveTracksToDatabase(tracks, playlistData.id);
-    }
-
-    return { ...playlistData, tracks };
   },
 
   async _saveTracksToDatabase(
@@ -411,63 +397,17 @@ export const supabasePlaylistService = {
 
   async _fetchPlaylistsFromDatabase(userId: string): Promise<Playlist[]> {
     // Fetch playlists
-    const { data: playlists, error: playlistError } = await supabase
-      .from('playlists')
-      .select('id, user_id, name, created_at, updated_at')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (playlistError) {
-      logger.error(
-        'supabasePlaylistService',
-        'Supabase playlist query error',
-        playlistError as any
-      );
-
-      // Provide more specific error messages for common auth issues
-      if (
-        playlistError.code === '42501' ||
-        playlistError.message?.includes('permission denied') ||
-        playlistError.message?.includes('Row Level Security') ||
-        playlistError.code === 'PGRST301'
-      ) {
-        // Log additional context for debugging
-        logger.error(
-          'Context',
-          'Error message',
-          {
-            errorCode: playlistError.code,
-            errorMessage: playlistError.message,
-            userId,
-          },
-          playlistError.message ?? JSON.stringify(playlistError)
-        );
-
-        throw new AppError(
-          'UNAUTHORIZED',
-          'Access denied: Your session may have expired. Please sign out and sign in again.',
-          {
-            details: { playlistError },
-          }
-        );
+    try {
+      const resp = await fetch(`/api/playlist-proxy?action=list&userId=${encodeURIComponent(userId)}`);
+      const json = await resp.json();
+      if (!resp.ok || !json?.ok) {
+        throw new Error(json?.error || 'Server list failed');
       }
-
-      throw new AppError('UPSTREAM_ERROR', 'Failed to fetch playlists', {
-        details: { playlistError },
-      });
+      return (json.playlists || []) as Playlist[];
+    } catch (e: any) {
+      logger.error('supabasePlaylistService', 'Proxy list error', e);
+      throw new AppError('UPSTREAM_ERROR', 'Failed to fetch playlists', { details: { error: e?.message } });
     }
-
-    if (!playlists || playlists.length === 0) {
-      return [];
-    }
-
-    // Fetch tracks for all playlists
-    const tracks = await this._fetchTracksForPlaylists(
-      playlists.map(p => p.id)
-    );
-
-    // Combine playlists with tracks
-    return this._combinePlaylistsWithTracks(playlists, tracks);
   },
 
   async _fetchTracksForPlaylists(playlistIds: string[]): Promise<Track[]> {
@@ -584,17 +524,14 @@ export const supabasePlaylistService = {
         return AuthHelper.handleUnauthenticated('remote delete', false);
       }
 
-      const query = supabase.from('playlists').delete().eq('id', playlistId);
-
       // Scope delete to owner if userId provided (defense-in-depth with RLS)
-      const { error } = userId
-        ? await query.eq('user_id', userId)
-        : await query;
-
-      if (error) {
-        throw new AppError('UPSTREAM_ERROR', 'Failed to delete playlist', {
-          details: { error },
-        });
+      try {
+        const url = `/api/playlist-proxy?action=delete&id=${encodeURIComponent(playlistId)}${userId ? `&userId=${encodeURIComponent(userId)}` : ''}`;
+        const resp = await fetch(url, { method: 'DELETE' });
+        const json = await resp.json();
+        if (!resp.ok || !json?.ok) throw new Error(json?.error || 'Server delete failed');
+      } catch (e: any) {
+        throw new AppError('UPSTREAM_ERROR', 'Failed to delete playlist', { details: { error: e?.message } });
       }
 
       // Efficient cache busting
@@ -637,26 +574,19 @@ export const supabasePlaylistService = {
         );
       }
 
-      const { data, error } = await supabase
-        .from('playlists')
-        .update({
-          name: updates.name?.trim(),
-          description: updates.description,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', playlistId)
-        .eq('user_id', userId) // Ensure user owns the playlist
-        .select()
-        .single();
-
-      if (error) {
-        throw new AppError('UPSTREAM_ERROR', 'Failed to update playlist', {
-          details: { error },
+      try {
+        const resp = await fetch('/api/playlist-proxy?action=update', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: playlistId, updates, userId }),
         });
+        const json = await resp.json();
+        if (!resp.ok || !json?.ok) throw new Error(json?.error || 'Server update failed');
+        cache.bustUserCache(userId);
+        return json.playlist as any;
+      } catch (e: any) {
+        throw new AppError('UPSTREAM_ERROR', 'Failed to update playlist', { details: { error: e?.message } });
       }
-
-      cache.bustUserCache(userId);
-      return data;
     } catch (error) {
       logger.error(
         'supabasePlaylistService',

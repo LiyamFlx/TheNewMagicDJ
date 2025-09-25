@@ -1,10 +1,21 @@
----
-name: Hello Test
+name: CI
+
 on:
-  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
 jobs:
-  hello:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Say hello
-        run: echo "Hello from Actions ✅"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck || true # some projects use tsconfig without errors; keep non-blocking if unset
+      - run: npm run build

@@ -494,6 +494,34 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
     }
   };
 
+  async function recognizeViaAudd(file: File) {
+    const form = new FormData();
+    form.append('file', file);
+    try {
+      const resp = await fetch('/api/audd?normalize=1&persist=1', {
+        method: 'POST',
+        body: form,
+      });
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json?.error?.message || 'Recognition failed');
+      const rec = json?.recognition;
+      if (!rec) return null;
+      // Map to minimal track shape
+      return {
+        id: rec.spotify_id || `recognized-${Date.now()}`,
+        title: rec.title,
+        artist: rec.artist,
+        duration: rec.duration || 180,
+        preview_url: rec.preview_url || undefined,
+        spotify_id: rec.spotify_id || undefined,
+        source_url: rec.preview_url || undefined,
+      } as any;
+    } catch (e) {
+      logger.error('MagicStudio', 'AudD recognition error', e);
+      return null;
+    }
+  }
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -508,21 +536,16 @@ const MagicStudio: React.FC<MagicStudioProps> = ({
       setProgress(0);
       setStatusMessage('Processing uploaded file...');
 
-      simplePlaylistService
-        .generateMagicMatchPlaylist({ userId: user?.id })
-        .then(async (result: any) => {
-          if (result) {
-            logger.info('MagicStudio', 'Track recognized from file', {
-              track: `${result.title} - ${result.artist}`,
+      recognizeViaAudd(file)
+        .then(async recognizedTrack => {
+          if (recognizedTrack) {
+            logger.info('MagicStudio', 'Track recognized from AudD', {
+              track: `${recognizedTrack.title} - ${recognizedTrack.artist}`,
             });
-            setStatusMessage('Track recognized from file!');
+            setStatusMessage('Track recognized! Building playlist...');
             setProgress(60);
-
-            const playlist =
-              await simplePlaylistService.generateMagicMatchPlaylist({
-                userId: user?.id,
-              });
-            playlist.tracks.unshift(result);
+            const playlist = await simplePlaylistService.generateMagicMatchPlaylist({ userId: user?.id });
+            playlist.tracks.unshift(recognizedTrack);
             onPlaylistGenerated(playlist);
             return;
           }

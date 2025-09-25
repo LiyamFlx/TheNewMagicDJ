@@ -42,6 +42,7 @@ import {
 import { logger } from '../utils/logger';
 import { throttle } from '../utils/debounce';
 import { formatTimeClock } from '../utils/format';
+import { logEvent } from '../services/eventsService';
 
 interface ProfessionalMagicPlayerProps {
   playlist: Playlist | null;
@@ -651,6 +652,14 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
       // Try next source
       const nextIndex = currentIndex + 1;
       if (nextIndex < sources.length && errorCountRef.current[errorKey] <= 5) {
+        try {
+          logEvent('player.source_fallback', {
+            deck,
+            fromIndex: currentIndex,
+            toIndex: nextIndex,
+            error: error?.message || String(error),
+          });
+        } catch {}
         dispatch({
           type: 'SET_SOURCE_INDEX',
           payload: { deck: deck === 'A' ? 'deckA' : 'deckB', index: nextIndex },
@@ -664,6 +673,14 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
             isDegraded: true,
           },
         });
+        try {
+          logEvent('player.error', {
+            deck,
+            error: error?.message || String(error),
+            currentIndex,
+            totalSources: sources.length,
+          });
+        } catch {}
         // Reset error count for future attempts
         errorCountRef.current[errorKey] = 0;
       }
@@ -1289,6 +1306,7 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
 
     audioB.play().catch(e => {
       logger.error('Next track play failed', e);
+      try { logEvent('player.error', { where: 'auto_transition_play', error: String(e) }); } catch {}
     });
 
     fadeIntervalRef.current = window.setInterval(() => {
@@ -1365,12 +1383,28 @@ const ProfessionalMagicPlayer: React.FC<ProfessionalMagicPlayerProps> = ({
         currentTrack: currentTrack?.title,
         nextTrack: playlist?.tracks[newIndex]?.title,
       });
+      try {
+        logEvent('player.skip', {
+          direction: 'forward',
+          from: state.currentTrackIndex,
+          to: newIndex,
+          trackId: currentTrack?.id,
+        });
+      } catch {}
       dispatch({ type: 'SET_TRACK_INDEX', payload: newIndex });
     }
   }, [state.currentTrackIndex, playlist, currentTrack]);
 
   const handleSkipBack = useCallback(() => {
     if (state.currentTrackIndex > 0) {
+      try {
+        logEvent('player.skip', {
+          direction: 'back',
+          from: state.currentTrackIndex,
+          to: state.currentTrackIndex - 1,
+          trackId: currentTrack?.id,
+        });
+      } catch {}
       dispatch({
         type: 'SET_TRACK_INDEX',
         payload: state.currentTrackIndex - 1,

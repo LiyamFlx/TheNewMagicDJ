@@ -11,9 +11,9 @@ export const FeatureStatusBadge: React.FC<{
   status?: Status;
   className?: string;
 }> = ({ status, className }) => {
-  const resolved = (status ||
-    (import.meta.env.VITE_FEATURE_STATUS as Status) ||
-    'demo') as Status;
+  // Default to 'functional' unless explicitly set to 'demo'
+  const envStatus = import.meta.env.VITE_FEATURE_STATUS as Status | undefined;
+  const resolved = (status || envStatus || 'functional') as Status;
   const label = resolved === 'functional' ? 'Functional' : 'Demo';
 
   return (

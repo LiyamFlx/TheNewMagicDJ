@@ -31,6 +31,13 @@ export default defineConfig({
     hmr: {
       overlay: true
     },
+    proxy: {
+      // Forward API calls to the Vercel serverless runtime during development
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
     // Add headers to help with Service Worker caching issues
     headers: {
       'Cache-Control': 'no-cache, no-store, must-revalidate',
