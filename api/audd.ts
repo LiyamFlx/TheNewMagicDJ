@@ -3,6 +3,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { withIdempotency } from '../utils/idempotency.js';
 import { requireAuth } from '../src/utils/apiAuth';
 import apiConfig from './config';
+import { getServerSupabase } from './lib/supabaseServer.js';
 import { errorFromResponse, normalizeError } from '../src/utils/errors';
 
 const AUDD_URL = 'https://api.audd.io/';
@@ -115,6 +116,21 @@ async function auddHandler(req: VercelRequest, res: VercelResponse) {
         const err = await errorFromResponse(response, text);
         return res.status(err.httpStatus || 502).json({ error: err });
       }
+      // Optional normalization + persistence
+      const { normalize, persist } = (req.query || {}) as Record<string, string>;
+      if (normalize === '1') {
+        try {
+          const json = JSON.parse(text);
+          const normalized = normalizeAudd(json);
+          if (persist === '1' && normalized) {
+            await persistTrack(req, normalized);
+          }
+          res.setHeader('Cache-Control', 'no-store');
+          return res.status(200).json({ ok: true, recognition: normalized });
+        } catch {
+          // fall back to raw text
+        }
+      }
       res.setHeader('Cache-Control', 'no-store');
       res.status(200).send(text);
     } else {
@@ -135,6 +151,18 @@ async function auddHandler(req: VercelRequest, res: VercelResponse) {
         const err = await errorFromResponse(response, text);
         return res.status(err.httpStatus || 502).json({ error: err });
       }
+      const { normalize, persist } = (req.query || {}) as Record<string, string>;
+      if (normalize === '1') {
+        try {
+          const json = JSON.parse(text);
+          const normalized = normalizeAudd(json);
+          if (persist === '1' && normalized) {
+            await persistTrack(req, normalized);
+          }
+          res.setHeader('Cache-Control', 'no-store');
+          return res.status(200).json({ ok: true, recognition: normalized });
+        } catch {}
+      }
       res.setHeader('Cache-Control', 'no-store');
       res.status(200).send(text);
     }
@@ -150,3 +178,48 @@ async function auddHandler(req: VercelRequest, res: VercelResponse) {
 export default apiConfig.ENABLE_IDEMPOTENCY
   ? withIdempotency(auddHandler)
   : auddHandler;
+
+// --- Helpers ---
+function normalizeAudd(json: any) {
+  if (!json) return null;
+  const result = json.result || json.data || {};
+  const title = result.title || 'Unknown Title';
+  const artist = result.artist || 'Unknown Artist';
+  const duration = result.timecode
+    ? parseTimecode(result.timecode)
+    : result.duration || undefined;
+  const spotify_id = result.spotify?.id;
+  const preview_url = result.spotify?.preview_url || result.apple_music?.previews?.[0]?.url;
+  return {
+    title,
+    artist,
+    album: result.album,
+    duration,
+    preview_url,
+    spotify_id,
+    recognition_source: 'AudD',
+  } as any;
+}
+
+function parseTimecode(tc: string): number | undefined {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(tc || '');
+  if (!m) return undefined;
+  return Number(m[1]) * 60 + Number(m[2]);
+}
+
+async function persistTrack(req: VercelRequest, track: any) {
+  try {
+    const supabase = getServerSupabase(req.headers.authorization);
+    const { data: user } = await supabase.auth.getUser();
+    const user_id = user?.user?.id || null;
+    const insert = {
+      title: track.title,
+      artist: track.artist,
+      duration: track.duration || null,
+      spotify_id: track.spotify_id || null,
+      preview_url: track.preview_url || null,
+      user_id,
+    };
+    await supabase.from('tracks').insert([insert]);
+  } catch {}
+}
