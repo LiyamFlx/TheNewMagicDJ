@@ -1,0 +1,35 @@
+# Exclude individual API files - only use consolidated index.ts
+api/analytics.ts
+api/acoustid.ts
+api/audd.ts
+api/config.ts
+api/events.ts
+api/generate-magic-set.ts
+api/health.ts
+api/playlist-proxy.ts
+api/sessions.ts
+api/spotify-token.ts
+api/youtube-search.ts
+api/lib/
+
+# Development files
+.env.local
+.env.example
+*.md
+OVERVIEW.md
+PLAYLIST_SERVICE_ANALYSIS.md
+YOUTUBE_SERVICE_IMPROVEMENTS.md
+AUDIO_RECOGNITION_FLOWCHART.md
+ENVIRONMENT_SETUP.md
+PRODUCTION_SETUP.md
+
+# Testing files
+tests/
+test/
+playwright.config.ts
+playwright-report.json
+qa-check.sh
+
+# Build artifacts
+node_modules
+.DS_Store
