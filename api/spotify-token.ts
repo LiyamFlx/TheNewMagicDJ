@@ -71,18 +71,20 @@ async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {
   const clientId = apiConfig.SPOTIFY_CLIENT_ID;
   const clientSecret = apiConfig.SPOTIFY_CLIENT_SECRET;
 
+  // Production validation
   if (!clientId || !clientSecret) {
-    // Don't spam logs in production, return graceful error
-    res.setHeader('Content-Type', 'application/json');
-    return res.status(503).json({
+    console.error('[spotify-token] Missing credentials:', {
+      hasClientId: !!clientId,
+      hasClientSecret: !!clientSecret
+    });
+    return res.status(500).json({
       error: {
-        code: 'MISSING_CREDENTIALS',
-        message: 'Spotify service temporarily unavailable',
-        httpStatus: 503,
-        retryable: true,
-      },
+        code: 'SPOTIFY_CONFIGURATION_ERROR',
+        message: 'Spotify API credentials not configured'
+      }
     });
   }
+
 
   const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString(
     'base64'

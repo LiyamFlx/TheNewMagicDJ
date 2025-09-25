@@ -23,7 +23,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const method = req.method || 'GET';
   const action = (req.query.action as string) || (req.body as any)?.action;
 
+  // Production error handling setup
+  const startTime = Date.now();
+
   try {
+    // Validate Supabase connection
+    if (!process.env.VITE_SUPABASE_URL && !process.env.PUBLIC_SUPABASE_URL) {
+      return res.status(500).json({
+        error: 'CONFIGURATION_ERROR',
+        message: 'Supabase URL not configured',
+        code: 'MISSING_SUPABASE_URL'
+      });
+    }
     if (!hasServiceKey && method !== 'GET') {
       res.setHeader('X-MagicDJ-Hint', 'Set SUPABASE_SERVICE_ROLE_KEY on server');
       return res.status(500).json({ error: 'Server missing SUPABASE_SERVICE_ROLE_KEY. Cannot write to playlists with anon key under RLS.' });
@@ -134,6 +145,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Allow', 'GET, POST, PATCH, DELETE');
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (e: any) {
-    return res.status(500).json({ error: e?.message || 'unknown' });
+    const duration = Date.now() - startTime;
+    console.error('[playlist-proxy] Error:', {
+      error: e?.message || 'unknown',
+      method,
+      action,
+      duration,
+      stack: process.env.NODE_ENV === 'development' ? e?.stack : undefined
+    });
+
+    // Return structured error response
+    return res.status(500).json({
+      error: 'PLAYLIST_OPERATION_FAILED',
+      message: e?.message || 'Internal server error',
+      code: e?.code || 'UNKNOWN_ERROR',
+      duration,
+      ...(process.env.NODE_ENV === 'development' && { stack: e?.stack })
+    });
   }
 }
