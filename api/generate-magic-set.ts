@@ -386,7 +386,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(500).json({
       error: 'Failed to generate magic set',
       details:
-        process.env.NODE_ENV === 'development' ? error.message : undefined,
+        process.env.NODE_ENV === 'development' ? (error as Error).message : undefined,
     });
   }
 }

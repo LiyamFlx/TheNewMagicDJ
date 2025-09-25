@@ -14,6 +14,8 @@ import type {
   AddTrackRequest,
   CreateSessionRequest,
   UpdateSessionRequest,
+} from '../shared/dto.js';
+import {
   playlistToDTO,
   trackToDTO,
   sessionToDTO,
@@ -169,7 +171,6 @@ export class BackendClient {
 
     if (!rateLimit.allowed) {
       throw new AppError('RATE_LIMITED', 'Too many requests', {
-        retryAfter: rateLimit.retryAfter,
       });
     }
   }

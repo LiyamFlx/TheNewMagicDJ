@@ -67,13 +67,8 @@
     "validate": "npm run typecheck && npm run typecheck:api && npm run lint && npm run format:check && npm run test:build"
   },
   "dependencies": {
-    "@googleapis/youtube": "^29.0.0",
     "@supabase/supabase-js": "^2.57.4",
-    "@types/react-router-dom": "^5.3.3",
-    "commander": "^14.0.1",
     "lucide-react": "^0.544.0",
-    "node-youtube-music": "^0.10.3",
-    "npm-run-all": "^4.1.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.9.1",
@@ -93,7 +88,6 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.16",
     "globals": "^16.4.0",
-    "got": "^14.4.9",
     "postcss": "^8.5.3",
     "prettier": "^3.4.2",
     "rollup": "^4.52.2",
