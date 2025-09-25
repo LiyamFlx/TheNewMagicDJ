@@ -7,7 +7,7 @@ import sessionsHandler from './sessions';
 import spotifyTokenHandler from './spotify-token';
 
 // Route mapping - core functionality only
-const routes: Record<string, (req: VercelRequest, res: VercelResponse) => Promise<void> | void> = {
+const routes: Record<string, (req: VercelRequest, res: VercelResponse) => Promise<any> | any> = {
   '/api/health': healthHandler,
   '/api/playlist-proxy': playlistProxyHandler,
   '/api/sessions': sessionsHandler,
