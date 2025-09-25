@@ -3,17 +3,12 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "outputDirectory": "dist",
-  "functions": {
-    "api/index.ts": {
-      "maxDuration": 30,
-      "bundle": true
-    }
-  },
   "builds": [
     {
       "src": "api/index.ts",
       "use": "@vercel/node",
       "config": {
+        "maxLambdaSize": "50mb",
         "includeFiles": "api/handlers/**/*"
       }
     }
