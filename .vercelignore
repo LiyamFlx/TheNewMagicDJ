@@ -1,5 +1,6 @@
-# Keep API files for imports but prevent them from becoming individual functions
-# Note: Only api/index.ts will be treated as a function due to vercel.json config
+# Only exclude non-essential files
+api/audio-recognition.py
+api/generate-magic-set-complex.ts.backup
 
 # Development files
 .env.local
