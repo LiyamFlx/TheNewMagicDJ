@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Import essential route handlers
-import healthHandler from './health';
-import playlistProxyHandler from './playlist-proxy';
-import sessionsHandler from './sessions';
-import spotifyTokenHandler from './spotify-token';
+import healthHandler from './handlers/health';
+import playlistProxyHandler from './handlers/playlist-proxy';
+import sessionsHandler from './handlers/sessions';
+import spotifyTokenHandler from './handlers/spotify-token';
 
 // Route mapping - core functionality only
 const routes: Record<string, (req: VercelRequest, res: VercelResponse) => Promise<any> | any> = {

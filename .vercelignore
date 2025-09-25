@@ -1,16 +1,5 @@
-# Exclude individual API files - only use consolidated index.ts
-api/analytics.ts
-api/acoustid.ts
-api/audd.ts
-api/config.ts
-api/events.ts
-api/generate-magic-set.ts
-api/health.ts
-api/playlist-proxy.ts
-api/sessions.ts
-api/spotify-token.ts
-api/youtube-search.ts
-api/lib/
+# Keep API files for imports but prevent them from becoming individual functions
+# Note: Only api/index.ts will be treated as a function due to vercel.json config
 
 # Development files
 .env.local
