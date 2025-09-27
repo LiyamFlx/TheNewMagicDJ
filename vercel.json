@@ -1,8 +1,5 @@
 {
   "buildCommand": "npm run build",
   "installCommand": "npm install",
-  "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api-consolidated/index?path=/api/$1" }
-  ]
+  "outputDirectory": "dist"
 }
