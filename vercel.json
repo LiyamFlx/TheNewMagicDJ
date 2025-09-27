@@ -6,7 +6,10 @@
   "builds": [
     {
       "src": "api/index.ts",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["api/handlers/**", "api/lib/**", "utils/**", "src/utils/**", "shared/**"]
+      }
     }
   ],
   "routes": [
