@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { withIdempotency } from '../../utils/idempotency.js';
-import apiConfig from '../config.js';
+import apiConfig from './config.js';
 import {
   AppError,
   errorFromResponse,

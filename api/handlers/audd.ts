@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 // Import from app-level utils to ensure Vercel bundling resolves path
 import { withIdempotency } from '../../utils/idempotency.js';
 import { requireAuth } from '../../src/utils/apiAuth';
-import apiConfig from '../config.js';
+import apiConfig from './config.js';
 import { getServerSupabase } from '../lib/supabaseServer';
 import { errorFromResponse, normalizeError } from '../../src/utils/errors';
 
