@@ -15,17 +15,24 @@ const routes: Record<string, (req: VercelRequest, res: VercelResponse) => Promis
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const path = req.url?.split('?')[0] || '';
-  const handler = routes[path];
+  // Get the API path from query parameter (passed by rewrite)
+  const pathParam = req.query.path as string;
+  const apiPath = pathParam || '/api/health';
+
+  const handler = routes[apiPath];
 
   if (handler) {
     try {
       await handler(req, res);
     } catch (error) {
-      console.error(`API route ${path} error:`, error);
+      console.error(`API route ${apiPath} error:`, error);
       res.status(500).json({ error: 'Internal server error' });
     }
   } else {
-    res.status(404).json({ error: 'API route not found' });
+    res.status(404).json({
+      error: 'API route not found',
+      requestedPath: apiPath,
+      availableRoutes: Object.keys(routes)
+    });
   }
 }
