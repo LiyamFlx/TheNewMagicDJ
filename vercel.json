@@ -1,5 +1,11 @@
 {
   "buildCommand": "npm run build",
   "installCommand": "npm install",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "functions": {
+    "api/[...route].ts": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  }
 }
