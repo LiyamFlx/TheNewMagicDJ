@@ -31,20 +31,6 @@ function getClientKey(req: VercelRequest): string {
   return `token:${ip}`;
 }
 
-function checkBucket(req: VercelRequest) {
-  const key = getClientKey(req);
-  const now = Date.now();
-  const entry = buckets.get(key);
-  if (!entry || now >= entry.reset) {
-    buckets.set(key, { count: 1, reset: now + BUCKET_WINDOW_MS });
-    return { allowed: true };
-  }
-  if (entry.count >= BUCKET_MAX) {
-    return { allowed: false, retryAfter: entry.reset - now };
-  }
-  entry.count += 1;
-  return { allowed: true };
-}
 
 async function fetchWithTimeout(
   input: RequestInfo | URL,

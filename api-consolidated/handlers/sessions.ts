@@ -42,6 +42,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .insert([
         {
           user_id,
+          name,
           playlist_id: playlist_id ?? null,
           status: 'active',
           started_at: new Date().toISOString(),
