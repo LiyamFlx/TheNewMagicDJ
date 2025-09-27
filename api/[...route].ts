@@ -1,17 +1,29 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Import essential route handlers from api-consolidated
+// Import all route handlers from api-consolidated
 import healthHandler from '../api-consolidated/handlers/health';
 import playlistProxyHandler from '../api-consolidated/handlers/playlist-proxy';
 import sessionsHandler from '../api-consolidated/handlers/sessions';
 import spotifyTokenHandler from '../api-consolidated/handlers/spotify-token';
+import generateMagicSetHandler from '../api-consolidated/handlers/generate-magic-set';
+import youtubeSearchHandler from '../api-consolidated/handlers/youtube-search';
+import analyticsHandler from '../api-consolidated/handlers/analytics';
+import eventsHandler from '../api-consolidated/handlers/events';
+import auddHandler from '../api-consolidated/handlers/audd';
+import acoustidHandler from '../api-consolidated/handlers/acoustid';
 
-// Route mapping - core functionality only
+// Route mapping - all API endpoints
 const routes: Record<string, (req: VercelRequest, res: VercelResponse) => Promise<any> | any> = {
   '/api/health': healthHandler,
   '/api/playlist-proxy': playlistProxyHandler,
   '/api/sessions': sessionsHandler,
   '/api/spotify-token': spotifyTokenHandler,
+  '/api/generate-magic-set': generateMagicSetHandler,
+  '/api/youtube-search': youtubeSearchHandler,
+  '/api/analytics': analyticsHandler,
+  '/api/events': eventsHandler,
+  '/api/audd': auddHandler,
+  '/api/acoustid': acoustidHandler,
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
