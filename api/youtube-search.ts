@@ -1,2 +1,2 @@
-export { default } from '../api-consolidated/handlers/youtube-search';
+export { default } from '../api-consolidated/handlers/youtube-search.js';
 

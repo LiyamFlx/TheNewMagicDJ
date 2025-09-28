@@ -1,2 +1,2 @@
-export { default } from '../api-consolidated/handlers/audd';
+export { default } from '../api-consolidated/handlers/audd.js';
 

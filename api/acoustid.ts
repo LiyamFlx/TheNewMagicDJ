@@ -1,2 +1,2 @@
-export { default } from '../api-consolidated/handlers/acoustid';
+export { default } from '../api-consolidated/handlers/acoustid.js';
 

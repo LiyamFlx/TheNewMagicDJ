@@ -1,2 +1,2 @@
-export { default } from '../api-consolidated/handlers/spotify-token';
+export { default } from '../api-consolidated/handlers/spotify-token.js';
 

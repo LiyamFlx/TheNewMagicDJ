@@ -1,2 +1,2 @@
-export { default } from '../api-consolidated/handlers/health';
+export { default } from '../api-consolidated/handlers/health.js';
 

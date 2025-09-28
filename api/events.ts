@@ -1,2 +1,2 @@
-export { default } from '../api-consolidated/handlers/events';
+export { default } from '../api-consolidated/handlers/events.js';
 

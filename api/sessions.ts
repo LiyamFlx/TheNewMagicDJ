@@ -1,2 +1,2 @@
-export { default } from '../api-consolidated/handlers/sessions';
+export { default } from '../api-consolidated/handlers/sessions.js';
 
