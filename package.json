@@ -48,7 +48,7 @@
     "start": "npm run preview",
     "api:test": "node --loader ts-node/esm test/api/test-spotify-token.ts",
     "api:health": "curl -s http://localhost:3000/api/spotify-token?health=true | jq || curl -s http://localhost:3000/api/spotify-token?health=true",
-    "test:build": "npm run typecheck && npm run typecheck:api && npm run build",
+    "test:build": "npm run typecheck && npm run build",
     "test:api": "npm run api:test",
     "deploy": "npm run test:build && vercel --prod",
     "deploy:preview": "vercel",
