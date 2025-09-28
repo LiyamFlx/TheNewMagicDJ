@@ -32,9 +32,9 @@ export default defineConfig({
       overlay: true
     },
     proxy: {
-      // Forward API calls to the Vercel serverless runtime during development
+      // Forward API calls to the development API server
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3001',
         changeOrigin: true,
       },
     },

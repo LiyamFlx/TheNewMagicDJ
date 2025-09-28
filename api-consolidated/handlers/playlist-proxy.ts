@@ -8,8 +8,10 @@ function getServiceClient() {
 // Add your active domains + dev hosts here
 const allowedHosts = [
   "localhost:3000",
+  "localhost:3001",
   "localhost:5173",
   "127.0.0.1:3000",
+  "127.0.0.1:3001",
   "127.0.0.1:5173",
   "the-new-magic.vercel.app",
   "the-new-magic-4nejzcnh7-liyams-projects.vercel.app"
