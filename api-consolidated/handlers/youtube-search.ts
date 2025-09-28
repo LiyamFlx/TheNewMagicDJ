@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { withIdempotency } from '../../src/utils/idempotency';
-import apiConfig from './config';
-import { AppError, normalizeError } from '../../src/utils/errors';
-import { validateYouTubeSearch } from '../../shared/validators';
-import { checkAndConsume } from '../../server-utils/apiRateLimiter';
-import { fetchWithTimeout } from '../../src/utils/http';
+import { withIdempotency } from '../../src/utils/idempotency.js';
+import apiConfig from './config.js';
+import { AppError, normalizeError } from '../../src/utils/errors.js';
+import { validateYouTubeSearch } from '../../shared/validators.js';
+import { checkAndConsume } from '../../server-utils/apiRateLimiter.js';
+import { fetchWithTimeout } from '../../src/utils/http.js';
 
 async function youtubeSearchHandler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {

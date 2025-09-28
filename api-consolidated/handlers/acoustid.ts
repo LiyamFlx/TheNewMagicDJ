@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { withIdempotency } from '../../src/utils/idempotency';
-import { requireAuth } from '../../src/utils/apiAuth';
-import apiConfig from './config';
-import { errorFromResponse, normalizeError } from '../../src/utils/errors';
-import { fetchWithTimeout } from '../../src/utils/http';
+import { withIdempotency } from '../../src/utils/idempotency.js';
+import { requireAuth } from '../../src/utils/apiAuth.js';
+import apiConfig from './config.js';
+import { errorFromResponse, normalizeError } from '../../src/utils/errors.js';
+import { fetchWithTimeout } from '../../src/utils/http.js';
 
 // Simple per-user/IP token bucket
 type Bucket = { count: number; reset: number };

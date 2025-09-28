@@ -3,7 +3,7 @@
  * Centralized, hardened client for production use
  */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '../shared/database.types';
+import type { Database } from '../shared/database.types.js';
 
 // Environment validation with fail-fast approach
 const requiredEnvVars = {

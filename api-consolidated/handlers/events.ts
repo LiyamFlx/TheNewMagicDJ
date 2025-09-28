@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { getServerSupabase } from '../lib/supabaseServer';
+import { getServerSupabase } from '../lib/supabaseServer.js';
 
 const EventSchema = z.object({
   type: z.string().min(1).max(100),

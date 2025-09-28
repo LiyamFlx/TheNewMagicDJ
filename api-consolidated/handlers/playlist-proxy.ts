@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { SecureSupabaseClient } from '../../lib/supabaseSecure';
+import { SecureSupabaseClient } from '../../lib/supabaseSecure.js';
 
 function getServiceClient() {
   return SecureSupabaseClient.getAdminClient();

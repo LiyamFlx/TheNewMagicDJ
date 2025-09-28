@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { SecureSupabaseClient } from '../../lib/supabaseSecure';
+import { SecureSupabaseClient } from '../../lib/supabaseSecure.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const start = Date.now();
