@@ -5,17 +5,37 @@ function getServiceClient() {
   return SecureSupabaseClient.getAdminClient();
 }
 
+// Add your active domains + dev hosts here
+const allowedHosts = [
+  "localhost:3000",
+  "localhost:5173",
+  "127.0.0.1:3000",
+  "127.0.0.1:5173",
+  "the-new-magic.vercel.app",
+  "the-new-magic-4nejzcnh7-liyams-projects.vercel.app"
+];
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set JSON content type header first
   res.setHeader('Content-Type', 'application/json');
 
-  const hasServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const supabase = getServiceClient();
+  const startTime = Date.now();
   const method = req.method || 'GET';
   const action = (req.query.action as string) || (req.body as any)?.action;
+  const host = req.headers.host || "";
 
-  // Production error handling setup
-  const startTime = Date.now();
+  // Host validation
+  if (!allowedHosts.includes(host)) {
+    return res.status(400).json({
+      error: "INVALID_HOST",
+      message: "Host not valid or supported",
+      received: host,
+      allowed: allowedHosts
+    });
+  }
+
+  const hasServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabase = getServiceClient();
 
   try {
     // Validate Supabase connection
@@ -45,19 +65,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .select('id, user_id, name, created_at, updated_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
-      if (playlistError) return res.status(500).json({
-        error: playlistError.message,
-        code: 'PLAYLIST_FETCH_ERROR'
-      });
+      if (playlistError) {
+        console.error("Supabase list error:", playlistError.message);
+        return res.status(500).json({
+          error: playlistError.message,
+          code: 'PLAYLIST_FETCH_ERROR'
+        });
+      }
 
       const ids = (playlists || []).map(p => p.id);
       let tracksByPlaylist: Record<string, any[]> = {};
       if (ids.length > 0) {
-        const { data: tracks } = await supabase
+        const { data: tracks, error } = await supabase
           .from('tracks')
           .select('id, playlist_id, title, artist, bpm, energy, duration, position, spotify_id, youtube_id')
           .in('playlist_id', ids)
           .order('created_at', { ascending: true });
+
+        if (error) {
+          console.error("Supabase tracks fetch error:", error.message);
+          return res.status(500).json({
+            error: error.message,
+            code: 'TRACKS_FETCH_ERROR'
+          });
+        }
+
         (tracks || []).forEach(t => {
           tracksByPlaylist[t.playlist_id] = tracksByPlaylist[t.playlist_id] || [];
           tracksByPlaylist[t.playlist_id].push(t);
