@@ -3,6 +3,7 @@ import {
   YouTubePlayerState,
   YouTubePlayerError,
 } from '../components/YouTubePlayer';
+import { audioUnlockService } from '../utils/audioUnlock';
 
 interface UseYouTubePlayerOptions {
   autoplay?: boolean;
@@ -73,7 +74,7 @@ export const useYouTubePlayer = (
         const player = new window.YT.Player(playerId.current, {
           videoId,
           playerVars: {
-            autoplay: options.autoplay ? 1 : 0,
+            autoplay: 0, // Disable autoplay to comply with browser policies
             controls: 0,
             disablekb: 1,
             enablejsapi: 1,
@@ -82,10 +83,14 @@ export const useYouTubePlayer = (
             modestbranding: 1,
             rel: 0,
             showinfo: 0,
-            volume: options.volume || 50,
+            // Remove volume from playerVars as it should be set via API
           },
           events: {
             onReady: () => {
+              // Set volume after player is ready
+              if (playerRef.current && options.volume !== undefined) {
+                playerRef.current.setVolume(options.volume);
+              }
               setIsReady(true);
               readyPromiseRef.current?.resolve();
               options.onReady?.();
@@ -157,13 +162,42 @@ export const useYouTubePlayer = (
   }, [videoId, options.autoplay, options.volume, isReady, options.onReady, options.onStateChange, options.onError]);
 
   const play = useCallback(async () => {
+    // Check if audio is unlocked, show prompt if needed
+    if (!audioUnlockService.isAudioUnlocked()) {
+      console.log('Audio not unlocked, showing interaction prompt');
+      audioUnlockService.showInteractionPrompt();
+      await audioUnlockService.waitForUnlock();
+    }
+
     if (!isReady) {
       await readyPromiseRef.current?.promise;
     }
+
     if (playerRef.current) {
-      playerRef.current.playVideo();
+      try {
+        // Ensure volume is set before playing
+        if (options.volume !== undefined) {
+          playerRef.current.setVolume(options.volume);
+        }
+
+        const result = playerRef.current.playVideo();
+
+        // For debugging: log play attempt
+        console.log('YouTube player play() called', {
+          playerState: playerRef.current.getPlayerState ? playerRef.current.getPlayerState() : 'unknown',
+          volume: playerRef.current.getVolume ? playerRef.current.getVolume() : 'unknown',
+          videoId,
+          audioUnlocked: audioUnlockService.isAudioUnlocked()
+        });
+
+        return result;
+      } catch (error) {
+        console.error('YouTube player play error:', error);
+        // Try to handle autoplay policy errors
+        throw error;
+      }
     }
-  }, [isReady]);
+  }, [isReady, options.volume, videoId]);
 
   const pause = useCallback(() => {
     if (playerRef.current) {
