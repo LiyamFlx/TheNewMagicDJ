@@ -1,0 +1,1 @@
+export { default } from '../api-consolidated/handlers/generate-magic-set.js';
