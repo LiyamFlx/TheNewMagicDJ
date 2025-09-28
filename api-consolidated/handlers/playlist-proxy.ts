@@ -5,17 +5,24 @@ function getServiceClient() {
   return SecureSupabaseClient.getAdminClient();
 }
 
-// Add your active domains + dev hosts here
-const allowedHosts = [
-  "localhost:3000",
-  "localhost:3001",
-  "localhost:5173",
-  "127.0.0.1:3000",
-  "127.0.0.1:3001",
-  "127.0.0.1:5173",
-  "the-new-magic.vercel.app",
-  "the-new-magic-4nejzcnh7-liyams-projects.vercel.app"
-];
+// Allowed hosts (dev + production). Also allow project vercel deployments by suffix.
+const allowedHosts = new Set<string>([
+  'localhost:3000',
+  'localhost:3001',
+  'localhost:5173',
+  '127.0.0.1:3000',
+  '127.0.0.1:3001',
+  '127.0.0.1:5173',
+  'the-new-magic.vercel.app',
+]);
+
+function isAllowedHost(host: string): boolean {
+  if (!host) return false;
+  if (allowedHosts.has(host)) return true;
+  // Allow any deployment for this project on vercel
+  if (host.endsWith('.vercel.app') && host.includes('the-new-magic')) return true;
+  return false;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set JSON content type header first
@@ -27,12 +34,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const host = req.headers.host || "";
 
   // Host validation
-  if (!allowedHosts.includes(host)) {
+  if (!isAllowedHost(host)) {
     return res.status(400).json({
       error: "INVALID_HOST",
       message: "Host not valid or supported",
       received: host,
-      allowed: allowedHosts
+      allowed: Array.from(allowedHosts)
     });
   }
 
