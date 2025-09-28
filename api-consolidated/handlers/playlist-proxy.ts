@@ -6,6 +6,9 @@ function getServiceClient() {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Set JSON content type header first
+  res.setHeader('Content-Type', 'application/json');
+
   const hasServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
   const supabase = getServiceClient();
   const method = req.method || 'GET';
@@ -25,18 +28,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     if (!hasServiceKey && method !== 'GET') {
       res.setHeader('X-MagicDJ-Hint', 'Set SUPABASE_SERVICE_ROLE_KEY on server');
-      return res.status(500).json({ error: 'Server missing SUPABASE_SERVICE_ROLE_KEY. Cannot write to playlists with anon key under RLS.' });
+      return res.status(500).json({
+        error: 'Server missing SUPABASE_SERVICE_ROLE_KEY. Cannot write to playlists with anon key under RLS.',
+        code: 'MISSING_SERVICE_KEY'
+      });
     }
     if (method === 'GET' && (action === 'list' || !action)) {
       const userId = (req.query.userId as string) || (req.query.user_id as string) || '';
-      if (!userId) return res.status(400).json({ error: 'Missing userId' });
+      if (!userId) return res.status(400).json({
+        error: 'Missing userId',
+        code: 'MISSING_USER_ID'
+      });
 
       const { data: playlists, error: playlistError } = await supabase
         .from('playlists')
         .select('id, user_id, name, created_at, updated_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
-      if (playlistError) return res.status(500).json({ error: playlistError.message });
+      if (playlistError) return res.status(500).json({
+        error: playlistError.message,
+        code: 'PLAYLIST_FETCH_ERROR'
+      });
 
       const ids = (playlists || []).map(p => p.id);
       let tracksByPlaylist: Record<string, any[]> = {};
@@ -56,8 +68,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (method === 'POST' && action === 'save') {
-      const { playlist, userId } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
-      if (!playlist || !userId) return res.status(400).json({ error: 'Missing payload' });
+      let parsedBody;
+      try {
+        parsedBody = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
+      } catch (e) {
+        return res.status(400).json({
+          error: 'Invalid JSON in request body',
+          code: 'INVALID_JSON'
+        });
+      }
+      const { playlist, userId } = parsedBody;
+      if (!playlist || !userId) return res.status(400).json({
+        error: 'Missing payload',
+        code: 'MISSING_PAYLOAD'
+      });
 
       const payload = {
         id: playlist.id || undefined,
@@ -70,7 +94,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .upsert(payload)
         .select()
         .single();
-      if (upsertErr) return res.status(500).json({ error: upsertErr.message });
+      if (upsertErr) return res.status(500).json({
+        error: upsertErr.message,
+        code: 'PLAYLIST_SAVE_ERROR'
+      });
 
       // Save tracks if provided
       const tracks = Array.isArray(playlist.tracks) ? playlist.tracks : [];
@@ -94,7 +121,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         for (let i = 0; i < sanitized.length; i += chunkSize) {
           const slice = sanitized.slice(i, i + chunkSize);
           const { error } = await supabase.from('tracks').upsert(slice);
-          if (error) return res.status(500).json({ error: error.message });
+          if (error) return res.status(500).json({
+            error: error.message,
+            code: 'TRACKS_SAVE_ERROR'
+          });
         }
       }
 
@@ -102,9 +132,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (method === 'PATCH' && action === 'update') {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
+      let body;
+      try {
+        body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
+      } catch (e) {
+        return res.status(400).json({
+          error: 'Invalid JSON in request body',
+          code: 'INVALID_JSON'
+        });
+      }
       const { id, updates, userId } = body;
-      if (!id || !userId) return res.status(400).json({ error: 'Missing id or userId' });
+      if (!id || !userId) return res.status(400).json({
+        error: 'Missing id or userId',
+        code: 'MISSING_ID_OR_USER_ID'
+      });
       const patch: any = {};
       if (typeof updates?.name === 'string') patch.name = updates.name.trim();
       if (typeof updates?.description === 'string') patch.description = updates.description;
@@ -116,17 +157,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .eq('user_id', userId)
         .select()
         .single();
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) return res.status(500).json({
+        error: error.message,
+        code: 'PLAYLIST_UPDATE_ERROR'
+      });
       return res.status(200).json({ ok: true, playlist: data });
     }
 
     if (method === 'DELETE' && (action === 'delete' || !action)) {
-      const id = (req.query.id as string) || (typeof req.body === 'string' ? JSON.parse(req.body).id : (req.body || {}).id);
-      const userId = (req.query.userId as string) || (typeof req.body === 'string' ? JSON.parse(req.body).userId : (req.body || {}).userId);
-      if (!id) return res.status(400).json({ error: 'Missing id' });
+      let parsedBody = {};
+      try {
+        parsedBody = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
+      } catch (e) {
+        return res.status(400).json({
+          error: 'Invalid JSON in request body',
+          code: 'INVALID_JSON'
+        });
+      }
+      const id = (req.query.id as string) || parsedBody.id;
+      const userId = (req.query.userId as string) || parsedBody.userId;
+      if (!id) return res.status(400).json({
+        error: 'Missing id',
+        code: 'MISSING_ID'
+      });
       const q = supabase.from('playlists').delete().eq('id', id);
       const { error } = userId ? await q.eq('user_id', userId) : await q;
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) return res.status(500).json({
+        error: error.message,
+        code: 'PLAYLIST_DELETE_ERROR'
+      });
       return res.status(200).json({ ok: true });
     }
 
