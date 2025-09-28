@@ -1,20 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
+import { SecureSupabaseClient } from '../../lib/supabaseSecure';
 
 function getServiceClient() {
-  const url =
-    process.env.PUBLIC_SUPABASE_URL ||
-    process.env.VITE_SUPABASE_URL ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    '';
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-  const anon =
-    process.env.PUBLIC_SUPABASE_ANON_KEY ||
-    process.env.VITE_SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    '';
-  const key = serviceKey || anon;
-  return createClient(url, key, { auth: { persistSession: false } });
+  return SecureSupabaseClient.getAdminClient();
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

@@ -1,66 +1,75 @@
+/**
+ * SECURE FRONTEND SUPABASE CLIENT
+ * Uses hardened configuration with proper environment validation
+ */
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from '../../shared/database.types';
 
-// Support multiple env var prefixes (Vite, Next.js, generic PUBLIC_)
-// Prefer VITE_* (Vite standard), then PUBLIC_*, then NEXT_PUBLIC_*, and finally process.env fallbacks
+// Environment variable resolution with validation
 // @ts-ignore - import.meta.env keys are runtime-defined
 const supabaseUrl =
   (import.meta as any)?.env?.VITE_SUPABASE_URL ||
   (import.meta as any)?.env?.PUBLIC_SUPABASE_URL ||
-  (import.meta as any)?.env?.NEXT_PUBLIC_SUPABASE_URL ||
-  (typeof process !== 'undefined'
-    ? process.env.VITE_SUPABASE_URL
-    : undefined) ||
-  (typeof process !== 'undefined'
-    ? process.env.PUBLIC_SUPABASE_URL
-    : undefined) ||
-  (typeof process !== 'undefined'
-    ? process.env.NEXT_PUBLIC_SUPABASE_URL
-    : undefined);
+  (typeof process !== 'undefined' ? process.env.VITE_SUPABASE_URL : undefined) ||
+  (typeof process !== 'undefined' ? process.env.PUBLIC_SUPABASE_URL : undefined);
 
 // @ts-ignore - import.meta.env keys are runtime-defined
 const supabaseAnonKey =
   (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY ||
   (import.meta as any)?.env?.PUBLIC_SUPABASE_ANON_KEY ||
-  (import.meta as any)?.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  (typeof process !== 'undefined'
-    ? process.env.VITE_SUPABASE_ANON_KEY
-    : undefined) ||
-  (typeof process !== 'undefined'
-    ? process.env.PUBLIC_SUPABASE_ANON_KEY
-    : undefined) ||
-  (typeof process !== 'undefined'
-    ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    : undefined);
+  (typeof process !== 'undefined' ? process.env.VITE_SUPABASE_ANON_KEY : undefined) ||
+  (typeof process !== 'undefined' ? process.env.PUBLIC_SUPABASE_ANON_KEY : undefined);
 
-// Fail loudly in production if env is missing; warn and use placeholder only in dev
-if ((!supabaseUrl || !supabaseAnonKey) && !import.meta.env.DEV) {
-  console.error(
-    'Supabase configuration missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
-  );
+// Strict validation in production
+// @ts-ignore - import.meta.env keys are runtime-defined
+const isDev = import.meta.env?.DEV || process.env.NODE_ENV === 'development';
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  const message = 'Missing required Supabase configuration: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY';
+
+  if (!isDev) {
+    throw new Error(message);
+  } else {
+    console.warn(message);
+  }
 }
 
-const resolvedUrl = supabaseUrl || 'https://placeholder.supabase.co';
-const resolvedKey = supabaseAnonKey || 'placeholder-anon-key';
+// Validate URL format in production
+if (supabaseUrl && !isDev && !supabaseUrl.startsWith('https://')) {
+  throw new Error('Supabase URL must use HTTPS in production');
+}
 
-export const supabase = createClient(resolvedUrl, resolvedKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    storageKey: 'sb-auth-token',
-    debug: import.meta.env.DEV,
-    flowType: 'pkce',
-  },
-  db: {
-    schema: 'public',
-  },
-  global: {
-    headers: {
-      'x-application-name': 'MagicDJ',
+// Create secure client with hardened configuration
+export const supabase = createClient<Database>(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-anon-key',
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      storageKey: 'sb-auth-token',
+      debug: isDev,
+      flowType: 'pkce',
     },
-  },
-});
+    db: {
+      schema: 'public',
+    },
+    global: {
+      headers: {
+        'x-application-name': 'MagicDJ',
+        'x-client-version': '2.0.0',
+      },
+    },
+    // Security configurations
+    realtime: {
+      params: {
+        eventsPerSecond: 10, // Rate limiting for realtime events
+      },
+    },
+  }
+);
 
 // expose the same names your app imports
 export const db: any = supabase;

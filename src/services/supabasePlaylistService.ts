@@ -426,7 +426,13 @@ export const supabasePlaylistService = {
       return []; // Return empty array rather than failing
     }
 
-    return tracks || [];
+    return (tracks || []).map(track => ({
+      ...track,
+      artist: track.artist || '', // Convert null to empty string
+      bpm: track.bpm ?? undefined, // Convert null to undefined
+      energy: track.energy ?? undefined, // Convert null to undefined
+      duration: track.duration ?? undefined, // Convert null to undefined
+    }));
   },
 
   _combinePlaylistsWithTracks(playlists: any[], tracks: Track[]): Playlist[] {
@@ -440,7 +446,7 @@ export const supabasePlaylistService = {
         acc[track.playlist_id].push({
           id: track.id,
           title: track.title,
-          artist: track.artist,
+          artist: track.artist || '', // Convert null to empty string
           bpm: track.bpm ?? undefined,
           energy:
             typeof track.energy === 'number' ? Number(track.energy) : undefined,
@@ -501,7 +507,11 @@ export const supabasePlaylistService = {
       }
 
       cache.bustUserCache(userId);
-      return { ...data, tracks: [] };
+      return {
+        ...data,
+        description: data.description || undefined, // Convert null to undefined
+        tracks: []
+      };
     } catch (error) {
       logger.error(
         'supabasePlaylistService',
