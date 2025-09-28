@@ -1,23 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { withIdempotency } from "../../server-utils/idempotency.js';
-import apiConfig from './config.js';
-import { AppError, normalizeError } from '../../src/utils/errors.js';
-import { validateYouTubeSearch } from '../../shared/validators.js';
-import { checkAndConsume } from "../../server-utils/apiRateLimiter.js';
-
-async function fetchWithTimeout(
-  input: RequestInfo | URL,
-  init: RequestInit = {},
-  timeoutMs = 12000
-): Promise<Response> {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(input, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(id);
-  }
-}
+import { withIdempotency } from '../../src/utils/idempotency';
+import apiConfig from './config';
+import { AppError, normalizeError } from '../../src/utils/errors';
+import { validateYouTubeSearch } from '../../shared/validators';
+import { checkAndConsume } from '../../server-utils/apiRateLimiter';
+import { fetchWithTimeout } from '../../src/utils/http';
 
 async function youtubeSearchHandler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {

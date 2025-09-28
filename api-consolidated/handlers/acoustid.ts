@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-// Import from app-level utils to ensure Vercel bundling resolves path
-import { withIdempotency } from "../../server-utils/idempotency.js';
+import { withIdempotency } from '../../src/utils/idempotency';
 import { requireAuth } from '../../src/utils/apiAuth';
-import apiConfig from './config.js';
+import apiConfig from './config';
 import { errorFromResponse, normalizeError } from '../../src/utils/errors';
+import { fetchWithTimeout } from '../../src/utils/http';
 
 // Simple per-user/IP token bucket
 type Bucket = { count: number; reset: number };
@@ -35,20 +35,6 @@ function checkBucket(req: VercelRequest): {
     return { allowed: false, retryAfter: entry.reset - now };
   entry.count += 1;
   return { allowed: true };
-}
-
-async function fetchWithTimeout(
-  input: RequestInfo | URL,
-  init: RequestInit = {},
-  timeoutMs = 12000
-): Promise<Response> {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(input, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(id);
-  }
 }
 
 const ACOUSTID_URL = 'https://api.acoustid.org/v2/lookup';

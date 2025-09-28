@@ -1,12 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { withIdempotency } from "../../server-utils/idempotency.js';
-import apiConfig from './config.js';
-import {
-  AppError,
-  errorFromResponse,
-  normalizeError,
-} from '../../src/utils/errors.js';
-import { checkAndConsume } from "../../server-utils/apiRateLimiter.js';
+import { withIdempotency } from '../../src/utils/idempotency';
+import apiConfig from './config';
+import { AppError, errorFromResponse, normalizeError } from '../../src/utils/errors';
+import { checkAndConsume } from '../../server-utils/apiRateLimiter';
+import { fetchWithTimeout } from '../../src/utils/http';
 
 type TokenCache = {
   access_token: string;
@@ -29,21 +26,6 @@ function getClientKey(req: VercelRequest): string {
     req.socket.remoteAddress ||
     'unknown';
   return `token:${ip}`;
-}
-
-
-async function fetchWithTimeout(
-  input: RequestInfo | URL,
-  init: RequestInit = {},
-  timeoutMs = 12000
-): Promise<Response> {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(input, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(id);
-  }
 }
 
 async function spotifyTokenHandler(req: VercelRequest, res: VercelResponse) {

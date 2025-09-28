@@ -199,7 +199,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (method === 'DELETE' && (action === 'delete' || !action)) {
-      let parsedBody = {};
+      let parsedBody: any = {};
       try {
         parsedBody = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
       } catch (e) {
@@ -208,8 +208,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           code: 'INVALID_JSON'
         });
       }
-      const id = (req.query.id as string) || parsedBody.id;
-      const userId = (req.query.userId as string) || parsedBody.userId;
+      const id = (req.query.id as string) || (parsedBody as any).id;
+      const userId = (req.query.userId as string) || (parsedBody as any).userId;
       if (!id) return res.status(400).json({
         error: 'Missing id',
         code: 'MISSING_ID'

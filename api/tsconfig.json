@@ -1,0 +1,22 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "skipLibCheck": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "types": ["node", "vite/client"],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"]
+  },
+  "include": [
+    "./**/*.ts",
+    "../api-consolidated/**/*.ts",
+    "../server-utils/**/*.ts",
+    "../shared/**/*.ts",
+    "../lib/**/*.ts",
+    "../src/utils/**/*.ts"
+  ]
+}
