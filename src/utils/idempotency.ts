@@ -36,7 +36,7 @@ class MemoryAdapter implements StorageAdapter {
 class KvAdapter implements StorageAdapter {
   constructor(_ttlSeconds: number) {}
   async get(key: string): Promise<any | null> {
-    const { kv } = await import('../../utils/kv.js');
+    const { kv } = await import('../../server-utils/kv.js');
     const raw = await kv.get(`idem:${key}`);
     if (!raw) return null;
     try {
@@ -46,7 +46,7 @@ class KvAdapter implements StorageAdapter {
     }
   }
   async set(key: string, value: any, ttlSeconds: number): Promise<void> {
-    const { kv } = await import('../../utils/kv.js');
+    const { kv } = await import('../../server-utils/kv.js');
     await kv.setex(`idem:${key}`, ttlSeconds, JSON.stringify(value));
   }
 }

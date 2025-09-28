@@ -1,12 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { withIdempotency } from '../../utils/idempotency.js';
+import { withIdempotency } from "../../server-utils/idempotency.js';
 import apiConfig from './config.js';
 import {
   AppError,
   errorFromResponse,
   normalizeError,
 } from '../../src/utils/errors.js';
-import { checkAndConsume } from '../../utils/apiRateLimiter.js';
+import { checkAndConsume } from "../../server-utils/apiRateLimiter.js';
 
 type TokenCache = {
   access_token: string;
