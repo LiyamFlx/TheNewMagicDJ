@@ -4,6 +4,7 @@ set -euo pipefail
 BASE_URL=${1:-${VERCEL_URL:-}}
 TOKEN=${2:-${TOKEN:-}}
 BYPASS=${3:-${VERCEL_BYPASS_TOKEN:-}}
+USER_ID=${4:-${MAGICDJ_TEST_USER_ID:-}}
 
 if [[ -z "$BASE_URL" ]]; then
   echo "Usage: $0 <base_url> [jwt_token]" >&2
@@ -49,6 +50,29 @@ if [[ -n "$TOKEN" ]]; then
   fi
 else
   echo "\nℹ Provide a JWT token as second arg to verify authorized endpoints (sessions/events)."
+fi
+
+echo "\n[Extra] GET /api/spotify-token"
+if [[ -n "$BYPASS" ]]; then
+  curl -sS -b "$COOKIE_JAR" "$BASE_URL/api/spotify-token" | jq . || curl -sS -b "$COOKIE_JAR" "$BASE_URL/api/spotify-token"
+else
+  curl -sS "$BASE_URL/api/spotify-token" | jq . || curl -sS "$BASE_URL/api/spotify-token"
+fi
+
+if [[ -n "$USER_ID" ]]; then
+  echo "\n[Extra] GET /api/playlist-proxy?action=list&userId=$USER_ID"
+  if [[ -n "$BYPASS" ]]; then
+    curl -sS -b "$COOKIE_JAR" "$BASE_URL/api/playlist-proxy?action=list&userId=$USER_ID" | jq . || true
+  else
+    curl -sS "$BASE_URL/api/playlist-proxy?action=list&userId=$USER_ID" | jq . || true
+  fi
+fi
+
+echo "\n[Extra] GET /api/youtube-search?q=daft%20punk&maxResults=1"
+if [[ -n "$BYPASS" ]]; then
+  curl -sS -b "$COOKIE_JAR" "$BASE_URL/api/youtube-search?q=daft%20punk&maxResults=1" | jq . || true
+else
+  curl -sS "$BASE_URL/api/youtube-search?q=daft%20punk&maxResults=1" | jq . || true
 fi
 
 echo "\nDone."
