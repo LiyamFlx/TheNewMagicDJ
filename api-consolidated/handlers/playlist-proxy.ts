@@ -143,20 +143,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Save tracks if provided
       const tracks = Array.isArray(playlist.tracks) ? playlist.tracks : [];
       if (tracks.length) {
-        const sanitized = tracks.map((t: any, idx: number) => ({
-          playlist_id: saved.id,
-          title: t.title || 'Untitled',
-          artist: t.artist || 'Unknown',
-          bpm: typeof t.bpm === 'number' ? Math.floor(t.bpm) : null,
-          energy: typeof t.energy === 'number' ? Math.floor(t.energy) : null,
-          duration: typeof t.duration === 'number' ? Math.floor(t.duration) : 180,
-          position: typeof t.position === 'number' ? t.position : idx,
-          spotify_id: t.spotify_id ?? null,
-          youtube_id: t.youtube_id ?? null,
-          preview_url: t.preview_url ?? null,
-          thumbnail: t.thumbnail ?? null,
-          source_url: t.source_url ?? null,
-        }));
+        const sanitized = tracks
+          .map((t: any, idx: number) => {
+            const source_url =
+              t.source_url || t.url || t.youtube_url || t.preview_url || null;
+            return {
+              playlist_id: saved.id,
+              title: t.title || 'Untitled',
+              artist: t.artist || 'Unknown',
+              bpm: typeof t.bpm === 'number' ? Math.floor(t.bpm) : null,
+              energy: typeof t.energy === 'number' ? Math.floor(t.energy) : null,
+              duration:
+                typeof t.duration === 'number' ? Math.floor(t.duration) : 180,
+              position: typeof t.position === 'number' ? t.position : idx,
+              spotify_id: t.spotify_id ?? null,
+              youtube_id: t.youtube_id ?? null,
+              preview_url: t.preview_url ?? null,
+              thumbnail: t.thumbnail ?? null,
+              source_url,
+            };
+          })
+          .filter(
+            (row: any) =>
+              row.title &&
+              Boolean(
+                row.spotify_id || row.youtube_id || row.preview_url || row.source_url
+              )
+          );
         // Upsert in chunks to be safe
         const chunkSize = 500;
         for (let i = 0; i < sanitized.length; i += chunkSize) {

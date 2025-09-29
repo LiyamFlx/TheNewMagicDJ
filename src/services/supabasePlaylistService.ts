@@ -146,33 +146,46 @@ class ValidationHelper {
 
   static sanitizeTrackData(tracks: Track[], playlistId: string) {
     return tracks
-      .map(track => ({
-        playlist_id: playlistId,
-        title: track.title || 'Untitled',
-        artist: track.artist || 'Unknown Artist',
-        bpm: typeof track.bpm === 'number' ? Math.floor(track.bpm) : null,
-        energy:
-          typeof track.energy === 'number' ? Math.floor(track.energy) : null,
-        duration:
-          typeof track.duration === 'number' ? Math.floor(track.duration) : 180,
-        key: (track as any).key || null,
-        genre: (track as any).genre || null,
-        position:
-          typeof (track as any).position === 'number'
-            ? (track as any).position
-            : null,
-        spotify_id: (track as any).spotify_id ?? null,
-        youtube_id: (track as any).youtube_id ?? null,
-        preview_url: (track as any).preview_url ?? null,
-        thumbnail: (track as any).thumbnail ?? null,
-        source_url:
+      .map(track => {
+        const source_url =
           (track as any).source_url ||
-          track.url ||
+          (track as any).url ||
           (track as any).youtube_url ||
           (track as any).preview_url ||
-          null,
-      }))
-      .filter(row => row.title);
+          null;
+
+        return {
+          playlist_id: playlistId,
+          title: track.title || 'Untitled',
+          artist: track.artist || 'Unknown Artist',
+          bpm: typeof track.bpm === 'number' ? Math.floor(track.bpm) : null,
+          energy:
+            typeof track.energy === 'number' ? Math.floor(track.energy) : null,
+          duration:
+            typeof track.duration === 'number' ? Math.floor(track.duration) : 180,
+          key: (track as any).key || null,
+          genre: (track as any).genre || null,
+          position:
+            typeof (track as any).position === 'number'
+              ? (track as any).position
+              : null,
+          spotify_id: (track as any).spotify_id ?? null,
+          youtube_id: (track as any).youtube_id ?? null,
+          preview_url: (track as any).preview_url ?? null,
+          thumbnail: (track as any).thumbnail ?? null,
+          source_url,
+        };
+      })
+      .filter(
+        row =>
+          row.title &&
+          Boolean(
+            row.spotify_id ||
+              row.youtube_id ||
+              row.preview_url ||
+              row.source_url
+          )
+      );
   }
 }
 
@@ -184,14 +197,38 @@ export const supabasePlaylistService = {
       // For now, use a default user ID if none provided to test save functionality
       const saveUserId = userId || 'anonymous-user';
 
+      // Drop tracks without any playable sources before saving
+      const hasPlayableSource = (t: any): boolean => {
+        return Boolean(
+          t?.spotify_id ||
+            t?.youtube_id ||
+            t?.preview_url ||
+            t?.source_url ||
+            t?.url ||
+            t?.youtube_url
+        );
+      };
+
+      const originalCount = playlist.tracks?.length || 0;
+      const filteredTracks = (playlist.tracks || []).filter(hasPlayableSource);
+      if (filteredTracks.length !== originalCount) {
+        logger.warn('supabasePlaylistService', 'Filtered tracks without sources', {
+          removed: originalCount - filteredTracks.length,
+          kept: filteredTracks.length,
+        });
+      }
+
       logger.info('supabasePlaylistService', 'Saving playlist', {
         playlistId: playlist.id,
         name: playlist.name,
         userId: saveUserId,
-        trackCount: playlist.tracks?.length || 0,
+        trackCount: filteredTracks.length,
       });
 
-      const result = await this._savePlaylistToDatabase(playlist, saveUserId);
+      const result = await this._savePlaylistToDatabase(
+        { ...playlist, tracks: filteredTracks },
+        saveUserId
+      );
       cache.bustUserCache(saveUserId);
 
       return result;
