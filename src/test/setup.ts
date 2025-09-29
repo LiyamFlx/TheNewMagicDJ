@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { vi, beforeEach } from 'vitest';
 
 // Mock Web Audio API
 global.AudioContext = vi.fn().mockImplementation(() => ({
@@ -56,18 +56,36 @@ global.HTMLAudioElement = vi.fn().mockImplementation(() => ({
   error: null
 }));
 
-// Mock MediaDevices API
+// Mock MediaDevices API with proper MediaStream interface
+const mockMediaStream = {
+  getTracks: vi.fn(() => []),
+  getAudioTracks: vi.fn(() => []),
+  getVideoTracks: vi.fn(() => []),
+  active: true,
+  id: 'mock-stream-id',
+  onaddtrack: null,
+  onremovetrack: null,
+  addTrack: vi.fn(),
+  removeTrack: vi.fn(),
+  getTrackById: vi.fn(() => null),
+  clone: vi.fn(() => mockMediaStream),
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  dispatchEvent: vi.fn(() => true)
+};
+
 global.navigator = {
   ...global.navigator,
   mediaDevices: {
-    getUserMedia: vi.fn(() =>
-      Promise.resolve({
-        getTracks: vi.fn(() => []),
-        getAudioTracks: vi.fn(() => []),
-        getVideoTracks: vi.fn(() => [])
-      })
-    )
-  }
+    getUserMedia: vi.fn(() => Promise.resolve(mockMediaStream as any)),
+    ondevicechange: null,
+    enumerateDevices: vi.fn(() => Promise.resolve([])),
+    getDisplayMedia: vi.fn(() => Promise.resolve(mockMediaStream as any)),
+    getSupportedConstraints: vi.fn(() => ({})),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(() => true)
+  } as any
 };
 
 // Mock performance.now for timing measurements
@@ -76,9 +94,13 @@ global.performance = {
   now: vi.fn(() => Date.now())
 };
 
-// Mock requestAnimationFrame
-global.requestAnimationFrame = vi.fn((cb) => setTimeout(cb, 16));
-global.cancelAnimationFrame = vi.fn((id) => clearTimeout(id));
+// Mock requestAnimationFrame with proper return type
+global.requestAnimationFrame = vi.fn((cb: FrameRequestCallback) => {
+  setTimeout(cb, 16);
+  return 1; // Return a number as expected
+}) as any;
+
+global.cancelAnimationFrame = vi.fn((id: number) => clearTimeout(id));
 
 // Console setup for test environment
 beforeEach(() => {

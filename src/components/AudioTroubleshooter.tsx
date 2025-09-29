@@ -9,19 +9,16 @@ import {
   HardDrive,
   TrendingUp,
   Settings,
-  RefreshCw
 } from 'lucide-react';
 import { audioPerformanceMonitor, PerformanceMetrics, AudioTroubleshootingInfo } from '../services/audioPerformanceMonitor';
 import { logger } from '../utils/logger';
 
 interface AudioTroubleshooterProps {
-  isActive?: boolean;
   onToggle?: (active: boolean) => void;
   className?: string;
 }
 
 const AudioTroubleshooter: React.FC<AudioTroubleshooterProps> = ({
-  isActive = false,
   onToggle,
   className = ''
 }) => {

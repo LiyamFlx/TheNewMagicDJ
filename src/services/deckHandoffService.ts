@@ -448,12 +448,12 @@ class DeckHandoffService {
   private calculateBeatAlignment(
     sourceBeatOffset: number,
     targetBeatOffset: number,
-    sourceBpm: number,
-    targetBpm: number
+    _sourceBpm: number,
+    _targetBpm: number
   ): number {
     // Calculate the time difference needed to align beats
-    const sourceBeatPeriod = 60 / sourceBpm; // seconds per beat
-    const targetBeatPeriod = 60 / targetBpm;
+    // const sourceBeatPeriod = 60 / sourceBpm; // seconds per beat
+    // const targetBeatPeriod = 60 / targetBpm;
 
     // Find the optimal alignment within one beat period
     const offsetDifference = targetBeatOffset - sourceBeatOffset;
@@ -501,7 +501,7 @@ class DeckHandoffService {
   /**
    * Apply sync drift correction
    */
-  private applySyncCorrection(deckA: DeckState, deckB: DeckState, drift: number): void {
+  private applySyncCorrection(_deckA: DeckState, deckB: DeckState, drift: number): void {
     // Simple correction: slightly adjust playback rate of one deck
     const correctionAmount = Math.min(0.01, drift * 0.1); // Small correction
 
