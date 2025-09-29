@@ -29,7 +29,10 @@
     "serverless"
   ],
   "scripts": {
-    "test": "echo \"No test suite defined yet\" && exit 0",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "dev": "vite --host",
     "dev:api": "vercel dev",
     "build": "tsc && vite build",
@@ -77,17 +80,23 @@
   "devDependencies": {
     "@eslint/js": "^9.36.0",
     "@playwright/test": "^1.55.0",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^24.5.2",
     "@types/react": "^18.3.24",
     "@types/react-dom": "^18.3.7",
     "@vercel/node": "^4.0.0",
     "@vitejs/plugin-react": "^5.0.3",
+    "@vitest/ui": "^3.2.4",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.0.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.16",
     "globals": "^16.4.0",
+    "happy-dom": "^19.0.1",
+    "jsdom": "^27.0.0",
     "postcss": "^8.5.3",
     "prettier": "^3.4.2",
     "rollup": "^4.52.3",
@@ -97,7 +106,8 @@
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.44.0",
     "vercel": "^48.1.6",
-    "vite": "^7.1.6"
+    "vite": "^7.1.6",
+    "vitest": "^3.2.4"
   },
   "optionalDependencies": {
     "@rollup/rollup-darwin-arm64": "^4.52.3"

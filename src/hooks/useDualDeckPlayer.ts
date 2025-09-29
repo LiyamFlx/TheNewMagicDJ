@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { AudioSource } from '../services/audioSourceService';
+import { deckHandoffService, CrossfadeSettings, DeckState as HandoffDeckState } from '../services/deckHandoffService';
 
 export interface DeckState {
   // Playback state
@@ -346,22 +347,105 @@ export function useDualDeckPlayer({
     [setVolume]
   );
 
-  // Sync decks
+  // Gapless transition between decks
+  const performGaplessTransition = useCallback(
+    async (
+      fromDeck: 'deckA' | 'deckB',
+      crossfadeSettings: CrossfadeSettings = {
+        curve: 'logarithmic',
+        duration: 3000,
+        type: 'normal'
+      },
+      beatMatch: boolean = true
+    ) => {
+      const sourceDeck = fromDeck === 'deckA' ? deckA : deckB;
+      const targetDeck = fromDeck === 'deckA' ? deckB : deckA;
+      const sourceAudio = audioRefs.current[fromDeck];
+      const targetAudio = audioRefs.current[fromDeck === 'deckA' ? 'deckB' : 'deckA'];
+
+      if (!sourceAudio || !targetAudio) {
+        throw new Error('Audio elements not available for transition');
+      }
+
+      // Convert to handoff service format
+      const sourceHandoffDeck: HandoffDeckState = {
+        isPlaying: sourceDeck.isPlaying,
+        currentTime: sourceDeck.currentTime,
+        duration: sourceDeck.duration,
+        volume: sourceDeck.volume,
+        bpm: sourceDeck.bpm,
+        isLoaded: !sourceDeck.isLoading,
+        audioElement: sourceAudio
+      };
+
+      const targetHandoffDeck: HandoffDeckState = {
+        isPlaying: targetDeck.isPlaying,
+        currentTime: targetDeck.currentTime,
+        duration: targetDeck.duration,
+        volume: targetDeck.volume,
+        bpm: targetDeck.bpm,
+        isLoaded: !targetDeck.isLoading,
+        audioElement: targetAudio
+      };
+
+      await deckHandoffService.performGaplessTransition(
+        sourceHandoffDeck,
+        targetHandoffDeck,
+        crossfadeSettings,
+        beatMatch
+      );
+
+      // Update state after transition
+      updateDeckState(fromDeck, { isPlaying: false });
+      updateDeckState(fromDeck === 'deckA' ? 'deckB' : 'deckA', { isPlaying: true });
+    },
+    [deckA, deckB, updateDeckState]
+  );
+
+  // Advanced sync with drift correction
   const syncDecks = useCallback(() => {
     if (deckA.isPlaying && deckB.isPlaying) {
-      // If both decks are playing, sync BPM and phase
-      // This is a placeholder - actual BPM sync would be more complex
-      if (deckB.currentTime > 0) {
-        seek('deckB', deckA.currentTime % (deckB.duration || 1));
+      const sourceAudio = audioRefs.current.deckA;
+      const targetAudio = audioRefs.current.deckB;
+
+      if (sourceAudio && targetAudio) {
+        const sourceHandoffDeck: HandoffDeckState = {
+          isPlaying: deckA.isPlaying,
+          currentTime: deckA.currentTime,
+          duration: deckA.duration,
+          volume: deckA.volume,
+          bpm: deckA.bpm,
+          isLoaded: !deckA.isLoading,
+          audioElement: sourceAudio
+        };
+
+        const targetHandoffDeck: HandoffDeckState = {
+          isPlaying: deckB.isPlaying,
+          currentTime: deckB.currentTime,
+          duration: deckB.duration,
+          volume: deckB.volume,
+          bpm: deckB.bpm,
+          isLoaded: !deckB.isLoading,
+          audioElement: targetAudio
+        };
+
+        // Monitor and correct sync drift
+        deckHandoffService.monitorSyncDrift(sourceHandoffDeck, targetHandoffDeck);
       }
     }
   }, [
     deckA.isPlaying,
     deckB.isPlaying,
     deckA.currentTime,
-    deckB.duration,
     deckB.currentTime,
-    seek,
+    deckA.duration,
+    deckB.duration,
+    deckA.volume,
+    deckB.volume,
+    deckA.bpm,
+    deckB.bpm,
+    deckA.isLoading,
+    deckB.isLoading,
   ]);
 
   return {
@@ -380,6 +464,12 @@ export function useDualDeckPlayer({
 
     // Sync controls
     syncDecks,
+
+    // Advanced DJ features
+    performGaplessTransition,
+
+    // Transition status
+    getTransitionStatus: () => deckHandoffService.getTransitionStatus(),
   };
 }
 
