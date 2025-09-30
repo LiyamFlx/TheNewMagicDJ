@@ -199,42 +199,37 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(
     // Expose the player API via ref
     useImperativeHandle(ref, () => playerApi, [playerApi]);
 
-    // Handle loading state
-    if (!videoId) {
-      return (
-        <div
-          className={`flex items-center justify-center bg-slate-900 ${className}`}
-        >
-          <div className="text-slate-400 text-center">
-            <div className="w-8 h-8 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-            <div className="text-sm font-orbitron">No video selected</div>
-          </div>
-        </div>
-      );
-    }
-
-    if (!isReady) {
-      return (
-        <div
-          className={`flex items-center justify-center bg-slate-900 ${className}`}
-        >
-          <div className="text-slate-400 text-center">
-            <div className="w-8 h-8 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-            <div className="text-sm font-orbitron">
-              Loading YouTube player...
-            </div>
-          </div>
-        </div>
-      );
-    }
-
     return (
       <div
         ref={containerRef}
-        id={playerElementId}
         className={`bg-slate-900 ${className}`}
-        style={{ minHeight: '200px' }}
-      />
+        style={{ minHeight: '200px', position: 'relative' }}
+      >
+        {/* YouTube player element - always present */}
+        <div
+          id={playerElementId}
+          style={{
+            width: '100%',
+            height: '100%',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            opacity: isReady ? 1 : 0,
+          }}
+        />
+
+        {/* Loading overlay */}
+        {(!videoId || !isReady) && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-slate-400 text-center">
+              <div className="w-8 h-8 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              <div className="text-sm font-orbitron">
+                {!videoId ? 'No video selected' : 'Loading YouTube player...'}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     );
   }
 );

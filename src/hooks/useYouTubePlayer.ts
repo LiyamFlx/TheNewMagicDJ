@@ -61,16 +61,23 @@ export const useYouTubePlayer = (
 
   // Load YouTube API with robust readiness + retry
   useEffect(() => {
-    if (!videoId) return;
+    if (!videoId) {
+      console.log('YouTube Player: No videoId provided');
+      return;
+    }
 
+    console.log('YouTube Player: Starting initialization for videoId:', videoId);
     let retry = 0;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
 
     const createPlayer = () => {
+      console.log('YouTube Player: Attempting to create player, YT available:', !!window.YT, 'YT.Player available:', !!(window.YT && window.YT.Player));
       if (!window.YT || !window.YT.Player) return false;
       try {
         const el = document.getElementById(playerId.current);
+        console.log('YouTube Player: Player element found:', !!el, 'Element ID:', playerId.current);
         if (!el) return false;
+        console.log('YouTube Player: Creating new YT.Player instance...');
         const player = new window.YT.Player(playerId.current, {
           videoId,
           playerVars: {
@@ -87,6 +94,7 @@ export const useYouTubePlayer = (
           },
           events: {
             onReady: () => {
+              console.log('YouTube Player: onReady event fired');
               // Set volume after player is ready
               if (playerRef.current && options.volume !== undefined) {
                 playerRef.current.setVolume(options.volume);
@@ -96,13 +104,16 @@ export const useYouTubePlayer = (
               options.onReady?.();
             },
             onStateChange: (event: any) => {
+              console.log('YouTube Player: State change:', event.data);
               options.onStateChange?.(event.data);
             },
             onError: (event: any) => {
+              console.error('YouTube Player: Error event:', event.data);
               options.onError?.(event.data);
               // Attempt a soft recreate once on player error
               if (!isReady && retry < 2) {
                 retry++;
+                console.log('YouTube Player: Retrying due to error, attempt:', retry);
                 retryTimer = setTimeout(() => {
                   try { playerRef.current?.destroy?.(); } catch {}
                   playerRef.current = null;
@@ -112,23 +123,30 @@ export const useYouTubePlayer = (
             },
           },
         });
+        console.log('YouTube Player: YT.Player instance created successfully');
         playerRef.current = player;
         return true;
-      } catch {
+      } catch (error) {
+        console.error('YouTube Player: Error creating player:', error);
         return false;
       }
     };
 
     const ensureApiLoaded = () => {
+      console.log('YouTube Player: ensureApiLoaded called, YT available:', !!window.YT);
       if (window.YT && window.YT.Player) {
+        console.log('YouTube Player: API already loaded, attempting to create player');
         if (!createPlayer() && retry < 3) {
           retry++;
+          console.log('YouTube Player: Create player failed, retrying...', retry);
           retryTimer = setTimeout(ensureApiLoaded, 300 * retry);
         }
         return;
       }
       const existingScript = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
+      console.log('YouTube Player: Existing script found:', !!existingScript);
       if (!existingScript) {
+        console.log('YouTube Player: Loading YouTube IFrame API script');
         const tag = document.createElement('script');
         tag.src = 'https://www.youtube.com/iframe_api';
         const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -137,13 +155,16 @@ export const useYouTubePlayer = (
 
       const original = window.onYouTubeIframeAPIReady;
       window.onYouTubeIframeAPIReady = () => {
+        console.log('YouTube Player: onYouTubeIframeAPIReady fired');
         if (original) original();
         createPlayer();
       };
 
       // Fallback if onYouTubeIframeAPIReady never fires
       retryTimer = setTimeout(() => {
+        console.log('YouTube Player: Fallback timeout triggered, checking API status');
         if (!window.YT || !window.YT.Player) {
+          console.log('YouTube Player: API still not ready, retrying...');
           ensureApiLoaded();
         }
       }, 800);
