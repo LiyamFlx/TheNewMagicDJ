@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Trash2,
   Plus,
@@ -14,6 +14,7 @@ import {
   Save,
   X,
   Edit3,
+  Headphones,
 } from 'lucide-react';
 import { Playlist } from '../types';
 import { formatTimeClock } from '../utils/format';
@@ -48,7 +49,19 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
   const [playlistName, setPlaylistName] = useState(playlist.name);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [previewingTrack, setPreviewingTrack] = useState<string | null>(null);
   const dragCounter = useRef(0);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Cleanup preview audio when component unmounts
+  useEffect(() => {
+    return () => {
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+        previewAudioRef.current.currentTime = 0;
+      }
+    };
+  }, []);
 
   const filteredTracks = playlist.tracks.filter(
     track =>
@@ -108,6 +121,66 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
 
     setDraggedIndex(null);
     setDragOverIndex(null);
+  };
+
+  const handlePreviewTrack = async (track: any) => {
+    const trackId = track.id;
+
+    // If clicking the same track that's already previewing, stop it
+    if (previewingTrack === trackId) {
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+        previewAudioRef.current.currentTime = 0;
+      }
+      setPreviewingTrack(null);
+      return;
+    }
+
+    // Stop any currently playing preview
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current.currentTime = 0;
+    }
+
+    // Find the best URL to preview
+    const previewUrl = track.preview_url || track.url;
+
+    if (!previewUrl) {
+      console.warn('No preview URL available for track:', track.title);
+      return;
+    }
+
+    try {
+      // Create new audio element
+      const audio = new Audio();
+      audio.volume = 0.7; // Set reasonable preview volume
+      audio.crossOrigin = 'anonymous';
+
+      // Set up event listeners
+      audio.onloadstart = () => setPreviewingTrack(trackId);
+      audio.onended = () => setPreviewingTrack(null);
+      audio.onerror = () => {
+        console.error('Error playing preview for:', track.title);
+        setPreviewingTrack(null);
+      };
+
+      // Store reference and play
+      previewAudioRef.current = audio;
+      audio.src = previewUrl;
+      await audio.play();
+
+      // Auto-stop after 30 seconds for preview
+      setTimeout(() => {
+        if (previewAudioRef.current === audio && previewingTrack === trackId) {
+          audio.pause();
+          setPreviewingTrack(null);
+        }
+      }, 30000);
+
+    } catch (error) {
+      console.error('Failed to play preview:', error);
+      setPreviewingTrack(null);
+    }
   };
 
   const shufflePlaylist = () => {
@@ -363,6 +436,27 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
 
                 {/* Actions */}
                 <div className="flex-center space-sm opacity-0 group-hover:opacity-100 transition-all">
+                  {/* Preview Button */}
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      handlePreviewTrack(track);
+                    }}
+                    className={`btn-icon-square ease-bounce ${
+                      previewingTrack === track.id
+                        ? 'btn-accent shadow-neon-cyan animate-pulse-glow'
+                        : 'btn-primary'
+                    }`}
+                    title={previewingTrack === track.id ? 'Stop preview' : 'Preview track'}
+                  >
+                    {previewingTrack === track.id ? (
+                      <Pause className="w-4 h-4 text-white" />
+                    ) : (
+                      <Headphones className="w-4 h-4 text-white" />
+                    )}
+                  </button>
+
+                  {/* Remove Button */}
                   <button
                     onClick={e => {
                       e.stopPropagation();
