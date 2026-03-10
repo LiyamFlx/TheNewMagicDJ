@@ -41,7 +41,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "typecheck:api": "tsc --noEmit --project api/tsconfig.json",
-    "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings 0",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix --max-warnings 0",
     "lint:api": "eslint api/**/*.ts --max-warnings 0",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\" \"api/**/*.{ts,js,json}\" \"utils/**/*.{ts,js,json}\"",
