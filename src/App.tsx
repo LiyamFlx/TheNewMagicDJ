@@ -24,16 +24,33 @@ import { useSpotifyToken } from './hooks/useSpotifyToken';
 import { useToast } from './hooks/useToast';
 import { logger } from './utils/logger';
 
-// Lazy-loaded heavy components
-const MagicStudio = React.lazy(() => import('./components/MagicStudio'));
-const ProfessionalMagicPlayer = React.lazy(
+// Auto-retry dynamic imports once on failure (handles stale asset hashes after deploy)
+function lazyWithRetry(importFn: () => Promise<any>) {
+  return React.lazy(() =>
+    importFn().catch(() => {
+      // Asset hash mismatch after deploy — reload to get fresh index.html
+      const reloaded = sessionStorage.getItem('chunk-reload');
+      if (!reloaded) {
+        sessionStorage.setItem('chunk-reload', '1');
+        window.location.reload();
+      }
+      // If reload already attempted, surface the error
+      sessionStorage.removeItem('chunk-reload');
+      return importFn();
+    })
+  );
+}
+
+// Lazy-loaded heavy components (with deploy-safe retry)
+const MagicStudio = lazyWithRetry(() => import('./components/MagicStudio'));
+const ProfessionalMagicPlayer = lazyWithRetry(
   () => import('./components/ProfessionalMagicPlayer')
 );
-const PlaylistEditor = React.lazy(() => import('./components/PlaylistEditor'));
-const AnalyticsExport = React.lazy(
+const PlaylistEditor = lazyWithRetry(() => import('./components/PlaylistEditor'));
+const AnalyticsExport = lazyWithRetry(
   () => import('./components/AnalyticsExport')
 );
-const LibraryProfile = React.lazy(() => import('./components/LibraryProfile'));
+const LibraryProfile = lazyWithRetry(() => import('./components/LibraryProfile'));
 
 // --- Central Logger ---
 // Wrapper for shared logger to match prior lightweight usage in this file
@@ -743,7 +760,7 @@ function AppContent() {
                     playlist={state.currentPlaylist}
                     session={state.currentSession}
                     isPlaying={state.isPlaying}
-                    onPlayPause={async playing => {
+                    onPlayPause={async (playing: boolean) => {
                       dispatch({ type: 'SET_PLAYING', payload: playing });
                       // best-effort event
                       logEvent(playing ? 'player.play' : 'player.pause');
