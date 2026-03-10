@@ -86,10 +86,13 @@ export const useYouTubePlayer = (
         log.debug('Player element lookup', { found: !!el, elementId: playerId.current });
         if (!el) return false;
         log.debug('Creating new YT.Player instance');
+        // Capture player in local scope so onReady can use it even if
+        // the callback fires synchronously before playerRef is assigned.
+        let localPlayer: any = null;
         const player = new window.YT.Player(playerId.current, {
           videoId,
           playerVars: {
-            autoplay: 0, // Disable autoplay to comply with browser policies
+            autoplay: 0,
             controls: 0,
             disablekb: 1,
             enablejsapi: 1,
@@ -98,14 +101,13 @@ export const useYouTubePlayer = (
             modestbranding: 1,
             rel: 0,
             showinfo: 0,
-            // Remove volume from playerVars as it should be set via API
           },
           events: {
             onReady: () => {
               log.info('Player ready');
-              // Set volume after player is ready
-              if (playerRef.current && options.volume !== undefined) {
-                playerRef.current.setVolume(options.volume);
+              const p = playerRef.current || localPlayer;
+              if (p && options.volume !== undefined && typeof p.setVolume === 'function') {
+                p.setVolume(options.volume);
               }
               setIsReady(true);
               readyPromiseRef.current?.resolve();
@@ -132,6 +134,7 @@ export const useYouTubePlayer = (
           },
         });
         log.info('YT.Player instance created');
+        localPlayer = player;
         playerRef.current = player;
         return true;
       } catch (error) {
@@ -205,7 +208,7 @@ export const useYouTubePlayer = (
     if (playerRef.current) {
       try {
         // Ensure volume is set before playing
-        if (options.volume !== undefined) {
+        if (options.volume !== undefined && typeof playerRef.current.setVolume === 'function') {
           playerRef.current.setVolume(options.volume);
         }
 
