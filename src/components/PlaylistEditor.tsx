@@ -188,8 +188,12 @@ const PlaylistEditor: React.FC<PlaylistEditorProps> = ({
     const remainingTracks = playlist.tracks.slice(currentTrackIndex + 1);
     const playedTracks = playlist.tracks.slice(0, currentTrackIndex);
 
-    // Shuffle remaining tracks
-    const shuffled = [...remainingTracks].sort(() => Math.random() - 0.5);
+    // Fisher-Yates shuffle for unbiased O(n) randomization
+    const shuffled = [...remainingTracks];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
 
     const newTracks = [...playedTracks, currentTrack, ...shuffled];
     const updatedPlaylist = { ...playlist, tracks: newTracks };

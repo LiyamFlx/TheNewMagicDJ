@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, LogIn, UserPlus, Mail, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useToast } from '../hooks/useToast';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   initialMode = 'signin',
 }) => {
+  const { showToast } = useToast();
   const [isSignUp, setIsSignUp] = useState(initialMode === 'signup');
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -63,14 +65,13 @@ const AuthModal: React.FC<AuthModalProps> = ({
       }
 
       if (isSignUp && !result.data.session) {
-        alert('Check your email for the confirmation link!');
+        showToast('Check your email for the confirmation link!', 'info');
       }
 
       onClose();
       setFormData({ email: '', password: '', name: '' });
     } catch (error) {
-      console.error('Auth error:', error);
-      alert(error instanceof Error ? error.message : 'Authentication failed');
+      showToast(error instanceof Error ? error.message : 'Authentication failed', 'error');
     } finally {
       setLoading(false);
     }

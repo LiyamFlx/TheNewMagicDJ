@@ -39,7 +39,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     dbOk,
     dbLatencyMs,
     env: process.env.VERCEL_ENV || process.env.NODE_ENV || 'unknown',
-    commit: process.env.VERCEL_GIT_COMMIT_SHA || null,
     version: process.env.npm_package_version || null,
     timestamp: new Date().toISOString(),
     error: errorMsg,

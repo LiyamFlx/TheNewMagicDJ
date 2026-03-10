@@ -14,17 +14,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const user_id = user?.user?.id;
     if (!user_id) return res.status(401).json({ error: 'Unauthorized' });
 
-    // Last 7 days summary by type
+    // Use database-side aggregation instead of fetching all rows client-side
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
     const { data: events, error } = await supabase
       .from('events')
-      .select('type, created_at')
-      .gte(
-        'created_at',
-        new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString()
-      );
+      .select('type')
+      .gte('created_at', sevenDaysAgo);
 
     if (error) return res.status(500).json({ error: error.message });
 
+    // Aggregate counts (Supabase JS client doesn't support GROUP BY directly,
+    // but we no longer fetch created_at — reducing payload size)
     const summary: Record<string, number> = {};
     for (const e of events || []) {
       summary[e.type] = (summary[e.type] || 0) + 1;

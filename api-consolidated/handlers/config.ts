@@ -14,12 +14,8 @@ export const apiConfig = {
   // Prefer server-side secrets; accept Vite-style for convenience; ignore old typo VITA_*
   SPOTIFY_CLIENT_ID: readEnv('SPOTIFY_CLIENT_ID', [
     'VITE_SPOTIFY_CLIENT_ID',
-    'VITA_SPOTIFY_CLIENT_ID',
   ]),
-  SPOTIFY_CLIENT_SECRET: readEnv('SPOTIFY_CLIENT_SECRET', [
-    // VITE_SPOTIFY_CLIENT_SECRET removed for security
-    'VITA_SPOTIFY_CLIENT_SECRET',
-  ]),
+  SPOTIFY_CLIENT_SECRET: readEnv('SPOTIFY_CLIENT_SECRET'),
   YOUTUBE_API_KEY: readEnv('YOUTUBE_API_KEY', ['VITE_YOUTUBE_API_KEY']),
 
   // Supabase configuration

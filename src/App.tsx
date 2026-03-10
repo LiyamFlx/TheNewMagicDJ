@@ -17,7 +17,6 @@ import NotFound from './components/NotFound';
 
 import { Playlist, User, Session } from './types/index';
 import { supabasePlaylistService } from './services/supabasePlaylistService';
-import { spotifyService } from './services/spotifyService';
 import { logEvent } from './services/eventsService';
 import { supabase } from './lib/supabase';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -180,27 +179,6 @@ function AppContent() {
     'auth-dismissed-at',
     0
   );
-
-  // --- Spotify is now lazily initialized when needed as fallback ---
-  // Removed automatic initialization to improve startup performance
-
-  // Provide lazy Spotify initialization function for services
-  // @ts-ignore - Function reserved for future lazy initialization
-  const unused__initializeSpotifyLazy =
-    useCallback(async (): Promise<boolean> => {
-      try {
-        const token = await fetchSpotifyTokenLazy();
-        if (token) {
-          spotifyService.initialize(token);
-          Logger.info('Spotify service lazily initialized');
-          return true;
-        }
-        return false;
-      } catch (error) {
-        Logger.error('Lazy Spotify initialization failed', error);
-        return false;
-      }
-    }, [fetchSpotifyTokenLazy]);
 
   // --- Initialize App ---
   useEffect(() => {

@@ -4,6 +4,14 @@ import {
   YouTubePlayerError,
 } from '../components/YouTubePlayer';
 import { audioUnlockService } from '../utils/audioUnlock';
+import { logger } from '../utils/logger';
+
+const log = {
+  debug: (msg: string, data?: any) => logger.debug('YouTubePlayer', msg, data),
+  info: (msg: string, data?: any) => logger.info('YouTubePlayer', msg, data),
+  warn: (msg: string, data?: any) => logger.warn('YouTubePlayer', msg, data),
+  error: (msg: string, err?: any) => logger.error('YouTubePlayer', msg, err),
+};
 
 interface UseYouTubePlayerOptions {
   autoplay?: boolean;
@@ -62,22 +70,22 @@ export const useYouTubePlayer = (
   // Load YouTube API with robust readiness + retry
   useEffect(() => {
     if (!videoId) {
-      console.log('YouTube Player: No videoId provided');
+      log.debug('No videoId provided');
       return;
     }
 
-    console.log('YouTube Player: Starting initialization for videoId:', videoId);
+    log.info('Starting initialization', { videoId });
     let retry = 0;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
 
     const createPlayer = () => {
-      console.log('YouTube Player: Attempting to create player, YT available:', !!window.YT, 'YT.Player available:', !!(window.YT && window.YT.Player));
+      log.debug('Attempting to create player', { ytAvailable: !!window.YT, ytPlayerAvailable: !!(window.YT && window.YT.Player) });
       if (!window.YT || !window.YT.Player) return false;
       try {
         const el = document.getElementById(playerId.current);
-        console.log('YouTube Player: Player element found:', !!el, 'Element ID:', playerId.current);
+        log.debug('Player element lookup', { found: !!el, elementId: playerId.current });
         if (!el) return false;
-        console.log('YouTube Player: Creating new YT.Player instance...');
+        log.debug('Creating new YT.Player instance');
         const player = new window.YT.Player(playerId.current, {
           videoId,
           playerVars: {
@@ -94,7 +102,7 @@ export const useYouTubePlayer = (
           },
           events: {
             onReady: () => {
-              console.log('YouTube Player: onReady event fired');
+              log.info('Player ready');
               // Set volume after player is ready
               if (playerRef.current && options.volume !== undefined) {
                 playerRef.current.setVolume(options.volume);
@@ -104,16 +112,16 @@ export const useYouTubePlayer = (
               options.onReady?.();
             },
             onStateChange: (event: any) => {
-              console.log('YouTube Player: State change:', event.data);
+              log.debug('State change', { state: event.data });
               options.onStateChange?.(event.data);
             },
             onError: (event: any) => {
-              console.error('YouTube Player: Error event:', event.data);
+              log.error('Player error', { errorCode: event.data });
               options.onError?.(event.data);
               // Attempt a soft recreate once on player error
               if (!isReady && retry < 2) {
                 retry++;
-                console.log('YouTube Player: Retrying due to error, attempt:', retry);
+                log.warn('Retrying due to error', { attempt: retry });
                 retryTimer = setTimeout(() => {
                   try { playerRef.current?.destroy?.(); } catch {}
                   playerRef.current = null;
@@ -123,30 +131,30 @@ export const useYouTubePlayer = (
             },
           },
         });
-        console.log('YouTube Player: YT.Player instance created successfully');
+        log.info('YT.Player instance created');
         playerRef.current = player;
         return true;
       } catch (error) {
-        console.error('YouTube Player: Error creating player:', error);
+        log.error('Error creating player', error);
         return false;
       }
     };
 
     const ensureApiLoaded = () => {
-      console.log('YouTube Player: ensureApiLoaded called, YT available:', !!window.YT);
+      log.debug('ensureApiLoaded', { ytAvailable: !!window.YT });
       if (window.YT && window.YT.Player) {
-        console.log('YouTube Player: API already loaded, attempting to create player');
+        log.debug('API already loaded, creating player');
         if (!createPlayer() && retry < 3) {
           retry++;
-          console.log('YouTube Player: Create player failed, retrying...', retry);
+          log.warn('Create player failed, retrying', { attempt: retry });
           retryTimer = setTimeout(ensureApiLoaded, 300 * retry);
         }
         return;
       }
       const existingScript = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
-      console.log('YouTube Player: Existing script found:', !!existingScript);
+      log.debug('Existing API script', { found: !!existingScript });
       if (!existingScript) {
-        console.log('YouTube Player: Loading YouTube IFrame API script');
+        log.info('Loading YouTube IFrame API script');
         const tag = document.createElement('script');
         tag.src = 'https://www.youtube.com/iframe_api';
         const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -155,16 +163,16 @@ export const useYouTubePlayer = (
 
       const original = window.onYouTubeIframeAPIReady;
       window.onYouTubeIframeAPIReady = () => {
-        console.log('YouTube Player: onYouTubeIframeAPIReady fired');
+        log.info('onYouTubeIframeAPIReady fired');
         if (original) original();
         createPlayer();
       };
 
       // Fallback if onYouTubeIframeAPIReady never fires
       retryTimer = setTimeout(() => {
-        console.log('YouTube Player: Fallback timeout triggered, checking API status');
+        log.debug('Fallback timeout triggered');
         if (!window.YT || !window.YT.Player) {
-          console.log('YouTube Player: API still not ready, retrying...');
+          log.warn('API still not ready, retrying');
           ensureApiLoaded();
         }
       }, 800);
@@ -185,7 +193,7 @@ export const useYouTubePlayer = (
   const play = useCallback(async () => {
     // Check if audio is unlocked, show prompt if needed
     if (!audioUnlockService.isAudioUnlocked()) {
-      console.log('Audio not unlocked, showing interaction prompt');
+      log.info('Audio not unlocked, showing interaction prompt');
       audioUnlockService.showInteractionPrompt();
       await audioUnlockService.waitForUnlock();
     }
@@ -203,17 +211,14 @@ export const useYouTubePlayer = (
 
         const result = playerRef.current.playVideo();
 
-        // For debugging: log play attempt
-        console.log('YouTube player play() called', {
+        log.debug('play() called', {
           playerState: playerRef.current.getPlayerState ? playerRef.current.getPlayerState() : 'unknown',
-          volume: playerRef.current.getVolume ? playerRef.current.getVolume() : 'unknown',
           videoId,
-          audioUnlocked: audioUnlockService.isAudioUnlocked()
         });
 
         return result;
       } catch (error) {
-        console.error('YouTube player play error:', error);
+        log.error('play() error', error);
         // Try to handle autoplay policy errors
         throw error;
       }

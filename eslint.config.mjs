@@ -53,19 +53,20 @@ export default [
       "react-hooks": pluginReactHooks,
     },
     rules: {
-      // Match legacy .eslintrc.json behavior
-      "@typescript-eslint/no-unused-vars": "off",
+      // TypeScript handles unused vars via tsconfig strict mode
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/ban-ts-comment": "off",
-      "no-empty": "off",
+      // Keep relaxed for gradual migration — enable as tech debt is resolved
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/ban-ts-comment": "warn",
+      "no-empty": "warn",
       "no-case-declarations": "off",
-      "no-useless-catch": "off",
+      "no-useless-catch": "warn",
       "react/no-unescaped-entities": "off",
-      // React Hooks rules (keep rules-of-hooks, relax deps for stability)
+      // React Hooks rules
       "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "off",
+      "react-hooks/exhaustive-deps": "warn",
     },
     settings: {
       react: {

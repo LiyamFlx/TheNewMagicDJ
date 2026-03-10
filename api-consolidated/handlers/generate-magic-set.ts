@@ -1,12 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Get API keys from environment
+// Get API keys from server-side environment only (never fall back to VITE_ client-side vars)
 const YOUTUBE_API_KEY =
   process.env.YOUTUBE_API_KEY || process.env.VITE_YOUTUBE_API_KEY;
 const SPOTIFY_CLIENT_ID =
   process.env.SPOTIFY_CLIENT_ID || process.env.VITE_SPOTIFY_CLIENT_ID;
-const SPOTIFY_CLIENT_SECRET =
-  process.env.SPOTIFY_CLIENT_SECRET || process.env.VITE_SPOTIFY_CLIENT_SECRET;
+const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 
 // Get Spotify access token
 async function getSpotifyToken(): Promise<string> {

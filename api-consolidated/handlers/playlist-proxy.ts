@@ -1,8 +1,37 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { SecureSupabaseClient } from '../../lib/supabaseSecure.js';
+import { getServerSupabase } from '../lib/supabaseServer.js';
 
 function getServiceClient() {
   return SecureSupabaseClient.getAdminClient();
+}
+
+/**
+ * Verify the caller's identity via JWT and return their user ID.
+ * Falls back to the userId sent in the request body/query ONLY for
+ * backwards-compatible GET requests when no auth header is present.
+ */
+async function authenticateRequest(
+  req: VercelRequest,
+  fallbackUserId?: string
+): Promise<{ userId: string | null; error?: string }> {
+  const auth = req.headers.authorization;
+  if (auth) {
+    try {
+      const supabase = getServerSupabase(auth);
+      const { data } = await supabase.auth.getUser();
+      const uid = data?.user?.id;
+      if (!uid) return { userId: null, error: 'Invalid or expired token' };
+      return { userId: uid };
+    } catch {
+      return { userId: null, error: 'Authentication failed' };
+    }
+  }
+  // Allow unauthenticated GET with explicit userId (read-only, RLS still applies)
+  if (req.method === 'GET' && fallbackUserId) {
+    return { userId: fallbackUserId };
+  }
+  return { userId: null, error: 'Authorization header required' };
 }
 
 // Allowed hosts (dev + production). Also allow project vercel deployments by suffix.
@@ -19,8 +48,8 @@ const allowedHosts = new Set<string>([
 function isAllowedHost(host: string): boolean {
   if (!host) return false;
   if (allowedHosts.has(host)) return true;
-  // Allow any deployment for this project on vercel
-  if (host.endsWith('.vercel.app') && host.includes('the-new-magic')) return true;
+  // Allow Vercel preview deployments matching the project's exact naming pattern
+  if (host.endsWith('.vercel.app') && /^the-new-magic(-[a-z0-9]+)?-/.test(host)) return true;
   return false;
 }
 
@@ -63,11 +92,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
     if (method === 'GET' && (action === 'list' || !action)) {
-      const userId = (req.query.userId as string) || (req.query.user_id as string) || '';
-      if (!userId) return res.status(400).json({
-        error: 'Missing userId',
-        code: 'MISSING_USER_ID'
-      });
+      const queryUserId = (req.query.userId as string) || (req.query.user_id as string) || '';
+      const { userId, error: authError } = await authenticateRequest(req, queryUserId);
+      if (!userId) return res.status(401).json({ error: authError || 'Unauthorized', code: 'UNAUTHORIZED' });
+      // userId is already validated by authenticateRequest above
 
       const { data: playlists, error: playlistError } = await supabase
         .from('playlists')
@@ -118,17 +146,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           code: 'INVALID_JSON'
         });
       }
-      const { playlist, userId } = parsedBody;
-      if (!playlist || !userId) return res.status(400).json({
-        error: 'Missing payload',
+      const { playlist } = parsedBody;
+      const { userId, error: authError } = await authenticateRequest(req);
+      if (!userId) return res.status(401).json({ error: authError || 'Unauthorized', code: 'UNAUTHORIZED' });
+      if (!playlist) return res.status(400).json({
+        error: 'Missing playlist payload',
         code: 'MISSING_PAYLOAD'
       });
 
+      const playlistName = String(playlist.name || '').trim().slice(0, 200);
+      const playlistDescription = playlist.description ? String(playlist.description).slice(0, 2000) : null;
       const payload = {
         id: playlist.id || undefined,
-        name: String(playlist.name || '').trim(),
+        name: playlistName || 'Untitled Playlist',
         user_id: userId,
-        description: playlist.description || null,
+        description: playlistDescription,
       };
       const { data: saved, error: upsertErr } = await supabase
         .from('playlists')
@@ -149,8 +181,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               t.source_url || t.url || t.youtube_url || t.preview_url || null;
             return {
               playlist_id: saved.id,
-              title: t.title || 'Untitled',
-              artist: t.artist || 'Unknown',
+              title: String(t.title || 'Untitled').slice(0, 500),
+              artist: String(t.artist || 'Unknown').slice(0, 500),
               bpm: typeof t.bpm === 'number' ? Math.floor(t.bpm) : null,
               energy: typeof t.energy === 'number' ? Math.floor(t.energy) : null,
               duration:
@@ -195,10 +227,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           code: 'INVALID_JSON'
         });
       }
-      const { id, updates, userId } = body;
-      if (!id || !userId) return res.status(400).json({
-        error: 'Missing id or userId',
-        code: 'MISSING_ID_OR_USER_ID'
+      const { id, updates } = body;
+      const { userId, error: authError } = await authenticateRequest(req);
+      if (!userId) return res.status(401).json({ error: authError || 'Unauthorized', code: 'UNAUTHORIZED' });
+      if (!id) return res.status(400).json({
+        error: 'Missing playlist id',
+        code: 'MISSING_ID'
       });
       const patch: any = {};
       if (typeof updates?.name === 'string') patch.name = updates.name.trim();
@@ -228,14 +262,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           code: 'INVALID_JSON'
         });
       }
+      const { userId, error: authError } = await authenticateRequest(req);
+      if (!userId) return res.status(401).json({ error: authError || 'Unauthorized', code: 'UNAUTHORIZED' });
       const id = (req.query.id as string) || (parsedBody as any).id;
-      const userId = (req.query.userId as string) || (parsedBody as any).userId;
       if (!id) return res.status(400).json({
         error: 'Missing id',
         code: 'MISSING_ID'
       });
-      const q = supabase.from('playlists').delete().eq('id', id);
-      const { error } = userId ? await q.eq('user_id', userId) : await q;
+      // Always enforce user_id to prevent cross-user deletion
+      const { error } = await supabase.from('playlists').delete().eq('id', id).eq('user_id', userId);
       if (error) return res.status(500).json({
         error: error.message,
         code: 'PLAYLIST_DELETE_ERROR'
@@ -255,13 +290,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       stack: process.env.NODE_ENV === 'development' ? e?.stack : undefined
     });
 
-    // Return structured error response
+    const isDev = process.env.VERCEL_ENV === 'development' || process.env.NODE_ENV === 'development';
     return res.status(500).json({
       error: 'PLAYLIST_OPERATION_FAILED',
-      message: e?.message || 'Internal server error',
+      message: isDev ? (e?.message || 'Internal server error') : 'Internal server error',
       code: e?.code || 'UNKNOWN_ERROR',
       duration,
-      ...(process.env.NODE_ENV === 'development' && { stack: e?.stack })
+      ...(isDev && { stack: e?.stack }),
     });
   }
 }

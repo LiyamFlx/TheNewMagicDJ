@@ -17,5 +17,5 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run lint
-      - run: npm run typecheck || true # some projects use tsconfig without errors; keep non-blocking if unset
+      - run: npm run typecheck
       - run: npm run build
